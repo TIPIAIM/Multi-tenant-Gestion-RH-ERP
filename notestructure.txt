@@ -1,0 +1,18 @@
+FADES-RH/
+│
+├── apps/
+│   ├── web/                 # React + Vite + TypeScript
+│   └── api/                 # Express + TypeScript
+│
+├── packages/
+│   └── contracts/           # Types partagés frontend/backend
+│
+├── docs/                    # Architecture, API, règles métier
+│
+├── package.json
+├── .gitignore
+└── README.md
+
+Nous utilisons un monorepo : frontend, API et types partagés restent dans un seul projet. Les npm workspaces sont justement conçus pour gérer plusieurs packages locaux à partir d’un seul dossier racine.
+
+c'etàit là phàse une

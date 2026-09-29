@@ -1,0 +1,48 @@
+import { Router } from "express";
+import {
+  requireAuth,
+} from "../../middlewares/auth.middleware.js";
+import {
+  tenantContextMiddleware,
+} from "../../middlewares/tenant-context.middleware.js";
+import {
+  changePasswordController,
+  getMeController,
+  loginController,
+  logoutController,
+  refreshController,
+} from "./auth.controller.js";
+
+export const authRouter = Router();
+
+authRouter.post(
+  "/login",
+  tenantContextMiddleware,
+  loginController,
+);
+
+authRouter.post(
+  "/refresh",
+  tenantContextMiddleware,
+  refreshController,
+);
+
+authRouter.get(
+  "/me",
+  tenantContextMiddleware,
+  requireAuth,
+  getMeController,
+);
+
+authRouter.post(
+  "/change-password",
+  tenantContextMiddleware,
+  requireAuth,
+  changePasswordController,
+);
+
+authRouter.post(
+  "/logout",
+  tenantContextMiddleware,
+  logoutController,
+);

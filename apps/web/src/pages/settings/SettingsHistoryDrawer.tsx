@@ -1,0 +1,82 @@
+import { LoaderCircle, RotateCcw, X } from "lucide-react";
+import type { SettingsRevision } from "../../features/settings/settings.types";
+
+function formatDate(value: string): string {
+  return new Intl.DateTimeFormat("fr-FR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+}
+
+export default function SettingsHistoryDrawer({
+  open,
+  revisions,
+  isLoading,
+  canRestore,
+  isRestoring,
+  onClose,
+  onRestore,
+}: {
+  open: boolean;
+  revisions: SettingsRevision[];
+  isLoading: boolean;
+  canRestore: boolean;
+  isRestoring: boolean;
+  onClose: () => void;
+  onRestore: (version: number) => void;
+}) {
+  if (!open) return null;
+
+  return (
+    <div className="settings-drawer-layer">
+      <button
+        type="button"
+        className="settings-drawer-backdrop"
+        onClick={onClose}
+        aria-label="Fermer l'historique"
+      />
+
+      <aside className="settings-history-drawer">
+        <header>
+          <div>
+            <p>VERSIONNEMENT</p>
+            <h3>Historique de configuration</h3>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Fermer">
+            <X size={20} />
+          </button>
+        </header>
+
+        {isLoading ? (
+          <div className="settings-empty">
+            <LoaderCircle className="is-spinning" /> Chargement...
+          </div>
+        ) : (
+          <div className="settings-history-list">
+            {revisions.map((revision) => (
+              <article key={revision.id}>
+                <div className="settings-version-badge">v{revision.version}</div>
+                <div>
+                  <strong>{revision.reason}</strong>
+                  <span>
+                    {revision.publishedByName} · {formatDate(revision.publishedAt)}
+                  </span>
+                  <p>{revision.changedSections.join(" · ")}</p>
+                </div>
+                {canRestore && (
+                  <button
+                    type="button"
+                    disabled={isRestoring}
+                    onClick={() => onRestore(revision.version)}
+                  >
+                    <RotateCcw size={16} /> Restaurer
+                  </button>
+                )}
+              </article>
+            ))}
+          </div>
+        )}
+      </aside>
+    </div>
+  );
+}

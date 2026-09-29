@@ -1,0 +1,1343 @@
+/* =========================================================
+   RH — TÂCHES / DRAWER ALIGNÉ SUR ROADMAP
+   ---------------------------------------------------------
+   Référence directe : roadmaps-page.css.
+   Même langage :
+   #046242 vert 
+   #0B2536 bleu profond
+   #E9B521 jaune doré
+   #F8FBF9 fond secondaire
+   #DBE8DF bordures
+   ========================================================= */
+
+/*
+ * IMPORTANT :
+ * L'overlay/backdrop existant dans tasks-page.css est conservé.
+ * Aucun pointer-events ni z-index expérimental n'est ajouté.
+ */
+
+.task-drawer {
+  width: min(720px, 100%);
+  height: 100dvh;
+  min-height: 0;
+  max-height: 100dvh;
+
+  box-sizing: border-box;
+
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  padding: 22px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 0 50px
+    rgba(0, 0, 0, 0.18);
+}
+
+/* HEADER — identique au langage Roadmap */
+
+.task-drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+
+  gap: 14px;
+}
+
+.task-drawer-header > div {
+  min-width: 0;
+}
+
+.task-drawer-header p {
+  margin: 0;
+
+  color:
+    var(
+      --tenant-primary,
+      #046242
+    );
+
+  font-size: 0.67rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.task-drawer-header h3 {
+  margin: 8px 0 0;
+
+  color: #0b2536;
+
+  font-size: 1.25rem;
+  line-height: 1.3;
+}
+
+.task-drawer-header > div > span {
+  display: block;
+
+  margin-top: 6px;
+
+  color: #71858b;
+
+  font-size: 0.75rem;
+}
+
+.task-icon-button {
+  display: grid;
+
+  width: 38px;
+  height: 38px;
+
+  flex: 0 0 38px;
+
+  place-items: center;
+
+  border: 1px solid #d6e4dc;
+  border-radius: 11px;
+
+  background: #ffffff;
+
+  color: #4c676e;
+
+  cursor: pointer;
+}
+
+/* RH READ ONLY */
+
+.task-rh-readonly-banner {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 10px;
+
+  margin-top: 16px;
+  padding: 13px;
+
+  border: 1px solid #dbe8df;
+  border-radius: 13px;
+
+  background: #f8fbf9;
+
+  color: #60777f;
+}
+
+.task-rh-readonly-banner > svg {
+  flex: 0 0 auto;
+
+  color:
+    var(
+      --tenant-primary,
+      #046242
+    );
+}
+
+.task-rh-readonly-banner strong {
+  display: block;
+
+  color: #163442;
+
+  font-size: 0.78rem;
+}
+
+.task-rh-readonly-banner p {
+  margin: 4px 0 0;
+
+  color: #71858b;
+
+  font-size: 0.74rem;
+  line-height: 1.55;
+}
+
+/* IDENTITY — copie visuelle de roadmap-drawer-identity */
+
+.task-drawer-identity {
+  display: grid;
+
+  gap: 12px;
+
+  margin-top: 20px;
+  padding: 18px;
+
+  border: 1px solid #dbe8df;
+  border-radius: 18px;
+
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(
+        233,
+        181,
+        33,
+        0.13
+      ),
+      transparent 16rem
+    ),
+    #f8fbf9;
+}
+
+.task-drawer-identity > div > strong {
+  display: block;
+
+  color: #0b2536;
+
+  font-size: 1.35rem;
+}
+
+.task-drawer-identity > div > span,
+.task-drawer-identity > p {
+  margin: 0;
+
+  color: #71858b;
+
+  font-size: 0.78rem;
+}
+
+.task-drawer-identity > p strong {
+  color: #25434d;
+
+  font-weight: 850;
+}
+
+.task-progress-track {
+  height: 8px;
+
+  overflow: hidden;
+
+  border-radius: 999px;
+
+  background: #dce9e1;
+}
+
+.task-progress-track i {
+  display: block;
+
+  height: 100%;
+
+  border-radius: inherit;
+
+  background:
+    linear-gradient(
+      90deg,
+      #046242,
+      #e9b521
+    );
+
+  transition: width 180ms ease;
+}
+
+/* STATUS — mêmes couleurs métier Roadmap */
+
+.task-status-pill {
+  display: inline-flex;
+
+  width: fit-content;
+
+  padding: 5px 8px;
+
+  border-radius: 999px;
+
+  font-size: 0.63rem;
+  font-weight: 900;
+}
+
+.task-status-pill.todo,
+.task-status-pill.cancelled {
+  background: #f2f3f4;
+  color: #69777b;
+}
+
+.task-status-pill.in-progress {
+  background: #fff5df;
+  color: #a86d06;
+}
+
+.task-status-pill.blocked {
+  background: #fff0ed;
+  color: #b34d3c;
+}
+
+.task-status-pill.completed {
+  background: #e9f7ed;
+  color: #19743d;
+}
+
+/* ACTIONS — même structure Roadmap */
+
+.task-drawer-actions {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 9px;
+
+  margin-top: 16px;
+}
+
+.task-primary-button,
+.task-secondary-action {
+  display: inline-flex;
+
+  min-height: 44px;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 8px;
+
+  padding: 0 14px;
+
+  border-radius: 12px;
+
+  font-size: 0.82rem;
+  font-weight: 850;
+
+  cursor: pointer;
+
+  transition:
+    transform 170ms ease,
+    box-shadow 170ms ease,
+    background-color 170ms ease,
+    border-color 170ms ease;
+}
+
+.task-primary-button {
+  border: 1px solid transparent;
+
+  background:
+    var(
+      --tenant-accent,
+      #e9b521
+    );
+
+  color: #0b2536;
+
+  box-shadow:
+    0 10px 20px
+    rgba(0, 0, 0, 0.12);
+}
+
+.task-secondary-action {
+  border: 1px solid #d2e0d8;
+
+  background: #f8fbf9;
+
+  color: #52716b;
+}
+
+.task-primary-button:hover:not(:disabled),
+.task-secondary-action:hover:not(:disabled) {
+  transform:
+    translateY(-2px);
+}
+
+.task-primary-button:disabled,
+.task-secondary-action:disabled {
+  cursor: not-allowed;
+
+  opacity: 0.62;
+}
+
+/* PROGRESSION ACTION BOX */
+
+.task-progress-action-box {
+  display: grid;
+
+  width: 100%;
+
+  gap: 10px;
+
+  padding: 12px;
+
+  border-radius: 13px;
+
+  background: #f8fbf9;
+}
+
+.task-progress-action-heading {
+  display: flex;
+
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+}
+
+.task-progress-action-heading span {
+  color: #4c6770;
+
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.task-progress-action-heading strong {
+  color: #0b2536;
+
+  font-size: 0.9rem;
+}
+
+.task-progress-range {
+  width: 100%;
+
+  accent-color:
+    var(
+      --tenant-primary,
+      #046242
+    );
+
+  cursor: pointer;
+}
+
+/* INPUTS — même style Roadmap */
+
+.task-inline-comment {
+  display: grid;
+
+  width: 100%;
+
+  gap: 7px;
+}
+
+.task-inline-comment > span,
+.task-kpi-submit-box label > span {
+  color: #4c6770;
+
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.task-inline-comment input,
+.task-inline-comment textarea,
+.task-kpi-submit-box input,
+.task-kpi-submit-box textarea {
+  width: 100%;
+
+  box-sizing: border-box;
+
+  min-height: 45px;
+
+  border: 1px solid #ceded4;
+  border-radius: 11px;
+
+  outline: 0;
+
+  background: #ffffff;
+
+  color: #163442;
+
+  font-size: 0.84rem;
+}
+
+.task-inline-comment input {
+  padding: 0 12px;
+}
+
+.task-inline-comment textarea,
+.task-kpi-submit-box textarea {
+  min-height: auto;
+
+  padding: 11px 12px;
+
+  resize: vertical;
+}
+
+.task-inline-comment input:focus,
+.task-inline-comment textarea:focus,
+.task-kpi-submit-box input:focus,
+.task-kpi-submit-box textarea:focus {
+  border-color:
+    var(
+      --tenant-primary,
+      #046242
+    );
+
+  box-shadow:
+    0 0 0 4px
+    rgba(4, 98, 66, 0.1);
+}
+
+/* SECTIONS — comme Roadmap */
+
+.task-drawer-section {
+  display: grid;
+
+  gap: 13px;
+
+  margin-top: 22px;
+}
+
+.task-drawer-section > p {
+  margin: 0;
+
+  color: #60777f;
+
+  font-size: 0.84rem;
+  line-height: 1.7;
+}
+
+.task-drawer-section-heading {
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+
+  color:
+    var(
+      --tenant-primary,
+      #046242
+    );
+}
+
+.task-drawer-section-heading h4 {
+  margin: 0;
+
+  color: #163442;
+
+  font-size: 0.93rem;
+}
+
+/* KPI SUMMARY */
+
+.task-kpi-summary {
+  display: grid;
+
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0, 1fr)
+    );
+
+  gap: 9px;
+}
+
+.task-kpi-summary > div {
+  padding: 10px;
+
+  border-radius: 12px;
+
+  background: #f8fbf9;
+}
+
+.task-kpi-summary span {
+  display: block;
+
+  color: #88999d;
+
+  font-size: 0.64rem;
+  font-weight: 900;
+
+  text-transform: uppercase;
+}
+
+.task-kpi-summary strong {
+  display: block;
+
+  margin-top: 4px;
+
+  color: #25434d;
+
+  font-size: 0.95rem;
+}
+
+/* KPI CARDS — même modèle que roadmap-item-card */
+
+.task-items-list {
+  display: grid;
+
+  gap: 13px;
+}
+
+.task-item-card {
+  display: grid;
+
+  gap: 12px;
+
+  padding: 15px;
+
+  border: 1px solid #dbe8df;
+  border-radius: 16px;
+
+  background: #ffffff;
+}
+
+.task-item-card > header {
+  display: flex;
+
+  justify-content:
+    space-between;
+
+  gap: 10px;
+}
+
+.task-item-card > header
+  span:first-child {
+  color: #71858b;
+
+  font-size: 0.68rem;
+  font-weight: 900;
+
+  text-transform: uppercase;
+}
+
+.task-item-card h5 {
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  margin: 5px 0 0;
+
+  color: #163442;
+
+  font-size: 0.9rem;
+}
+
+.task-item-card h5 svg {
+  color:
+    var(
+      --tenant-primary,
+      #046242
+    );
+}
+
+.task-item-card > p {
+  margin: 0;
+
+  color: #60777f;
+
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.task-kpi-status {
+  width: fit-content;
+
+  padding: 5px 8px;
+
+  border-radius: 999px;
+
+  font-size: 0.63rem;
+  font-weight: 900;
+
+  white-space: nowrap;
+}
+
+.task-kpi-status.pending-review {
+  background: #fff5df;
+
+  color: #a86d06;
+}
+
+.task-kpi-status.validated {
+  background: #e9f7ed;
+
+  color: #19743d;
+}
+
+/* META — identique au modèle Roadmap */
+
+.task-item-meta {
+  display: grid;
+
+  grid-template-columns: 1fr;
+
+  gap: 9px;
+
+  margin: 0;
+}
+
+.task-item-meta div {
+  padding: 10px;
+
+  border-radius: 12px;
+
+  background: #f8fbf9;
+}
+
+.task-item-meta dt {
+  color: #88999d;
+
+  font-size: 0.64rem;
+  font-weight: 900;
+
+  text-transform: uppercase;
+}
+
+.task-item-meta dd {
+  margin: 4px 0 0;
+
+  color: #25434d;
+
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+/* KPI PROOF / SUBMIT — transposition Roadmap */
+
+.task-kpi-proof,
+.task-kpi-submit-box {
+  display: grid;
+
+  gap: 9px;
+
+  padding: 12px;
+
+  border-radius: 13px;
+
+  background: #f8fbf9;
+}
+
+.task-kpi-proof > strong {
+  color: #163442;
+
+  font-size: 0.78rem;
+}
+
+.task-kpi-proof p {
+  margin: 0;
+
+  color: #60777f;
+
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.task-kpi-proof small {
+  color: #819198;
+
+  font-size: 0.68rem;
+}
+
+.task-kpi-file-row {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  align-items: center;
+
+  justify-content:
+    space-between;
+
+  gap: 8px;
+}
+
+.task-kpi-file-row > div {
+  display: flex;
+
+  min-width: 0;
+
+  align-items: center;
+
+  gap: 7px;
+
+  color:
+    var(
+      --tenant-primary,
+      #046242
+    );
+}
+
+.task-kpi-file-row > div span {
+  overflow: hidden;
+
+  color: #60777f;
+
+  font-size: 0.72rem;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.task-kpi-file-row button {
+  display: inline-flex;
+
+  width: fit-content;
+
+  min-height: 34px;
+
+  align-items: center;
+
+  gap: 7px;
+
+  padding: 0 10px;
+
+  border: 1px solid #d2e0d8;
+  border-radius: 9px;
+
+  background: #ffffff;
+
+  color:
+    var(
+      --tenant-primary,
+      #046242
+    );
+
+  font-size: 0.72rem;
+  font-weight: 850;
+
+  cursor: pointer;
+}
+
+.task-kpi-file-row > small {
+  color: #71858b;
+
+  font-size: 0.68rem;
+}
+
+/* FILE PICKER — même UX que Roadmap */
+
+.task-file-picker {
+  position: relative;
+
+  display: flex;
+
+  min-height: 41px;
+
+  align-items: center;
+
+  gap: 8px;
+
+  padding: 0 12px;
+
+  border: 1px dashed #a7c7b3;
+  border-radius: 11px;
+
+  background: #ffffff;
+
+  color:
+    var(
+      --tenant-primary,
+      #046242
+    );
+
+  font-size: 0.74rem;
+  font-weight: 850;
+
+  cursor: pointer;
+}
+
+.task-file-picker input {
+  position: absolute;
+
+  inset: 0;
+
+  opacity: 0;
+
+  cursor: pointer;
+}
+
+/* WARNING */
+
+.task-kpi-warning {
+  display: flex;
+
+  align-items: flex-start;
+
+  gap: 9px;
+
+  padding: 12px;
+
+  border: 1px solid #ead9a4;
+  border-radius: 13px;
+
+  background: #fffaf0;
+
+  color: #80671d;
+
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+/* ERROR / EMPTY — Roadmap language */
+
+.task-form-error {
+  padding: 12px;
+
+  border: 1px solid #efc8c0;
+  border-radius: 13px;
+
+  background: #fff4f2;
+
+  color: #a63426;
+
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.task-empty {
+  display: grid;
+
+  justify-items: center;
+
+  gap: 10px;
+
+  padding: 24px 16px;
+
+  border: 1px dashed #cbdcd2;
+  border-radius: 18px;
+
+  background: #f8fbf9;
+
+  color: #60777f;
+
+  font-size: 0.76rem;
+
+  text-align: center;
+}
+
+/* COMMENTS */
+
+.task-comments-list {
+  display: grid;
+
+  gap: 10px;
+}
+
+.task-comments-list article {
+  display: grid;
+
+  gap: 5px;
+
+  padding: 12px;
+
+  border-radius: 13px;
+
+  background: #f8fbf9;
+}
+
+.task-comments-list strong {
+  color: #163442;
+
+  font-size: 0.78rem;
+}
+
+.task-comments-list p {
+  margin: 0;
+
+  color: #60777f;
+
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.task-comments-list small {
+  color: #819198;
+
+  font-size: 0.68rem;
+}
+
+/* HISTORIQUE — exactement le langage Roadmap */
+
+.task-activity-list {
+  display: grid;
+
+  gap: 10px;
+}
+
+.task-activity-list article {
+  display: flex;
+
+  gap: 10px;
+}
+
+.task-activity-list
+  article > span {
+  width: 10px;
+  height: 10px;
+
+  flex: 0 0 10px;
+
+  margin-top: 5px;
+
+  border-radius: 999px;
+
+  background:
+    var(
+      --tenant-primary,
+      #046242
+    );
+}
+
+.task-activity-list strong {
+  color: #163442;
+
+  font-size: 0.8rem;
+}
+
+.task-activity-list p {
+  margin: 3px 0 0;
+
+  color: #60777f;
+
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.task-activity-list small {
+  display: block;
+
+  margin-top: 3px;
+
+  color: #819198;
+
+  font-size: 0.68rem;
+}
+
+/* FOOTER */
+
+.task-drawer-footer {
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  margin-top: 22px;
+  padding-top: 14px;
+
+  border-top:
+    1px solid #e3ece6;
+
+  color: #71858b;
+
+  font-size: 0.72rem;
+}
+
+/* RESPONSABILITÉ / PLANNING */
+
+.task-responsibility-meta,
+.task-planning-meta {
+  grid-template-columns:
+    repeat(
+      3,
+      minmax(0, 1fr)
+    );
+}
+
+/* RESPONSIVE */
+
+@media (
+  max-width: 680px
+) {
+  .task-drawer {
+    width: 100%;
+
+    height: 100dvh;
+    max-height: 100dvh;
+
+    padding: 18px;
+  }
+
+  .task-drawer-header h3 {
+    font-size: 1.08rem;
+  }
+
+  .task-kpi-summary,
+  .task-responsibility-meta,
+  .task-planning-meta {
+    grid-template-columns:
+      1fr;
+  }
+
+  .task-item-card > header {
+    flex-direction:
+      column;
+  }
+
+  .task-kpi-status {
+    align-self:
+      flex-start;
+  }
+
+  .task-kpi-file-row {
+    align-items:
+      flex-start;
+
+    flex-direction:
+      column;
+  }
+}
+
+/* =========================================================
+   V3.1 — LISIBILITÉ MAXIMALE / AUCUN BLUR
+   ---------------------------------------------------------
+   Ce bloc neutralise uniquement les effets visuels pouvant
+   rendre le texte flou. Il ne touche ni aux z-index,
+   ni aux pointer-events, ni aux clics, ni à la logique.
+   ========================================================= */
+
+/* Aucun flou sur l'arrière-plan du drawer */
+.task-drawer-backdrop {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  filter: none !important;
+}
+
+/* Drawer entièrement opaque et net */
+.task-drawer {
+  background: #ffffff !important;
+  background-image: none !important;
+
+  opacity: 1 !important;
+
+  filter: none !important;
+
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+
+  text-shadow: none !important;
+}
+
+/* Aucun effet de flou sur les principales zones */
+.task-drawer-header,
+.task-drawer-identity,
+.task-drawer-actions,
+.task-progress-action-box,
+.task-drawer-section,
+.task-item-card,
+.task-kpi-proof,
+.task-kpi-submit-box,
+.task-comments-list article,
+.task-activity-list article,
+.task-rh-readonly-banner,
+.task-inline-comment,
+.task-file-picker {
+  opacity: 1 !important;
+
+  filter: none !important;
+
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+
+  text-shadow: none !important;
+}
+
+/* Contraste texte renforcé */
+.task-drawer-header h3,
+.task-drawer-section-heading h4,
+.task-item-card h5,
+.task-comments-list strong,
+.task-activity-list strong,
+.task-kpi-proof > strong,
+.task-rh-readonly-banner strong {
+  color: #0b2536 !important;
+  opacity: 1 !important;
+}
+
+.task-drawer-header > div > span,
+.task-drawer-identity > div > span,
+.task-drawer-identity > p,
+.task-drawer-section > p,
+.task-item-card > p,
+.task-kpi-proof p,
+.task-comments-list p,
+.task-activity-list p,
+.task-comments-list small,
+.task-activity-list small,
+.task-kpi-proof small,
+.task-rh-readonly-banner p {
+  color: #4f676f !important;
+  opacity: 1 !important;
+}
+
+/* Libellés secondaires plus lisibles */
+.task-item-meta dt,
+.task-kpi-summary span,
+.task-inline-comment > span,
+.task-kpi-submit-box label > span {
+  color: #596f76 !important;
+  opacity: 1 !important;
+}
+
+/* Valeurs importantes plus sombres */
+.task-item-meta dd,
+.task-kpi-summary strong,
+.task-progress-action-heading strong,
+.task-drawer-identity > div > strong {
+  color: #163442 !important;
+  opacity: 1 !important;
+}
+
+/* Champs totalement blancs et texte net */
+.task-inline-comment input,
+.task-inline-comment textarea,
+.task-kpi-submit-box input,
+.task-kpi-submit-box textarea,
+.task-file-picker {
+  background: #ffffff !important;
+
+  color: #163442 !important;
+
+  opacity: 1 !important;
+
+  filter: none !important;
+
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+
+  text-shadow: none !important;
+}
+
+/* Placeholder plus visible */
+.task-inline-comment input::placeholder,
+.task-inline-comment textarea::placeholder,
+.task-kpi-submit-box input::placeholder,
+.task-kpi-submit-box textarea::placeholder {
+  color: #839398 !important;
+  opacity: 1 !important;
+}
+
+/* Lisibilité du texte global du drawer */
+.task-drawer {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.task-drawer p,
+.task-drawer span,
+.task-drawer strong,
+.task-drawer small,
+.task-drawer h3,
+.task-drawer h4,
+.task-drawer h5,
+.task-drawer dt,
+.task-drawer dd,
+.task-drawer label,
+.task-drawer button,
+.task-drawer input,
+.task-drawer textarea {
+  text-rendering: optimizeLegibility;
+}
+
+/* Fond extérieur sombre mais sans flou */
+.task-drawer-backdrop {
+  background: rgba(11, 37, 54, 0.40) !important;
+}
+
+/* Un peu plus de taille pour lecture confortable */
+.task-drawer-section > p,
+.task-item-card > p,
+.task-kpi-proof p,
+.task-comments-list p,
+.task-activity-list p {
+  font-size: 0.80rem !important;
+  line-height: 1.58 !important;
+}
+
+.task-item-meta dd,
+.task-inline-comment input,
+.task-inline-comment textarea,
+.task-kpi-submit-box input,
+.task-kpi-submit-box textarea {
+  font-size: 0.82rem !important;
+}
+
+/* =========================================================
+   V3.2 — INTERACTIONS STABLES
+   ---------------------------------------------------------
+   Le bouton .task-drawer-backdrop n'est plus rendu dans le DOM.
+   La couche elle-même porte le voile sombre.
+   Résultat : aucun élément absolu invisible ne peut intercepter
+   les clics à l'intérieur du drawer.
+   ========================================================= */
+
+.task-drawer-layer {
+  background: rgba(11, 37, 54, 0.40) !important;
+
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+
+  cursor: default;
+}
+
+/*
+ * Le drawer reste un enfant normal de la grille historique.
+ * Aucun pointer-events n'est nécessaire.
+ */
+.task-drawer {
+  position: relative;
+
+  width: min(720px, 100%);
+  height: 100dvh;
+  min-height: 0;
+  max-height: 100dvh;
+
+  overflow-x: hidden;
+  overflow-y: auto;
+
+  background: #ffffff !important;
+
+  cursor: auto;
+}
+
+/*
+ * Les anciens styles du backdrop restent dans tasks-page.css,
+ * mais la classe n'est plus présente dans ce composant.
+ * Cette règle est simplement une sécurité si un ancien rendu
+ * persiste momentanément pendant le HMR.
+ */
+.task-drawer-layer > .task-drawer-backdrop {
+  display: none !important;
+}
+
+/* Les contrôles gardent un curseur explicite et visible. */
+.task-drawer button:not(:disabled),
+.task-drawer input[type="range"]:not(:disabled),
+.task-drawer input[type="file"]:not(:disabled),
+.task-drawer label.task-file-picker {
+  cursor: pointer;
+}
+
+/* Aucun pseudo-overlay sur les zones d'action. */
+.task-drawer-actions,
+.task-progress-action-box,
+.task-kpi-submit-box,
+.task-item-card {
+  isolation: auto;
+}
+
+/* Le range doit recevoir directement les interactions souris/tactiles. */
+.task-progress-range {
+  position: relative;
+  z-index: auto;
+
+  touch-action: pan-x;
+}
+
+/*
+ * Le champ file couvre uniquement son label, comme dans Roadmap,
+ * et jamais les boutons voisins.
+ */
+.task-file-picker {
+  overflow: hidden;
+}
+
+.task-file-picker input[type="file"] {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  opacity: 0;
+
+  cursor: pointer;
+}
+
+/* Mobile : scroll interne conservé. */
+@supports (height: 100svh) {
+  .task-drawer {
+    height: 100svh;
+    max-height: 100svh;
+  }
+}
+
+@supports (height: 100dvh) {
+  .task-drawer {
+    height: 100dvh;
+    max-height: 100dvh;
+  }
+}

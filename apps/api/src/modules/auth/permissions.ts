@@ -1,0 +1,198 @@
+//import type { UserRole } from "../users/user.types.js";
+import type { UserRole } from "../users/user.types.js";
+
+export const permissions = [
+  "TENANT_MANAGE",
+
+  "USER_VIEW",
+  "USER_CREATE",
+  "USER_UPDATE",
+  "USER_PASSWORD_RESET",
+  "USER_SESSION_MANAGE",
+
+  "ORG_VIEW",
+  "ORG_MANAGE",
+
+  "AGENT_VIEW",
+  "AGENT_MANAGE",
+
+  "TASK_VIEW",
+  "TASK_MANAGE",
+  "TASK_PROGRESS_UPDATE",
+  "TASK_COMMENT",
+
+  "ATTENDANCE_VIEW",
+  "ATTENDANCE_MANAGE",
+  "ATTENDANCE_SELF_CHECK_IN",
+  "ATTENDANCE_SELF_CHECK_OUT",
+
+  "LEAVE_VIEW",
+  "LEAVE_MANAGE",
+
+  "LEAVE_REQUEST_CREATE",
+  "LEAVE_REQUEST_REVIEW",
+  "LEAVE_BALANCE_VIEW",
+  "LEAVE_BALANCE_MANAGE",
+
+  "ROADMAP_VIEW",
+  "ROADMAP_MANAGE",
+  "ROADMAP_REVIEW",
+  "ROADMAP_EVALUATE",
+
+  "EVALUATION_VIEW",
+  "EVALUATION_MANAGE",
+   
+   "SETTINGS_VIEW", "SETTINGS_MANAGE", "SETTINGS_PUBLISH",
+
+  "DASHBOARD_VIEW",
+  "REPORT_VIEW",
+  "AUDIT_VIEW",
+   
+] as const;
+
+export type Permission = (typeof permissions)[number];
+
+const allPermissions = [...permissions];
+
+export const rolePermissions: Record<UserRole, readonly Permission[]> = {
+  TENANT_ADMIN: allPermissions,
+
+  DIRECTION: [
+  "DASHBOARD_VIEW",
+   
+    "ORG_VIEW",
+    "AGENT_VIEW",
+
+    "TASK_VIEW",
+    "TASK_MANAGE",
+    "TASK_PROGRESS_UPDATE",
+    "TASK_COMMENT",
+
+    "ATTENDANCE_VIEW",
+    "ATTENDANCE_MANAGE",
+    "ATTENDANCE_SELF_CHECK_IN",
+    "ATTENDANCE_SELF_CHECK_OUT",
+
+    "LEAVE_VIEW",
+    "LEAVE_REQUEST_CREATE",
+    "LEAVE_REQUEST_REVIEW",
+    "LEAVE_BALANCE_VIEW",
+    //"LEAVE_BALANCE_MANAGE",
+    // càhier de route
+
+    //"ROADMAP_EVALUATE càhier de route",
+
+    "ROADMAP_VIEW",
+    "ROADMAP_MANAGE",
+    "ROADMAP_REVIEW",
+
+"SETTINGS_VIEW", 
+
+    "EVALUATION_VIEW",
+    "DASHBOARD_VIEW",
+    "REPORT_VIEW",
+  ],
+
+  RH_MANAGER: [
+    "USER_VIEW",
+    "USER_CREATE",
+    "USER_UPDATE",
+    "USER_PASSWORD_RESET",
+    "USER_SESSION_MANAGE",
+
+    "ORG_VIEW",
+
+    "AGENT_VIEW",
+    "AGENT_MANAGE",
+
+    "TASK_VIEW",
+    "TASK_MANAGE",
+    "TASK_PROGRESS_UPDATE",
+    "TASK_COMMENT",
+
+    "ATTENDANCE_VIEW",
+    "ATTENDANCE_MANAGE",
+    "ATTENDANCE_SELF_CHECK_IN",
+    "ATTENDANCE_SELF_CHECK_OUT",
+
+    //càhier de route
+
+    "ROADMAP_VIEW",
+    "ROADMAP_MANAGE",
+    "ROADMAP_REVIEW",
+    "ROADMAP_EVALUATE",
+
+    "LEAVE_VIEW",
+    "LEAVE_MANAGE",
+    "LEAVE_REQUEST_CREATE",
+    "LEAVE_REQUEST_REVIEW",
+    "LEAVE_BALANCE_VIEW",
+    "LEAVE_BALANCE_MANAGE",
+
+    "EVALUATION_VIEW",
+    "EVALUATION_MANAGE",
+"SETTINGS_VIEW", "SETTINGS_MANAGE",
+
+    "DASHBOARD_VIEW",
+    "REPORT_VIEW",
+    
+  ],
+
+  SERVICE_MANAGER: [
+    "DASHBOARD_VIEW",
+    "ORG_VIEW",
+    "AGENT_VIEW",
+
+    "TASK_VIEW",
+    "TASK_MANAGE",
+    "TASK_PROGRESS_UPDATE",
+    "TASK_COMMENT",
+
+    "ATTENDANCE_VIEW",
+    "ATTENDANCE_MANAGE",
+    "ATTENDANCE_SELF_CHECK_IN",
+    "ATTENDANCE_SELF_CHECK_OUT",
+
+    "LEAVE_VIEW",
+    "LEAVE_MANAGE",
+    "LEAVE_REQUEST_CREATE",
+    "LEAVE_REQUEST_REVIEW",
+    "LEAVE_BALANCE_VIEW",
+
+    "ROADMAP_VIEW",
+    "ROADMAP_REVIEW",
+    "ROADMAP_MANAGE",
+
+    "EVALUATION_VIEW",
+
+
+    "SETTINGS_VIEW",
+
+    
+    "DASHBOARD_VIEW",
+    "REPORT_VIEW",
+    
+  ],
+
+  AGENT: [
+    "TASK_VIEW",
+    "TASK_PROGRESS_UPDATE",
+    "TASK_COMMENT",
+
+    "ATTENDANCE_VIEW",
+    "ATTENDANCE_SELF_CHECK_IN",
+    "ATTENDANCE_SELF_CHECK_OUT",
+    "LEAVE_VIEW",
+    "LEAVE_REQUEST_CREATE",
+    "LEAVE_BALANCE_VIEW",
+
+    "ROADMAP_VIEW",
+    "ROADMAP_MANAGE",
+
+    "REPORT_VIEW"
+  ],
+};
+
+export function hasPermission(role: UserRole, permission: Permission): boolean {
+  return rolePermissions[role].includes(permission);
+}

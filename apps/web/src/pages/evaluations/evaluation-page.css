@@ -1,0 +1,2090 @@
+.evaluations-page {
+  display: grid;
+  width: min(1440px, 100%);
+  gap: 20px;
+  margin-inline: auto;
+}
+
+.evaluations-hero {
+  position: relative;
+  display: grid;
+  gap: 22px;
+  overflow: hidden;
+  padding: clamp(24px, 4vw, 44px);
+  border-radius: 0 28px 0 28px;
+  background:
+    radial-gradient(circle at 90% 15%, rgba(233, 181, 33, 0.28), transparent 18rem),
+    linear-gradient(135deg, var(--tenant-primary, #046242), #0b2536);
+  box-shadow: 0 24px 54px rgba(11, 37, 54, 0.18);
+}
+
+.evaluations-hero::after {
+  position: absolute;
+  right: -85px;
+  bottom: -100px;
+  width: 255px;
+  height: 255px;
+  border: 26px solid rgba(255, 255, 255, 0.08);
+  border-radius: 50%;
+  content: "";
+}
+
+.evaluations-hero > * { position: relative; z-index: 1; }
+
+.evaluations-eyebrow,
+.evaluation-modal-header p,
+.evaluation-drawer-header p,
+.evaluations-list-header p {
+  margin: 0;
+  color: var(--tenant-accent, #e9b521);
+  font-size: 0.68rem;
+  font-weight: 950;
+  letter-spacing: 0.13em;
+}
+
+.evaluations-hero h2 {
+  margin: 12px 0 0;
+  color: #fff;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.evaluations-hero h2 span { color: var(--tenant-accent, #e9b521); }
+.evaluations-hero p:last-child { max-width: 760px; margin: 16px 0 0; color: rgba(255,255,255,.8); line-height: 1.75; }
+.evaluations-hero-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+
+.evaluation-primary-button,
+.evaluation-secondary-button,
+.evaluation-cancel-button,
+.evaluation-danger-button,
+.evaluation-clear-button {
+  display: inline-flex;
+  min-height: 43px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 14px;
+  border-radius: 0 11px 0 11px;
+  font-size: .8rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.evaluation-primary-button { border: 1px solid transparent; background: var(--tenant-accent, #e9b521); color: #0b2536; }
+.evaluation-secondary-button { border: 1px solid #cfe0d5; background: #fff; color: var(--tenant-primary, #046242); }
+.evaluations-hero .evaluation-secondary-button { border-color: rgba(255,255,255,.28); background: rgba(255,255,255,.1); color: #fff; }
+.evaluation-cancel-button { border: 1px solid #d2dfd7; background: #fff; color: #546d72; }
+.evaluation-danger-button { border: 1px solid #c43f2d; background: #c43f2d; color: #fff; }
+.evaluation-primary-button:disabled,.evaluation-secondary-button:disabled,.evaluation-cancel-button:disabled,.evaluation-danger-button:disabled,.evaluation-clear-button:disabled { cursor: not-allowed; opacity: .6; }
+
+.evaluations-alert,.evaluation-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 13px;
+  border: 1px solid #efc8c0;
+  border-radius: 0 13px 0 13px;
+  background: #fff4f2;
+  color: #a63426;
+  font-size: .8rem;
+}
+.evaluations-alert strong,.evaluations-alert p { display: block; margin: 0; }
+.evaluations-alert p { margin-top: 4px; color: #80554d; }
+
+.evaluations-metrics-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.evaluations-metric-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid #dbe8df;
+  border-radius: 0 17px 0 17px;
+  background: #fff;
+}
+.metric-icon { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 0 12px 0 12px; }
+.metric-icon.total { background: #edf3fb; color: #2d5e92; }
+.metric-icon.score { background: #fff5df; color: #a76a05; }
+.metric-icon.validated { background: #e9f7ed; color: #19743d; }
+.metric-icon.excellence { background: #f3effc; color: #6a4f9c; }
+.metric-icon.leave-total { background: #edf3fb; color: #2d5e92; }
+.metric-icon.leave-approved { background: #e9f7ed; color: #19743d; }
+.metric-icon.leave-pending { background: #fff5df; color: #a76a05; }
+.evaluations-metric-card span,.evaluations-metric-card strong,.evaluations-metric-card p { display: block; }
+.evaluations-metric-card > div > span { color: #72868c; font-size: .72rem; font-weight: 850; }
+.evaluations-metric-card strong { margin-top: 6px; color: #173841; font-size: 1.1rem; }
+.evaluations-metric-card p { margin: 5px 0 0; color: #829397; font-size: .7rem; }
+
+.evaluations-filter-panel,.evaluations-list-panel {
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid #dbe8df;
+  border-radius: 0 20px 0 20px;
+  background: #fff;
+}
+.evaluations-filter-heading { display: flex; align-items: center; gap: 9px; color: var(--tenant-primary, #046242); }
+.evaluations-filter-heading strong,.evaluations-filter-heading span { display: block; }
+.evaluations-filter-heading strong { color: #173841; font-size: .9rem; }
+.evaluations-filter-heading span { margin-top: 3px; color: #74888d; font-size: .74rem; }
+.evaluations-filters { display: grid; grid-template-columns: 1fr; gap: 11px; margin-top: 18px; }
+.evaluations-search-field,.evaluation-filter-field,.evaluation-form-field { display: grid; gap: 6px; }
+.evaluations-search-field { position: relative; align-items: center; }
+.evaluations-search-field svg { position: absolute; left: 12px; color: #7c9095; }
+.evaluations-search-field input { padding-left: 40px !important; }
+.evaluations-search-field input,.evaluation-filter-field input,.evaluation-filter-field select,.evaluation-form-field input,.evaluation-form-field select,.evaluation-form-field textarea,.evaluation-form-section textarea,.evaluation-link-builder input {
+  width: 100%;
+  min-height: 43px;
+  border: 1px solid #ceded4;
+  border-radius: 0 11px 0 11px;
+  outline: 0;
+  background: #fff;
+  color: #173841;
+  font-size: .82rem;
+}
+.evaluations-search-field input,.evaluation-filter-field input,.evaluation-filter-field select,.evaluation-form-field input,.evaluation-form-field select,.evaluation-link-builder input { padding: 0 11px; }
+.evaluation-form-field textarea,.evaluation-form-section textarea { padding: 10px 11px; resize: vertical; }
+.evaluation-filter-field span,.evaluation-form-field span { color: #38565f; font-size: .72rem; font-weight: 850; }
+.evaluation-clear-button { border: 1px solid #d2e0d8; background: #f8fbf9; color: #52716b; }
+
+.evaluations-list-header { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+.evaluations-list-header p { color: var(--tenant-primary, #046242); }
+.evaluations-list-header h3 { margin: 7px 0 0; color: #173841; }
+.evaluations-list-header > span { padding: 6px 9px; border-radius: 999px; background: #edf7f0; color: #19743d; font-size: .66rem; font-weight: 950; white-space: nowrap; }
+.evaluations-empty { display: grid; justify-items: center; gap: 10px; margin-top: 22px; padding: 34px 18px; border: 1px dashed #c8d9cf; border-radius: 0 16px 0 16px; background: #f9fcfa; color: #60777f; text-align: center; }
+.evaluations-empty strong,.evaluations-empty p { margin: 0; }
+.evaluations-list { display: grid; gap: 10px; margin-top: 20px; }
+.evaluation-card { display: grid; grid-template-columns: 1fr; gap: 12px; padding: 15px; border: 1px solid #dce8e1; border-radius: 0 15px 0 15px; background: #fff; }
+.evaluation-reference { display: inline-flex; width: fit-content; padding: 4px 8px; border-radius: 999px; background: #edf7f0; color: var(--tenant-primary, #046242); font-size: .62rem; font-weight: 950; }
+.evaluation-card h4 { margin: 8px 0 0; color: #173841; }
+.evaluation-card p,.evaluation-card small { display: block; margin: 4px 0 0; color: #74888d; font-size: .73rem; }
+.evaluation-card-score strong { display: block; font-size: 1.35rem; }
+.evaluation-card-score strong.excellent,.evaluation-card-score strong.very-good { color: #19743d; }
+.evaluation-card-score strong.satisfactory { color: #2d5e92; }
+.evaluation-card-score strong.needs-improvement { color: #a76a05; }
+.evaluation-card-score strong.insufficient { color: #b34d3c; }
+.evaluation-card-score span,.evaluation-card-status span { display: block; color: #173841; font-size: .74rem; font-weight: 900; }
+.evaluation-card-actions { display: flex; gap: 7px; }
+.evaluation-card-actions button,.evaluation-icon-button { display: grid; width: 35px; height: 35px; place-items: center; border: 1px solid #d3e1d8; border-radius: 0 9px 0 9px; background: #fff; color: var(--tenant-primary, #046242); cursor: pointer; }
+.evaluation-card-actions button.is-danger { border-color: #efc8c0; color: #b34d3c; }
+.evaluations-pagination { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 18px; }
+.evaluations-pagination button { min-height: 34px; border: 1px solid #d2e0d7; border-radius: 0 9px 0 9px; background: #fff; color: #42625f; font-weight: 850; cursor: pointer; }
+.evaluations-pagination span { color: #70868b; font-size: .73rem; }
+
+.evaluation-modal-layer,.evaluation-drawer-layer,.evaluation-delete-layer { position: fixed; z-index: 150; inset: 0; display: grid; }
+.evaluation-modal-layer,.evaluation-delete-layer { place-items: end center; }
+.evaluation-drawer-layer { place-items: stretch end; }
+.evaluation-modal-backdrop,.evaluation-drawer-backdrop,.evaluation-delete-backdrop { position: absolute; inset: 0; border: 0; background: rgba(7, 25, 33, .62); backdrop-filter: blur(3px); }
+.evaluation-modal,.evaluation-drawer,.evaluation-delete-modal { position: relative; z-index: 1; overflow-y: auto; background: #fff; box-shadow: 0 0 55px rgba(0,0,0,.2); }
+.evaluation-modal { width: min(900px, 100%); max-height: 94dvh; padding: 22px; border-radius: 0 24px 0 0; }
+.evaluation-drawer { width: min(760px, 100%); min-height: 100dvh; padding: 22px; }
+.evaluation-delete-modal { width: min(520px, 100%); padding: 24px; border-radius: 0 22px 0 22px; }
+.evaluation-modal-header,.evaluation-drawer-header { display: flex; justify-content: space-between; gap: 14px; align-items: flex-start; }
+.evaluation-modal-header p,.evaluation-drawer-header p { color: var(--tenant-primary, #046242); }
+.evaluation-modal-header h3,.evaluation-drawer-header h3 { margin: 8px 0 0; color: #173841; }
+.evaluation-form { display: grid; gap: 22px; margin-top: 22px; }
+.evaluation-form-section { display: grid; gap: 12px; padding: 14px; border: 1px solid #dbe8df; border-radius: 0 15px 0 15px; background: #fbfdfc; }
+.evaluation-form-section h4,.evaluation-review-panel h4,.evaluation-print-section h4 { display: flex; align-items: center; gap: 8px; margin: 0; color: #173841; }
+.evaluation-form-section p,.evaluation-review-panel p,.evaluation-print-section p { margin: 0; color: #647b82; font-size: .8rem; line-height: 1.6; }
+.evaluation-form-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+.evaluation-link-builder { display: grid; gap: 9px; }
+.evaluation-links-list { display: grid; gap: 8px; }
+.evaluation-links-list article { display: flex; justify-content: space-between; gap: 10px; padding: 10px; border: 1px solid #dce8e1; border-radius: 0 11px 0 11px; background: #fff; }
+.evaluation-links-list strong,.evaluation-links-list span { display: block; }
+.evaluation-links-list span { overflow: hidden; color: #74888d; font-size: .72rem; text-overflow: ellipsis; }
+.evaluation-links-list button { display: grid; width: 31px; height: 31px; place-items: center; border: 1px solid #efc8c0; border-radius: 0 8px 0 8px; background: #fff4f2; color: #b34d3c; }
+.evaluation-modal-footer { display: flex; flex-direction: column-reverse; gap: 9px; }
+.evaluation-drawer-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 18px; }
+.evaluation-tabs { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 18px; border-bottom: 1px solid #dce8e1; }
+.evaluation-tabs button { min-height: 36px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #70868b; font-weight: 850; cursor: pointer; }
+.evaluation-tabs button.is-active { border-bottom-color: var(--tenant-primary, #046242); color: var(--tenant-primary, #046242); }
+
+.evaluation-printable-document { display: grid; gap: 18px; margin-top: 20px; }
+.print-header { display: flex; justify-content: space-between; gap: 16px; padding: 18px; border-radius: 0 18px 0 18px; background: linear-gradient(135deg, #edf7f0, #fff); }
+.print-header span { color: var(--tenant-primary, #046242); font-size: .65rem; font-weight: 950; letter-spacing: .11em; }
+.print-header h2 { margin: 7px 0; color: #173841; }
+.print-header p { margin: 0; color: #5f777d; line-height: 1.6; }
+.print-header > strong { display: grid; min-width: 92px; height: 92px; place-items: center; border-radius: 50%; background: var(--tenant-primary, #046242); color: #fff; font-size: 1.35rem; }
+.evaluation-score-band { display: flex; gap: 12px; align-items: center; padding: 14px; border: 1px solid #dbe8df; border-radius: 0 15px 0 15px; background: #fff; color: var(--tenant-primary, #046242); }
+.evaluation-score-band span,.evaluation-score-band strong { display: block; }
+.evaluation-score-band span { color: #173841; font-weight: 950; }
+.evaluation-score-band strong { margin-top: 4px; color: #6b7f86; font-size: .8rem; }
+.print-grid,.snapshot-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.print-card,.criterion-print { padding: 12px; border: 1px solid #dbe8df; border-radius: 0 12px 0 12px; background: #fff; }
+.print-card span,.print-card strong,.print-card p { display: block; }
+.print-card span { color: #74888d; font-size: .68rem; font-weight: 900; }
+.print-card strong { margin-top: 4px; color: #173841; }
+.print-card p { margin: 4px 0 0; color: #73888d; font-size: .74rem; }
+.evaluation-print-section { display: grid; gap: 10px; }
+.snapshot-grid span { padding: 9px 10px; border: 1px solid #dbe8df; border-radius: 0 10px 0 10px; color: #34515a; font-size: .76rem; }
+.criterion-print strong,.criterion-print span,.criterion-print p,.criterion-print small { display: block; }
+.criterion-print strong { color: #173841; }
+.criterion-print span { margin-top: 4px; color: #046242; font-size: .72rem; font-weight: 900; }
+.criterion-print p { margin: 7px 0 0; }
+.criterion-print small { margin-top: 7px; color: #819197; }
+.signature-grid { display: grid; grid-template-columns: 1fr; gap: 18px; margin-top: 18px; }
+.signature-box { min-height: 74px; padding-top: 10px; border-top: 1px solid #173841; color: #173841; font-weight: 850; }
+.evaluation-review-panel { display: grid; gap: 12px; margin-top: 18px; padding: 14px; border: 1px solid #dbe8df; border-radius: 0 15px 0 15px; background: #fff; }
+.criteria-score-editor { display: grid; gap: 9px; }
+.criteria-score-row { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; padding: 11px; border: 1px solid #dce8e1; border-radius: 0 11px 0 11px; }
+.criteria-score-row span { color: #173841; font-weight: 850; }
+.criteria-score-row small { color: #75888d; font-size: .68rem; }
+.criteria-score-row input { width: 76px; min-height: 36px; border: 1px solid #ceded4; border-radius: 0 9px 0 9px; padding: 0 8px; }
+.evaluation-delete-modal footer { display: flex; justify-content: flex-end; gap: 9px; margin-top: 16px; }
+
+.is-spinning { animation: evaluation-spin 800ms linear infinite; }
+@keyframes evaluation-spin { to { transform: rotate(360deg); } }
+
+@media (min-width: 680px) {
+  .evaluations-hero { grid-template-columns: minmax(0, 1fr) auto; align-items: end; }
+  .evaluations-metrics-grid { grid-template-columns: repeat(auto-fit, minmax(185px, 1fr)); }
+  .evaluations-filters { grid-template-columns: minmax(220px, 1.4fr) repeat(5, minmax(130px, 1fr)) auto; align-items: end; }
+  .evaluation-card { grid-template-columns: minmax(250px, 1.7fr) minmax(90px, .6fr) minmax(150px, .8fr) auto; align-items: center; }
+  .evaluation-form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .evaluation-form-field-full { grid-column: 1 / -1; }
+  .evaluation-modal-layer,.evaluation-delete-layer { place-items: center; padding: 18px; }
+  .evaluation-modal { border-radius: 0 22px 0 22px; }
+  .evaluation-modal-footer { flex-direction: row; justify-content: flex-end; }
+  .print-grid,.snapshot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .signature-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media print {
+  body * { visibility: hidden !important; }
+  .evaluation-printable-document,
+  .evaluation-printable-document * { visibility: visible !important; }
+  .evaluation-printable-document { position: absolute; inset: 0; width: 100%; margin: 0; padding: 20px; }
+  .no-print { display: none !important; }
+  .evaluation-drawer-layer,.evaluation-drawer { position: static !important; inset: auto !important; width: 100% !important; min-height: auto !important; box-shadow: none !important; padding: 0 !important; }
+  .evaluation-drawer-backdrop { display: none !important; }
+}
+
+.evaluation-intelligence-block {
+  padding: 14px;
+  border: 1px solid #cfe3d7;
+  border-radius: 0 16px 0 16px;
+  background:
+    radial-gradient(circle at top right, rgba(233, 181, 33, 0.13), transparent 14rem),
+    #f8fcfa;
+}
+
+.intelligence-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.intelligence-grid article {
+  padding: 12px;
+  border: 1px solid #dbe8df;
+  border-radius: 0 12px 0 12px;
+  background: #ffffff;
+}
+
+.intelligence-grid span,
+.intelligence-grid strong {
+  display: block;
+}
+
+.intelligence-grid span {
+  color: #73888d;
+  font-size: .68rem;
+  font-weight: 900;
+}
+
+.intelligence-grid strong {
+  margin-top: 5px;
+  color: #173841;
+  font-size: .82rem;
+}
+
+.intelligence-indexes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.intelligence-indexes span {
+  padding: 7px 10px;
+  border: 1px solid #dbe8df;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #34515a;
+  font-size: .72rem;
+  font-weight: 850;
+}
+
+.evaluation-executive-brief {
+  padding: 13px;
+  border: 1px solid #e7d49d;
+  border-radius: 0 14px 0 14px;
+  background: #fffaf0;
+}
+
+.smart-list-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+.smart-list-grid > div {
+  padding: 12px;
+  border: 1px solid #dbe8df;
+  border-radius: 0 12px 0 12px;
+  background: #ffffff;
+}
+
+.smart-list-grid strong {
+  display: block;
+  color: #173841;
+  font-size: .78rem;
+}
+
+.smart-list-grid ul {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: #62797f;
+  font-size: .74rem;
+  line-height: 1.55;
+}
+
+@media (min-width: 680px) {
+  .intelligence-grid,
+  .smart-list-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+
+.evaluation-selected-agent-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid #d8e7de;
+  border-radius: 0 16px 0 16px;
+  background: linear-gradient(135deg, #f6fbf8, #ffffff);
+}
+
+.evaluation-selected-agent-card span,
+.evaluation-selected-agent-card small,
+.evaluation-selected-agent-card strong,
+.evaluation-selected-agent-card b,
+.evaluation-selected-agent-card p {
+  display: block;
+}
+
+.evaluation-selected-agent-card span {
+  color: var(--tenant-primary, #046242);
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+}
+
+.evaluation-selected-agent-card strong {
+  margin-top: 5px;
+  color: #102f3b;
+  font-size: 0.95rem;
+}
+
+.evaluation-selected-agent-card p {
+  margin: 4px 0 0;
+  color: #6a7f85;
+  font-size: 0.78rem;
+}
+
+.evaluation-selected-agent-card small {
+  color: #7b8d92;
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.evaluation-selected-agent-card b {
+  margin-top: 4px;
+  color: #233f49;
+  font-size: 0.78rem;
+}
+
+.evaluation-data-note {
+  margin: 0 0 12px;
+  color: #647a82;
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+
+.evaluation-automatic-summary,
+.criterion-automation-details {
+  display: grid;
+  gap: 6px;
+  margin: 12px 0 0;
+  padding-left: 18px;
+  color: #4e6870;
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.criterion-score-basis {
+  display: block;
+  margin-top: 8px;
+  color: var(--tenant-primary, #046242);
+  font-weight: 850;
+}
+
+@media (min-width: 720px) {
+  .evaluation-selected-agent-card {
+    grid-template-columns: 1.4fr repeat(3, minmax(0, 1fr));
+    align-items: center;
+  }
+}
+
+@media print {
+  .evaluation-automatic-summary,
+  .criterion-automation-details {
+    break-inside: avoid;
+  }
+}
+
+/* Intégration du module Congés dans la fiche d'évaluation */
+.evaluation-leave-block {
+  padding: 14px;
+  border: 1px solid #d5e6dc;
+  border-radius: 0 16px 0 16px;
+  background:
+    radial-gradient(circle at top right, rgba(233, 181, 33, 0.12), transparent 13rem),
+    #f8fcfa;
+}
+
+.leave-metrics-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 9px;
+}
+
+.leave-metrics-grid article {
+  padding: 11px;
+  border: 1px solid #dbe8df;
+  border-radius: 0 11px 0 11px;
+  background: #fff;
+}
+
+.leave-metrics-grid span,
+.leave-metrics-grid strong,
+.leave-metrics-grid small {
+  display: block;
+}
+
+.leave-metrics-grid span {
+  color: #71868b;
+  font-size: 0.67rem;
+  font-weight: 900;
+}
+
+.leave-metrics-grid strong {
+  margin-top: 5px;
+  color: #173841;
+  font-size: 0.92rem;
+}
+
+.leave-metrics-grid small {
+  margin-top: 3px;
+  color: #657b81;
+  font-size: 0.68rem;
+}
+
+.leave-balance-card {
+  display: grid;
+  gap: 12px;
+  padding: 13px;
+  border: 1px solid #e5d399;
+  border-radius: 0 14px 0 14px;
+  background: #fffaf0;
+}
+
+.leave-balance-card span,
+.leave-balance-card strong {
+  display: block;
+}
+
+.leave-balance-card > div:first-child > span {
+  color: #8a6a11;
+  font-size: 0.68rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.leave-balance-card > div:first-child > strong {
+  margin-top: 5px;
+  color: #173841;
+  font-size: 0.9rem;
+}
+
+.leave-balance-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.leave-balance-details span {
+  padding: 6px 8px;
+  border: 1px solid #eadba9;
+  border-radius: 999px;
+  background: #fff;
+  color: #6b5a26;
+  font-size: 0.67rem;
+  font-weight: 800;
+}
+
+.leave-breakdown-list {
+  display: grid;
+  gap: 8px;
+}
+
+.leave-breakdown-list article {
+  display: grid;
+  gap: 8px;
+  padding: 11px;
+  border: 1px solid #dbe8df;
+  border-radius: 0 11px 0 11px;
+  background: #fff;
+}
+
+.leave-breakdown-list strong,
+.leave-breakdown-list span,
+.leave-breakdown-list b {
+  display: block;
+}
+
+.leave-breakdown-list strong {
+  color: #173841;
+  font-size: 0.78rem;
+}
+
+.leave-breakdown-list span {
+  margin-top: 3px;
+  color: #71868b;
+  font-size: 0.69rem;
+}
+
+.leave-breakdown-list b {
+  color: var(--tenant-primary, #046242);
+  font-size: 0.72rem;
+}
+
+@media (min-width: 680px) {
+  .leave-metrics-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .leave-balance-card {
+    grid-template-columns: minmax(190px, 0.8fr) 1.5fr;
+    align-items: center;
+  }
+
+  .leave-breakdown-list article {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+  }
+}
+
+@media print {
+  .evaluation-leave-block,
+  .leave-balance-card,
+  .leave-breakdown-list article,
+  .leave-metrics-grid article {
+    break-inside: avoid;
+  }
+}
+
+
+/* ==========================================================================
+   Fiche institutionnelle FADES — écran, téléchargement et impression
+   ========================================================================== */
+
+.evaluation-printable-document {
+  --fades-green: var(--tenant-primary, #046242);
+  --fades-green-secondary: var(--tenant-secondary, #1a7543);
+  --fades-gold: var(--tenant-accent, #e9b521);
+  --fades-navy: #0b2536;
+  --fades-paper: #ffffff;
+  position: relative;
+  padding: clamp(16px, 2.4vw, 28px);
+  border: 1px solid #d7e5dc;
+  border-radius: 0 22px 0 22px;
+  background:
+    linear-gradient(90deg, var(--fades-green) 0 7px, transparent 7px),
+    var(--fades-paper);
+  box-shadow: 0 20px 44px rgba(11, 37, 54, 0.08);
+}
+
+.evaluation-document-masthead {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 18px;
+  border-radius: 0 18px 0 18px;
+  background:
+    radial-gradient(circle at 92% 18%, rgba(233, 181, 33, 0.24), transparent 12rem),
+    linear-gradient(135deg, var(--fades-green), var(--fades-green-secondary));
+  color: #fff;
+}
+
+.evaluation-brand-lockup {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 15px;
+}
+
+.evaluation-document-logo {
+  width: clamp(82px, 12vw, 126px);
+  max-height: 70px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  object-position: left center;
+}
+
+.evaluation-logo-fallback {
+  display: grid;
+  min-width: 104px;
+  min-height: 64px;
+  flex: 0 0 104px;
+  align-content: center;
+  justify-items: center;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  border-radius: 0 15px 0 15px;
+  background: rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+.evaluation-logo-fallback strong {
+  color: #fff;
+  font-size: 1.35rem;
+  font-weight: 950;
+  letter-spacing: 0.08em;
+}
+
+.evaluation-logo-fallback span {
+  max-width: 92px;
+  margin-top: 3px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.46rem;
+  font-weight: 800;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.evaluation-brand-lockup > div:last-child {
+  min-width: 0;
+}
+
+.evaluation-brand-lockup span,
+.evaluation-brand-lockup strong,
+.evaluation-brand-lockup small,
+.evaluation-document-meta span,
+.evaluation-document-meta strong,
+.evaluation-document-meta small {
+  display: block;
+}
+
+.evaluation-brand-lockup span {
+  color: var(--fades-gold);
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.13em;
+}
+
+.evaluation-brand-lockup strong {
+  margin-top: 6px;
+  color: #fff;
+  font-size: clamp(0.92rem, 2vw, 1.2rem);
+  line-height: 1.22;
+}
+
+.evaluation-brand-lockup small {
+  margin-top: 5px;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.68rem;
+  font-weight: 750;
+}
+
+.evaluation-document-meta {
+  padding: 11px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 0 13px 0 13px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.evaluation-document-meta span {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.58rem;
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.evaluation-document-meta strong {
+  margin-top: 4px;
+  color: #fff;
+  font-size: 0.86rem;
+}
+
+.evaluation-document-meta small {
+  margin-top: 5px;
+  color: var(--fades-gold);
+  font-size: 0.62rem;
+  font-weight: 900;
+}
+
+.evaluation-printable-document .print-header {
+  border: 1px solid #d7e6dd;
+  background:
+    radial-gradient(circle at 92% 22%, rgba(233, 181, 33, 0.15), transparent 10rem),
+    linear-gradient(135deg, #f0f8f3, #fff);
+}
+
+.evaluation-printable-document .print-header > strong {
+  border: 6px solid rgba(233, 181, 33, 0.52);
+  box-shadow: 0 10px 24px rgba(4, 98, 66, 0.17);
+}
+
+.evaluation-section-heading {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.evaluation-section-heading span {
+  color: #8a6a11;
+  font-size: 0.62rem;
+  font-weight: 950;
+  letter-spacing: 0.1em;
+}
+
+.evaluation-section-heading > strong {
+  width: fit-content;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: var(--fades-green);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 900;
+}
+
+.evaluation-preline-text {
+  white-space: pre-line;
+}
+
+.evaluation-executive-brief {
+  gap: 14px;
+  padding: 17px;
+  border-left: 5px solid var(--fades-gold);
+  background:
+    radial-gradient(circle at right top, rgba(233, 181, 33, 0.14), transparent 13rem),
+    #fffaf0;
+}
+
+.evaluation-executive-brief .evaluation-preline-text {
+  color: #344f58;
+  font-size: 0.79rem;
+  line-height: 1.78;
+}
+
+.evaluation-interview-block {
+  padding: 15px;
+  border: 1px solid #d7e5dc;
+  border-radius: 0 15px 0 15px;
+  background: #f8fcfa;
+}
+
+.signature-box strong,
+.signature-box span {
+  display: block;
+}
+
+.signature-box span {
+  margin-top: 7px;
+  color: #75898e;
+  font-size: 0.65rem;
+  font-weight: 650;
+}
+
+.evaluation-document-footer {
+  display: grid;
+  gap: 10px;
+  margin-top: 6px;
+  padding: 14px 0 0;
+  border-top: 3px solid var(--fades-green);
+  color: #456068;
+}
+
+.evaluation-document-footer > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 6px 12px;
+}
+
+.evaluation-document-footer strong {
+  color: var(--fades-green);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+}
+
+.evaluation-document-footer span,
+.evaluation-document-footer small {
+  font-size: 0.64rem;
+  line-height: 1.4;
+}
+
+.evaluation-document-footer small {
+  color: #8a6a11;
+  font-weight: 850;
+}
+
+@media (min-width: 680px) {
+  .evaluation-document-masthead {
+    grid-template-columns: minmax(0, 1fr) auto;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .evaluation-document-meta {
+    min-width: 170px;
+    text-align: right;
+  }
+
+  .evaluation-section-heading {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .evaluation-selected-agent-card {
+    grid-template-columns: minmax(180px, 1.35fr) repeat(
+        5,
+        minmax(105px, 1fr)
+      );
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+
+  html,
+  body {
+    background: #fff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .evaluation-printable-document {
+    position: static !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 0 0 9px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .evaluation-document-masthead,
+  .print-header,
+  .evaluation-score-band,
+  .print-card,
+  .evaluation-print-section,
+  .criterion-print,
+  .leave-metrics-grid article,
+  .leave-balance-card,
+  .leave-breakdown-list article,
+  .signature-box {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .criterion-print,
+  .evaluation-print-section {
+    orphans: 3;
+    widows: 3;
+  }
+
+  .evaluation-document-logo {
+    min-width: 20mm;
+  }
+
+  .evaluation-document-footer {
+    margin-top: 14px;
+  }
+}
+
+/* ==========================================================================\n   VERSION A4 PREMIUM — logo visible uniquement dans le document imprimé\n   ou téléchargé, jamais dans l’interface de consultation.\n   ========================================================================== */
+
+.evaluation-print-only-logo {
+  display: none;
+}
+
+.evaluation-standalone-document .evaluation-print-only-logo {
+  display: block;
+}
+
+.evaluation-standalone-document {
+  background: #edf3ef;
+}
+
+.evaluation-standalone-document .evaluation-printable-document {
+  width: 210mm;
+  max-width: calc(100vw - 32px);
+  margin: 20px auto;
+  padding: 12mm 13mm 14mm;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+  box-shadow: 0 18px 54px rgba(11, 37, 54, 0.14);
+}
+
+.evaluation-printable-document {
+  --print-green: #046242;
+  --print-green-soft: #eaf5ef;
+  --print-gold: #e9b521;
+  --print-navy: #0b2536;
+  --print-border: #d8e5dd;
+}
+
+.evaluation-printable-document .evaluation-document-masthead {
+  padding: 15px 17px;
+  border-radius: 0 14px 0 14px;
+}
+
+.evaluation-printable-document .evaluation-brand-lockup {
+  align-items: center;
+}
+
+.evaluation-printable-document .evaluation-document-logo {
+  width: 34mm;
+  max-width: 150px;
+  max-height: 22mm;
+  object-fit: contain;
+}
+
+.evaluation-printable-document .print-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 31mm;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 16px;
+}
+
+.evaluation-printable-document .print-header > strong {
+  width: 28mm;
+  min-width: 28mm;
+  height: 28mm;
+  font-size: 1.15rem;
+}
+
+.evaluation-printable-document .print-header h2 {
+  font-size: 1.22rem;
+  line-height: 1.2;
+}
+
+.evaluation-printable-document .print-header p,
+.evaluation-printable-document .evaluation-print-section p,
+.evaluation-printable-document .evaluation-preline-text {
+  text-align: justify;
+  hyphens: auto;
+}
+
+.evaluation-printable-document .print-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.evaluation-printable-document .print-card {
+  min-height: 76px;
+  padding: 11px 12px;
+}
+
+.evaluation-printable-document .evaluation-score-band {
+  padding: 11px 13px;
+}
+
+.evaluation-printable-document .evaluation-print-section {
+  gap: 8px;
+  padding: 13px 14px;
+  border: 1px solid var(--print-border);
+  border-radius: 0 12px 0 12px;
+  background: #fff;
+}
+
+.evaluation-printable-document .evaluation-print-section > h4 {
+  padding-bottom: 7px;
+  border-bottom: 1px solid #e4ece7;
+  color: var(--print-navy);
+  font-size: .83rem;
+}
+
+.evaluation-printable-document .snapshot-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.evaluation-printable-document .snapshot-grid span {
+  min-height: 42px;
+  padding: 8px 9px;
+  background: #f8fbf9;
+}
+
+.evaluation-printable-document .intelligence-grid,
+.evaluation-printable-document .smart-list-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.evaluation-printable-document .intelligence-grid article,
+.evaluation-printable-document .smart-list-grid > div {
+  padding: 10px 11px;
+}
+
+.evaluation-printable-document .criterion-print {
+  padding: 11px 12px;
+  border-left: 3px solid var(--print-green);
+}
+
+.evaluation-printable-document .criterion-print + .criterion-print {
+  margin-top: 7px;
+}
+
+.evaluation-printable-document .leave-metrics-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.evaluation-printable-document .leave-metrics-grid article {
+  min-height: 70px;
+  padding: 9px;
+}
+
+.evaluation-printable-document .signature-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  padding-top: 8px;
+}
+
+.evaluation-printable-document .signature-box {
+  min-height: 75px;
+  padding: 9px 8px;
+  border: 1px solid var(--print-border);
+  border-top: 3px solid var(--print-green);
+  border-radius: 0 10px 0 10px;
+}
+
+.evaluation-printable-document .evaluation-document-footer {
+  padding-top: 10px;
+}
+
+@media (max-width: 760px) {
+  .evaluation-standalone-document .evaluation-printable-document {
+    width: auto;
+    margin: 0;
+    padding: 18px;
+  }
+
+  .evaluation-printable-document .snapshot-grid,
+  .evaluation-printable-document .leave-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 9mm 10mm 11mm;
+  }
+
+  html,
+  body {
+    width: 210mm;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  .evaluation-print-only-logo {
+    display: block !important;
+  }
+
+  .evaluation-printable-document {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    font-size: 9.2pt;
+  }
+
+  .evaluation-document-masthead {
+    margin-bottom: 7mm;
+  }
+
+  .evaluation-document-logo {
+    width: 34mm !important;
+    min-width: 34mm !important;
+    max-height: 20mm !important;
+  }
+
+  .print-header,
+  .evaluation-score-band,
+  .print-grid,
+  .evaluation-intelligence-block,
+  .evaluation-executive-brief,
+  .evaluation-leave-block,
+  .signature-grid,
+  .evaluation-document-footer {
+    margin-top: 4mm !important;
+  }
+
+  .evaluation-print-section,
+  .print-card,
+  .criterion-print,
+  .intelligence-grid article,
+  .smart-list-grid > div,
+  .leave-metrics-grid article,
+  .leave-balance-card,
+  .leave-breakdown-list article,
+  .signature-box {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .evaluation-print-section h4,
+  .criterion-print > div:first-child,
+  .leave-breakdown-list article > div:first-child {
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+
+  .evaluation-print-section p,
+  .evaluation-print-section li,
+  .criterion-print p,
+  .criterion-print li {
+    orphans: 3;
+    widows: 3;
+  }
+
+  .evaluation-print-section {
+    padding: 9px 10px !important;
+  }
+
+  .evaluation-print-section > h4 {
+    font-size: 8.4pt !important;
+  }
+
+  .evaluation-print-section p,
+  .evaluation-print-section li,
+  .criterion-print p,
+  .criterion-print li,
+  .snapshot-grid span {
+    font-size: 7.6pt !important;
+    line-height: 1.38 !important;
+  }
+
+  .evaluation-printable-document .snapshot-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .evaluation-printable-document .leave-metrics-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  .evaluation-printable-document .intelligence-grid,
+  .evaluation-printable-document .smart-list-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .evaluation-document-footer {
+    break-before: avoid;
+    page-break-before: avoid;
+  }
+}
+
+/* ========================================================================== 
+   EN-TÊTE OFFICIEL FADES — alignement identique au module Rapports
+   Visible uniquement dans le document autonome imprimé ou téléchargé.
+   ========================================================================== */
+.evaluation-official-letterhead {
+  display: none;
+}
+
+.evaluation-standalone-document .evaluation-official-letterhead {
+  display: block;
+  margin: 0 0 5mm;
+  padding: 0 2mm 2mm;
+  border-bottom: 2.5px solid #046242;
+  color: #111;
+  background: #fff;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.evaluation-letterhead-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42mm minmax(0, 1fr);
+  align-items: start;
+  column-gap: 8mm;
+  min-height: 30mm;
+}
+
+.evaluation-letterhead-authority {
+  display: flex;
+  min-width: 0;
+  min-height: 27mm;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 0;
+  color: #111;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10.4px;
+  font-weight: 900;
+  line-height: 1.34;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.evaluation-letterhead-authority strong {
+  display: block;
+  color: #111;
+  font: inherit;
+  letter-spacing: 0;
+}
+
+.evaluation-letterhead-authority-right > strong {
+  white-space: nowrap;
+}
+
+.evaluation-letterhead-dashes {
+  display: block;
+  margin-top: 4px;
+  color: #111;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .05em;
+}
+
+.evaluation-letterhead-logo {
+  display: flex;
+  min-height: 27mm;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.evaluation-letterhead-logo .evaluation-document-logo {
+  display: block;
+  width: 39mm;
+  max-width: 100%;
+  height: 16mm;
+  max-height: 16mm;
+  margin: 0 auto;
+  object-fit: contain;
+  object-position: center top;
+}
+
+.evaluation-letterhead-logo .evaluation-logo-fallback {
+  width: 39mm;
+  min-height: 16mm;
+  color: #046242;
+  text-align: center;
+}
+
+.evaluation-letterhead-motto {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  margin-top: 7px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 9.6px;
+  font-weight: 850;
+  line-height: 1;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.evaluation-letterhead-motto b,
+.evaluation-letterhead-motto i {
+  font-style: normal;
+  font-weight: 850;
+}
+
+.evaluation-letterhead-motto i { color: #111; }
+.evaluation-motto-work { color: #d20d24; }
+.evaluation-motto-justice { color: #d4a017; }
+.evaluation-motto-solidarity { color: #07934f; }
+
+.evaluation-letterhead-institution {
+  margin-top: 2mm;
+  padding: 0;
+  border: 0;
+  color: #111;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 12px;
+  font-weight: 950;
+  line-height: 1.2;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: .01em;
+}
+
+.evaluation-letterhead-institution::after {
+  display: block;
+  width: 100%;
+  height: 2px;
+  margin-top: 3mm;
+  background: linear-gradient(
+    to right,
+    #046242 0 calc(100% - 24mm),
+    #e9b521 calc(100% - 24mm) 100%
+  );
+  content: "";
+}
+
+@media print {
+  .evaluation-official-letterhead {
+    display: block !important;
+    margin: 0 0 5mm !important;
+    padding: 0 2mm 2mm !important;
+    border-bottom: 2.5px solid #046242 !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
+
+.evaluation-standalone-document .evaluation-document-footer {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: flex-end !important;
+  justify-content: space-between !important;
+  gap: 2.5mm 7mm !important;
+}
+
+.evaluation-standalone-document .evaluation-document-footer > .evaluation-document-footer-contact {
+  display: block !important;
+  flex: 1 1 115mm !important;
+  min-width: 0 !important;
+}
+
+.evaluation-standalone-document .evaluation-document-footer > .evaluation-document-footer-meta {
+  display: block !important;
+  flex: 0 0 40mm !important;
+  min-width: 40mm !important;
+  text-align: right !important;
+}
+
+.evaluation-standalone-document .evaluation-document-footer > small {
+  display: block !important;
+  flex: 0 0 100% !important;
+  width: 100% !important;
+  text-align: center !important;
+}
+
+/* ========================================================================== 
+   Correctif V5 — pied de page  aligné sur le module Rapports
+   ========================================================================== */
+.evaluation-printable-document .evaluation-document-footer {
+  display: block;
+  width: 100%;
+  margin-top: 18px;
+  padding-top: 10px;
+  border-top: 1px solid #a9bdb2;
+  color: #374f57;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+
+.evaluation-printable-document .evaluation-letterhead-footer-row {
+  display: grid;
+  grid-template-columns: 95px 1px minmax(0, 1fr) 1px 118px;
+  align-items: center;
+  gap: 18px;
+  width: 100%;
+}
+
+.evaluation-printable-document .evaluation-footer-flag {
+  display: block;
+  width: 88px;
+  height: 54px;
+  object-fit: cover;
+}
+
+.evaluation-printable-document .evaluation-footer-divider {
+  display: block;
+  width: 1px;
+  height: 62px;
+  background: #111;
+}
+
+.evaluation-printable-document .evaluation-footer-contact {
+  min-width: 0;
+  text-align: center;
+  color: #273e47;
+  font-family: "Times New Roman", Times, serif;
+  font-size: 0.72rem;
+  line-height: 1.42;
+}
+
+.evaluation-printable-document .evaluation-footer-contact a {
+  color: #1f5f8f;
+  text-decoration: underline;
+}
+
+.evaluation-printable-document .evaluation-footer-guinea {
+  display: block;
+  width: 110px;
+  max-height: 58px;
+  object-fit: contain;
+}
+
+.evaluation-printable-document .evaluation-footer-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid #d6e1da;
+  color: #5d747a;
+  font-size: 0.67rem;
+}
+
+.evaluation-printable-document .evaluation-footer-meta strong {
+  color: #0b2536;
+}
+
+.evaluation-printable-document .evaluation-footer-confidential {
+  margin-top: 4px;
+  color: #5d747a;
+  font-size: 0.65rem;
+  text-align: center;
+}
+
+@media (max-width: 680px) {
+  .evaluation-printable-document .evaluation-letterhead-footer-row {
+    grid-template-columns: 70px 1px minmax(0, 1fr) 1px 82px;
+    gap: 10px;
+  }
+
+  .evaluation-printable-document .evaluation-footer-flag {
+    width: 64px;
+    height: 40px;
+  }
+
+  .evaluation-printable-document .evaluation-footer-divider {
+    height: 48px;
+  }
+
+  .evaluation-printable-document .evaluation-footer-guinea {
+    width: 78px;
+    max-height: 42px;
+  }
+
+  .evaluation-printable-document .evaluation-footer-contact {
+    font-size: 0.58rem;
+  }
+
+  .evaluation-printable-document .evaluation-footer-meta {
+    display: grid;
+    gap: 3px;
+    text-align: center;
+  }
+}
+
+@media print {
+  .evaluation-printable-document .evaluation-document-footer,
+  .evaluation-printable-document .evaluation-letterhead-footer-row {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
+
+/* ========================================================================== 
+   V1.8 — pagination A4 professionnelle de la fiche d’évaluation
+   L’impression et le téléchargement sont paginés par EvaluationDetailsDrawer.
+   L’en-tête et le pied de page sont clonés sur chaque feuille A4.
+   ========================================================================== */
+.evaluation-pages,
+.evaluation-paper,
+.evaluation-paper-header,
+.evaluation-paper-content,
+.evaluation-paper-footer {
+  box-sizing: border-box;
+}
+
+/* La structure finale reste neutre dans le drawer. Le moteur autonome récupère
+   les signatures, puis répète séparément l’en-tête et le pied de page. */
+.evaluation-final-page {
+  display: block;
+}
+
+@media print {
+  .evaluation-final-page {
+    display: block !important;
+    min-height: auto !important;
+    break-before: auto !important;
+    page-break-before: auto !important;
+  }
+
+  .evaluation-final-page .signature-grid {
+    margin-top: 18px !important;
+  }
+
+  .evaluation-final-page .evaluation-document-footer {
+    position: static !important;
+    margin-top: 18px !important;
+  }
+}
+
+/* ========================================================================== 
+   V1.9 — sécurité anti-pages vierges pour le document autonome
+   ========================================================================== */
+@media print {
+  body.evaluation-standalone-document,
+  body.evaluation-standalone-document * {
+    visibility: visible !important;
+  }
+
+  body.evaluation-standalone-document .evaluation-pages,
+  body.evaluation-standalone-document .evaluation-paper,
+  body.evaluation-standalone-document .evaluation-paper-header,
+  body.evaluation-standalone-document .evaluation-paper-content,
+  body.evaluation-standalone-document .evaluation-paper-footer,
+  body.evaluation-standalone-document .evaluation-paper * {
+    visibility: visible !important;
+  }
+
+  body.evaluation-standalone-document .evaluation-pages {
+    display: grid !important;
+  }
+
+  body.evaluation-standalone-document > .evaluation-printable-document {
+    position: static !important;
+    inset: auto !important;
+    display: none !important;
+    visibility: hidden !important;
+  }
+}
+
+
+/* ==========================================================================
+   V2.0 — alignement du pied de page
+   Drapeau à gauche, coordonnées centrées, identité Guinée à droite.
+   ========================================================================== */
+.evaluation-printable-document .evaluation-letterhead-footer-row,
+.evaluation-standalone-document .evaluation-letterhead-footer-row {
+  display: grid !important;
+  grid-template-columns: 20mm .3mm minmax(0, 1fr) .3mm 29mm !important;
+  grid-template-areas: "flag divider-left contact divider-right wordmark" !important;
+  align-items: center !important;
+  justify-items: stretch !important;
+  width: 100% !important;
+  min-height: 13mm !important;
+  gap: 4mm !important;
+}
+
+.evaluation-printable-document .evaluation-footer-visual,
+.evaluation-standalone-document .evaluation-footer-visual {
+  display: flex !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 12.5mm !important;
+  align-items: center !important;
+  overflow: hidden !important;
+}
+
+.evaluation-printable-document .evaluation-footer-visual-left,
+.evaluation-standalone-document .evaluation-footer-visual-left {
+  grid-area: flag !important;
+  justify-content: flex-start !important;
+}
+
+.evaluation-printable-document .evaluation-footer-visual-right,
+.evaluation-standalone-document .evaluation-footer-visual-right {
+  grid-area: wordmark !important;
+  justify-content: flex-end !important;
+}
+
+.evaluation-printable-document .evaluation-footer-divider-left,
+.evaluation-standalone-document .evaluation-footer-divider-left {
+  grid-area: divider-left !important;
+}
+
+.evaluation-printable-document .evaluation-footer-divider-right,
+.evaluation-standalone-document .evaluation-footer-divider-right {
+  grid-area: divider-right !important;
+}
+
+.evaluation-printable-document .evaluation-footer-contact,
+.evaluation-standalone-document .evaluation-footer-contact {
+  grid-area: contact !important;
+  min-width: 0 !important;
+  align-self: center !important;
+  text-align: center !important;
+}
+
+.evaluation-printable-document .evaluation-footer-contact > div,
+.evaluation-standalone-document .evaluation-footer-contact > div {
+  display: block !important;
+  width: 100% !important;
+}
+
+.evaluation-printable-document .evaluation-footer-flag,
+.evaluation-standalone-document .evaluation-footer-flag {
+  width: 18mm !important;
+  height: 12mm !important;
+  max-width: 100% !important;
+  object-fit: contain !important;
+  object-position: left center !important;
+}
+
+.evaluation-printable-document .evaluation-footer-guinea,
+.evaluation-standalone-document .evaluation-footer-guinea {
+  width: 27mm !important;
+  height: 12mm !important;
+  max-width: 100% !important;
+  max-height: 12mm !important;
+  object-fit: contain !important;
+  object-position: right center !important;
+}
+
+.evaluation-printable-document .evaluation-footer-divider,
+.evaluation-standalone-document .evaluation-footer-divider {
+  width: .3mm !important;
+  height: 12mm !important;
+  justify-self: center !important;
+}
+
+@media (max-width: 680px) {
+  .evaluation-printable-document .evaluation-letterhead-footer-row {
+    grid-template-columns: 16mm .3mm minmax(0, 1fr) .3mm 24mm !important;
+    gap: 2.5mm !important;
+  }
+
+  .evaluation-printable-document .evaluation-footer-flag {
+    width: 15mm !important;
+    height: 10mm !important;
+  }
+
+  .evaluation-printable-document .evaluation-footer-guinea {
+    width: 22mm !important;
+    height: 10mm !important;
+  }
+}
+/* ==========================================================================
+   ÉVALUATIONS — EXPORT PDF / WORD V1
+   Aucun changement sur les règles métier du module.
+   ========================================================================== */
+
+/* Les anciens blocs institutionnels sont neutralisés même s'un cache ancien
+   ou une copie historique du composant les réintroduisait. */
+.evaluation-official-letterhead,
+.evaluation-document-footer {
+  display: none !important;
+}
+
+/* Barre d'export plus claire dans le drawer, sans toucher aux autres actions. */
+.evaluation-drawer-actions {
+  align-items: center;
+}
+
+.evaluation-drawer-actions .evaluation-secondary-button {
+  min-width: 104px;
+}
+
+/* Surface invisible utilisée uniquement pour générer le PDF complet. */
+.evaluation-export-host {
+  position: fixed;
+  z-index: -1;
+  top: 0;
+  left: -100000px;
+  width: 794px;
+  min-height: 1px;
+  overflow: visible;
+  background: #ffffff;
+  pointer-events: none;
+}
+
+.evaluation-export-host .evaluation-export-clone {
+  display: grid !important;
+  width: 794px !important;
+  max-width: 794px !important;
+  gap: 10px !important;
+  margin: 0 !important;
+  padding: 28px !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.evaluation-export-host .evaluation-print-section,
+.evaluation-export-host .criterion-print,
+.evaluation-export-host .print-card,
+.evaluation-export-host .leave-metrics-grid article,
+.evaluation-export-host .leave-balance-card,
+.evaluation-export-host .leave-breakdown-list article,
+.evaluation-export-host .smart-list-grid > div,
+.evaluation-export-host .signature-box {
+  overflow: visible !important;
+}
+
+.evaluation-export-host .print-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.evaluation-export-host .snapshot-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+.evaluation-export-host .intelligence-grid,
+.evaluation-export-host .smart-list-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+}
+
+.evaluation-export-host .intelligence-indexes,
+.evaluation-export-host .leave-metrics-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.evaluation-export-host .signature-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+}
+
+.evaluation-export-host .evaluation-print-section p,
+.evaluation-export-host .criterion-print p,
+.evaluation-export-host .criterion-print small,
+.evaluation-export-host .smart-list-grid li,
+.evaluation-export-host .evaluation-automatic-summary li {
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+  white-space: normal !important;
+}
+
+@media (max-width: 679px) {
+  .evaluation-drawer-actions .evaluation-secondary-button {
+    flex: 1 1 calc(50% - 9px);
+    min-width: 0;
+  }
+}
+/* ==========================================================================
+   ÉVALUATIONS EXPORT V1.1 — PAGE DE GARDE + SOMMAIRE
+   Uniquement visibles dans les documents exportés/imprimés.
+   ========================================================================== */
+
+.evaluation-printable-document > .evaluation-export-cover,
+.evaluation-printable-document > .evaluation-export-toc {
+  display: none;
+}
+
+.evaluation-export-host .evaluation-export-cover,
+.evaluation-export-host .evaluation-export-toc {
+  display: flex !important;
+  width: 100% !important;
+  min-height: 1030px !important;
+}
+
+.evaluation-export-host .evaluation-export-cover {
+  position: relative;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 44px 42px 36px;
+  overflow: hidden;
+  border: 1px solid #d7e5dc;
+  background:
+    radial-gradient(circle at 90% 8%, rgba(233, 181, 33, .16), transparent 240px),
+    linear-gradient(180deg, #fff 0%, #f7fbf8 100%);
+}
+
+.evaluation-export-host .evaluation-export-toc {
+  flex-direction: column;
+  padding: 50px 46px;
+  border: 1px solid #d7e5dc;
+  background: #fff;
+}
+/* ==========================================================================
+   ÉVALUATIONS EXPORT V1.2 — MISE EN PAGE UNIFIÉE PDF / WORD
+   ========================================================================== */
+
+.evaluation-export-host .evaluation-export-cover {
+  min-height: 1015px !important;
+}
+
+.evaluation-export-host .evaluation-export-toc {
+  min-height: 0 !important;
+  margin-bottom: 12px !important;
+  padding: 24px 28px 22px !important;
+}
+
+.evaluation-export-host .evaluation-print-section {
+  padding: 10px 12px !important;
+}
+
+.evaluation-export-host .print-card,
+.evaluation-export-host .criterion-print,
+.evaluation-export-host .smart-list-grid > div,
+.evaluation-export-host .leave-metrics-grid article {
+  padding: 9px 10px !important;
+}
+
+.evaluation-export-host .criterion-print + .criterion-print {
+  margin-top: 7px !important;
+}
+
+.evaluation-export-host .evaluation-print-section p,
+.evaluation-export-host .evaluation-preline-text,
+.evaluation-export-host .criterion-print p,
+.evaluation-export-host .criterion-print small {
+  line-height: 1.46 !important;
+}
+
+.evaluation-export-host {
+  --evaluation-doc-primary: #046242;
+  --evaluation-doc-primary-soft: #eaf5ef;
+  --evaluation-doc-navy: #0b2536;
+  --evaluation-doc-ink: #173841;
+  --evaluation-doc-text: #405e66;
+  --evaluation-doc-muted: #60777f;
+  --evaluation-doc-border: #d7e5dc;
+  --evaluation-doc-gold: #e9b521;
+  --evaluation-doc-zebra: #eef7f1;
+}
+/* ==========================================================================
+   ÉVALUATIONS EXPORT V1.3 — NUMÉROTATION SOMMAIRE / CORPS
+   ========================================================================== */
+
+.evaluation-export-host .evaluation-numbered-title {
+  display: grid !important;
+  grid-template-columns: 34px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 9px !important;
+  margin: 2px 0 9px !important;
+  padding: 0 0 7px !important;
+  border-bottom: 1px solid #d7e5dc !important;
+}
+
+.evaluation-export-host .evaluation-section-number {
+  display: grid !important;
+  width: 30px !important;
+  height: 27px !important;
+  place-items: center !important;
+  border-radius: 0 8px 0 8px !important;
+  background: #046242 !important;
+  color: #ffffff !important;
+  font-size: 10px !important;
+  font-weight: 900 !important;
+}
+
+.evaluation-export-host .evaluation-section-title-text {
+  min-width: 0 !important;
+  color: #0b2536 !important;
+  font-size: 12px !important;
+  font-weight: 900 !important;
+  line-height: 1.25 !important;
+  letter-spacing: .02em !important;
+  text-transform: uppercase !important;
+}
+
+.evaluation-export-host .evaluation-final-page {
+  padding-top: 2px !important;
+}
+
+.evaluation-export-host .evaluation-print-section + .evaluation-print-section {
+  margin-top: 8px !important;
+}
+
+@media print {
+  .evaluation-numbered-title {
+    display: grid !important;
+    grid-template-columns: 9mm minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 2.5mm !important;
+    margin: 0 0 2.5mm !important;
+    padding-bottom: 2mm !important;
+    border-bottom: .3mm solid #d7e5dc !important;
+  }
+
+  .evaluation-section-number {
+    display: grid !important;
+    width: 8mm !important;
+    height: 7.2mm !important;
+    place-items: center !important;
+    border-radius: 0 2mm 0 2mm !important;
+    background: #046242 !important;
+    color: #ffffff !important;
+    font-weight: 900 !important;
+  }
+
+  .evaluation-section-title-text {
+    color: #0b2536 !important;
+    font-weight: 900 !important;
+    text-transform: uppercase !important;
+  }
+}
+/* ==========================================================================
+   ÉVALUATIONS V1.5 — IMPRESSION SOBRE
+   La version imprimée suit la palette restreinte du PDF.
+   ========================================================================== */
+
+@media print {
+  .evaluation-export-cover {
+    background: #ffffff !important;
+    border-color: #d8deda !important;
+  }
+
+  .evaluation-export-cover::after {
+    display: none !important;
+  }
+
+  .evaluation-export-cover-topline {
+    border-bottom-color: #24323a !important;
+    box-shadow: inset 0 -1px 0 #a98f55 !important;
+  }
+
+  .evaluation-export-cover-score-card {
+    border: 1px solid #bcc7c1 !important;
+    background: #ffffff !important;
+    color: #26343b !important;
+  }
+
+  .evaluation-export-cover-score-card strong {
+    color: #245a49 !important;
+  }
+
+  .evaluation-export-cover-summary article,
+  .evaluation-export-cover-insight,
+  .evaluation-export-toc-markers article,
+  .print-card,
+  .evaluation-print-section,
+  .criterion-print,
+  .leave-metrics-grid article,
+  .smart-list-grid > div,
+  .signature-box {
+    background: #ffffff !important;
+    border-color: #d8deda !important;
+  }
+
+  .evaluation-section-number {
+    border: 1px solid #245a49 !important;
+    background: #ffffff !important;
+    color: #245a49 !important;
+  }
+
+  .evaluation-section-title-text,
+  .evaluation-export-cover h1,
+  .evaluation-export-toc h2 {
+    color: #24323a !important;
+  }
+
+  .evaluation-export-toc li span {
+    border: 1px solid #bcc7c1 !important;
+    background: #ffffff !important;
+    color: #245a49 !important;
+  }
+
+  .evaluation-export-toc-score {
+    border-color: #d8deda !important;
+    background: #ffffff !important;
+    color: #245a49 !important;
+  }
+
+  .evaluation-numbered-title {
+    border-bottom-color: #d8deda !important;
+  }
+}
+/* ==========================================================================
+   ÉVALUATIONS V1.6 — CHARTE FADES DOCUMENTAIRE
+   ========================================================================== */
+
+@media print {
+  .evaluation-export-cover {
+    background: #ffffff !important;
+  }
+
+  .evaluation-export-cover-topline {
+    border-bottom-color: #0b2536 !important;
+    box-shadow: inset 0 -1px 0 #e9b521 !important;
+  }
+
+  .evaluation-export-cover-topline span,
+  .evaluation-export-cover-label,
+  .evaluation-export-cover-agent span,
+  .evaluation-numbered-kicker {
+    color: #046242 !important;
+  }
+
+  .evaluation-export-cover h1,
+  .evaluation-export-toc h2,
+  .evaluation-section-title-text {
+    color: #0b2536 !important;
+  }
+
+  .evaluation-export-cover-score-card {
+    border: 1px solid #b8cec0 !important;
+    border-top: 3px solid #e9b521 !important;
+    background: #ffffff !important;
+    color: #173841 !important;
+  }
+
+  .evaluation-export-cover-score-card strong {
+    color: #046242 !important;
+  }
+
+  .evaluation-export-cover-summary article {
+    border-color: #d7e5dc !important;
+    background: #ffffff !important;
+  }
+
+  .evaluation-export-cover-summary article:nth-child(1),
+  .evaluation-export-cover-summary article:nth-child(4) {
+    background: #eef7f1 !important;
+  }
+
+  .evaluation-export-cover-insight {
+    border: 1px solid #d7e5dc !important;
+    border-left: 3px solid #046242 !important;
+    background: #ffffff !important;
+  }
+
+  .evaluation-export-toc-score {
+    border: 1px solid #d7e5dc !important;
+    border-top: 2px solid #e9b521 !important;
+    background: #eef7f1 !important;
+    color: #046242 !important;
+  }
+
+  .evaluation-section-number {
+    border-color: #046242 !important;
+    background: #ffffff !important;
+    color: #046242 !important;
+  }
+
+  .evaluation-numbered-title {
+    border-bottom-color: #d7e5dc !important;
+  }
+
+  .criterion-print:nth-of-type(even),
+  .leave-breakdown-list article:nth-child(even) {
+    background: #eef7f1 !important;
+  }
+
+  .signature-box {
+    border-color: #d7e5dc !important;
+    border-top: 2px solid #0b2536 !important;
+    box-shadow:
+      inset 9mm 1px 0 #046242,
+      inset 14mm 1px 0 #e9b521 !important;
+  }
+}

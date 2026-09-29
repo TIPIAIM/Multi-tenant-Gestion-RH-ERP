@@ -1,0 +1,273 @@
+﻿<!doctype html>
+<html
+  xmlns:o="urn:schemas-microsoft-com:office:office"
+  xmlns:w="urn:schemas-microsoft-com:office:word"
+  xmlns="http://www.w3.org/TR/REC-html40"
+>
+<head>
+  <meta charset="utf-8">
+  <meta name="ProgId" content="Word.Document">
+  <meta name="Generator" content="FADES-RH">
+  <style>
+    @page Section1 {
+      size: 595.3pt 841.9pt;
+      margin: 42pt;
+      mso-header-margin: 0pt;
+      mso-footer-margin: 0pt;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      background: #ffffff;
+      color: #173841;
+      font-family: Aptos, Calibri, Arial, Helvetica, sans-serif;
+      font-size: 10pt;
+      line-height: 1.48;
+    }
+
+    body { page: Section1; }
+
+    .report-printable-document,
+    .report-export-clone {
+      display: block;
+      width: 100%;
+      margin: 0;
+      padding: 0;
+      border: 0;
+      background: #ffffff;
+      box-shadow: none;
+    }
+
+    .report-official-letterhead,
+    .report-document-footer,
+    .report-screen-only {
+      display: none !important;
+    }
+
+    .report-document-title {
+      width: 100%;
+      margin: 0 0 14pt;
+      padding: 14pt;
+      border: 1pt solid #bdd8c7;
+      background: #eef8f2;
+      page-break-inside: avoid;
+    }
+
+    .report-document-kicker {
+      display: block;
+      margin-bottom: 4pt;
+      color: #046242;
+      font-size: 7.5pt;
+      font-weight: 700;
+      letter-spacing: .06em;
+    }
+
+    .report-document-title h1 {
+      margin: 4pt 0 5pt;
+      color: #0b2536;
+      font-size: 17pt;
+      line-height: 1.15;
+    }
+
+    .report-document-title p {
+      margin: 0;
+      color: #536d74;
+      font-size: 8.5pt;
+    }
+
+    .report-index-badge {
+      margin-top: 8pt;
+      padding: 7pt 10pt;
+      border: 1pt solid #046242;
+      background: #046242;
+      color: #ffffff;
+      font-size: 12pt;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .report-word-layout-table,
+    .report-table {
+      width: 100%;
+      border-collapse: collapse;
+      border-spacing: 0;
+      table-layout: fixed;
+      mso-table-lspace: 0pt;
+      mso-table-rspace: 0pt;
+    }
+
+    .report-word-layout-table {
+      margin: 7pt 0 2pt;
+    }
+
+    .report-word-layout-table > tbody > tr > td {
+      padding: 4pt;
+      vertical-align: top;
+      border: 0;
+    }
+
+    .report-meta-card,
+    .report-kpi-card,
+    .report-module-card,
+    .report-analysis-card,
+    .report-editorial-block,
+    .report-comparison-grid article {
+      display: block;
+      width: auto;
+      margin: 0;
+      padding: 8pt;
+      border: 1pt solid #c8ddd0;
+      background: #ffffff;
+      page-break-inside: avoid;
+    }
+
+    .report-section {
+      margin-top: 13pt;
+    }
+
+    .report-section-title {
+      margin: 0 0 7pt;
+      padding: 6pt 8pt;
+      border-left: 4pt solid #e9b521;
+      background: #f2f7f4;
+      color: #0b2536;
+      font-size: 9.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+      page-break-after: avoid;
+    }
+
+    .report-section p {
+      margin: 0 0 7pt;
+      color: #415c64;
+      text-align: justify;
+      white-space: pre-line;
+      orphans: 3;
+      widows: 3;
+    }
+
+    .report-executive-summary,
+    .report-director-note,
+    .report-warning-box,
+    .report-editorial-block {
+      padding: 10pt;
+      border: 1pt solid #c8ddd0;
+      background: #f8fbf9;
+      white-space: pre-line;
+      page-break-inside: avoid;
+    }
+
+    .report-director-note {
+      border-color: #dfc877;
+      background: #fff9e9;
+    }
+
+    .report-editorial-block {
+      margin-bottom: 7pt;
+      background: #ffffff;
+    }
+
+    .report-editorial-block h4 {
+      margin: 0 0 5pt;
+      color: #046242;
+      font-size: 9pt;
+    }
+
+    .report-editorial-block.is-confidential {
+      border-color: #d8c06c;
+      background: #fffaf0;
+    }
+
+    .report-table {
+      margin-top: 5pt;
+      font-size: 7.5pt;
+    }
+
+    .report-table thead {
+      display: table-header-group;
+    }
+
+    .report-table th,
+    .report-table td {
+      padding: 5pt 4pt;
+      border: 1pt solid #aac8b6;
+      vertical-align: middle;
+    }
+
+    .report-table th {
+      background: #046242;
+      color: #ffffff;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .report-table td {
+      color: #173841;
+      text-align: center;
+    }
+
+    .report-table td:first-child,
+    .report-table th:first-child {
+      text-align: left;
+    }
+
+    .report-list,
+    .report-source-list {
+      padding-left: 18pt;
+    }
+
+    .report-signatures {
+      width: 100%;
+      margin-top: 24pt;
+      page-break-inside: avoid;
+    }
+
+    .report-signature {
+      min-height: 42pt;
+      padding-top: 7pt;
+      border-top: 1pt solid #173841;
+    }
+
+    h1, h2, h3, h4 {
+      page-break-after: avoid;
+    }
+  </style>
+</head>
+<body>
+<article class="report-printable-document report-export-clone"><section class="report-document-title"><div><span class="report-document-kicker">RH · GOUVERNANCE · PERFORMANCE · DÉCISION</span><h1>CONTRIBUTION DU RÉDACTE</h1><p>Rapport semestriel · Direction — Service · Données arrêtées au 20 septembre 2026</p></div><div class="report-index-badge">50/100</div></section><table class="report-word-layout-table" role="presentation"><tbody><tr><td style="width: 50%;"><article class="report-meta-card"><span>Référence</span><strong>RAP-2026-S2-0001</strong></article></td><td style="width: 50%;"><article class="report-meta-card"><span>Période</span><strong>01 juillet 2026 — 31 décembre 2026</strong></article></td></tr><tr><td style="width: 50%;"><article class="report-meta-card"><span>Statut</span><strong>Prêt pour validation</strong></article></td><td style="width: 50%;"><article class="report-meta-card"><span>Préparé par</span><strong>Jaures</strong></article></td></tr></tbody></table><section class="report-section"><h2 class="report-section-title">Synthèse exécutive</h2><div class="report-executive-summary">Le présent rapport semestriel porte sur le Service Service SI. L’indice consolidé de pilotage est de 50/100, avec un niveau de gouvernance CRITIQUE .
+
+L’activité comprend 11 tâche(s), dont 10 clôturée(s) (91 %), ainsi que 0 feuille(s) de route présentant une progression moyenne de 0 %.
+
+La présence couvre 1 % des journées-agent attendues après déduction de 0 jour(s) de congé approuvé(s). Les évaluations disponibles affichent une moyenne de 0/100.
+
+Aucun rapport antérieur validé ou archivé de même nature n’est disponible pour une comparaison historique fiable.
+
+La confiance des données est MEDIUM. Les principales décisions portent sur les retards, la qualité du pointage, les demandes en attente et la mise en œuvre des actions RH.</div></section><table class="report-word-layout-table" role="presentation"><tbody><tr><td style="width: 33.3333%;"><article class="report-kpi-card"><span>Indice global</span><strong>50/100</strong></article></td><td style="width: 33.3333%;"><article class="report-kpi-card"><span>Exécution</span><strong>91/100</strong></article></td><td style="width: 33.3333%;"><article class="report-kpi-card"><span>Assiduité</span><strong>1/100</strong></article></td></tr><tr><td style="width: 33.3333%;"><article class="report-kpi-card"><span>Feuilles de route</span><strong>0/100</strong></article></td><td style="width: 33.3333%;"><article class="report-kpi-card"><span>Évaluations</span><strong>0/100</strong></article></td><td style="width: 33.3333%;"><article class="report-kpi-card"><span>Qualité données</span><strong>40/100</strong></article></td></tr></tbody></table><section class="report-section"><h2 class="report-section-title">Évolution mensuelle des indicateurs</h2><div class="report-table-wrap"><table class="report-table report-trend-table"><thead><tr><th>Période</th><th>Tâches créées</th><th>Tâches clôturées</th><th>Présence</th><th>Couverture</th><th>Congés approuvés</th><th>Retards</th></tr></thead><tbody><tr style="background-color: rgb(255, 255, 255);"><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid; background-color: rgb(247, 251, 248); font-weight: 700;">juillet 2026</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">0</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">0</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">0%</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">0%</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">0 j</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">0 min</td></tr><tr style="background-color: rgb(238, 247, 241);"><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid; background-color: rgb(229, 242, 233); font-weight: 700;">août 2026</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">0</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">0</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">0%</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">0%</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">0 j</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">0 min</td></tr><tr style="background-color: rgb(255, 255, 255);"><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid; background-color: rgb(247, 251, 248); font-weight: 700;">septembre 2026</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">11</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">10</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">4%</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">4%</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">0 j</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">3 h 45 min</td></tr></tbody></table></div></section><section class="report-section report-avoid-break"><h2 class="report-section-title">Lecture décisionnelle</h2><table class="report-word-layout-table" role="presentation"><tbody><tr><td style="width: 50%;"><article class="report-module-card"><span>Gouvernance</span><strong>Critique</strong><small>Niveau de maîtrise du périmètre</small></article></td><td style="width: 50%;"><article class="report-module-card"><span>Risque</span><strong>Critique</strong><small>Risque consolidé</small></article></td></tr><tr><td style="width: 50%;"><article class="report-module-card"><span>Fiabilité</span><strong>Suffisante</strong><small>Confiance des données</small></article></td><td style="width: 50%;"><article class="report-module-card"><span>Validation</span><strong>En attente</strong><small>Document non validé</small></article></td></tr></tbody></table></section><section class="report-section"><h2 class="report-section-title">Note prête pour la Direction générale</h2><div class="report-director-note">1. SITUATION GÉNÉRALE
+
+Sur la période considérée, le Service Service SI présente un indice de performance consolidé de 50/100. La gouvernance est classée CRITIQUE, avec un niveau de confiance des données MEDIUM.
+
+2. EXÉCUTION ET PRIORITÉS
+
+10/11 tâche(s) sont clôturées ; 0 restent échues. Les feuilles de route atteignent 0 % en moyenne, avec 0 élément(s) restant(s).
+
+3. DISCIPLINE ADMINISTRATIVE ET RH
+
+Le périmètre compte 2 Agent(s) actif(s). La couverture du pointage est de 1 %, la présence de 1 % et la ponctualité de 0 %. 0 jour(s) de congé approuvé(s) ont été neutralisés.
+
+4. PERFORMANCE ET DÉVELOPPEMENT
+
+0 évaluation(s) sont disponibles, avec un score moyen de 0/100. 0 recommandation(s) de promotion, 0 plan(s) de formation et 0 plan(s) d’amélioration sont recensés.
+
+5. ÉVOLUTION PAR RAPPORT À LA PÉRIODE DE RÉFÉRENCE
+
+Aucune référence antérieure validée ou archivée n’est disponible pour établir une variation fiable.
+
+6. ARBITRAGES PROPOSÉS
+
+1. Décider d’un plan de fiabilisation du pointage et de régularisation des données manquantes.</div></section><section class="report-section"><h2 class="report-section-title">1. Effectifs, organisation et conformité documentaire</h2><table class="report-word-layout-table" role="presentation"><tbody><tr><td style="width: 50%;"><article class="report-module-card"><span>Agents actifs</span><strong>2/2</strong><small>2 arrivée(s) · 0 départ(s)</small></article></td><td style="width: 50%;"><article class="report-module-card"><span>Contrats</span><strong>1 permanents</strong><small>1 durée déterminée · 0 autres</small></article></td></tr><tr><td style="width: 50%;"><article class="report-module-card"><span>Comptes</span><strong>0/0 actifs</strong><small>0 adresse(s) vérifiée(s)</small></article></td><td style="width: 50%;"><article class="report-module-card"><span>Documents RH</span><strong>0 actifs</strong><small>0 expiré(s) · 0 à renouveler</small></article></td></tr></tbody></table></section><section class="report-section"><h2 class="report-section-title">2. Tâches et exécution opérationnelle</h2><table class="report-word-layout-table" role="presentation"><tbody><tr><td style="width: 50%;"><article class="report-module-card"><span>Tâches suivies</span><strong>11</strong><small>0 en cours · 1 à démarrer</small></article></td><td style="width: 50%;"><article class="report-module-card"><span>Terminées</span><strong>10</strong><small>Taux de clôture 91 %</small></article></td></tr><tr><td style="width: 50%;"><article class="report-module-card"><span>Retards / blocages</span><strong>0 / 0</strong><small>À qualifier et arbitrer</small></article></td><td style="width: 50%;"><article class="report-module-card"><span>Progression moyenne</span><strong>91 %</strong><small>0 critique(s) · 1 haute(s)</small></article></td></tr></tbody></table></section><section class="report-section"><h2 class="report-section-title">3. Pointage, présence et charge de travail</h2><table class="report-word-layout-table" role="presentation"><tbody><tr><td style="width: 50%;"><article class="report-module-card"><span>Couverture pointage</span><strong>1 %</strong><small>115 journée(s)-agent non tracée(s)</small></article></td><td style="width: 50%;"><article class="report-module-card"><span>Taux de présence</span><strong>1 %</strong><small>1 présent(s) · 0 absence(s)</small></article></td></tr><tr><td style="width: 50%;"><article class="report-module-card"><span>Ponctualité</span><strong>0 %</strong><small>1 retard(s) · 3 h 45 min</small></article></td><td style="width: 50%;"><article class="report-module-card"><span>Charge enregistrée</span><strong>0 min</strong><small>Heures supplémentaires : signal, pas bonus automatique</small></article></td></tr></tbody></table></section><section class="report-section"><h2 class="report-section-title">4. Congés et absences autorisées</h2><table class="report-word-layout-table" role="presentation"><tbody><tr><td style="width: 50%;"><article class="report-module-card"><span>Demandes</span><strong>0</strong><small>0 jour(s) demandé(s)</small></article></td><td style="width: 50%;"><article class="report-module-card"><span>Approuvés</span><strong>0</strong><small>0 jour(s) neutralisé(s)</small></article></td></tr><tr><td style="width: 50%;"><article class="report-module-card"><span>En validation</span><strong>0</strong><small>0 jour(s)</small></article></td><td style="width: 50%;"><article class="report-module-card"><span>Taux d’approbation</span><strong>0 %</strong><small>0 refus · 0 annulation(s)</small></article></td></tr></tbody></table></section><section class="report-section"><h2 class="report-section-title">5. Feuilles de route et objectifs annuels</h2><table class="report-word-layout-table" role="presentation"><tbody><tr><td style="width: 50%;"><article class="report-module-card"><span>Feuilles suivies</span><strong>0</strong><small>0 approuvée(s) · 0 clôturée(s)</small></article></td><td style="width: 50%;"><article class="report-module-card"><span>Progression moyenne</span><strong>0 %</strong><small>État actuel figé lors de la génération</small></article></td></tr><tr><td style="width: 50%;"><article class="report-module-card"><span>Éléments réalisés</span><strong>0/0</strong><small>Taux 0 %</small></article></td><td style="width: 50%;"><article class="report-module-card"><span>Reste à réaliser</span><strong>0</strong><small>0 feuille(s) retournée(s)</small></article></td></tr></tbody></table></section><section class="report-section"><h2 class="report-section-title">6. Évaluations et décisions RH</h2><table class="report-word-layout-table" role="presentation"><tbody><tr><td style="width: 50%;"><article class="report-module-card"><span>Évaluations</span><strong>0</strong><small>0 validée(s) RH</small></article></td><td style="width: 50%;"><article class="report-module-card"><span>Score moyen</span><strong>0/100</strong><small>0 niveau(x) excellent ou très bon</small></article></td></tr><tr><td style="width: 50%;"><article class="report-module-card"><span>Risques</span><strong>0</strong><small>0 critique(s)</small></article></td><td style="width: 50%;"><article class="report-module-card"><span>Décisions</span><strong>0 promotion(s)</strong><small>0 formation(s) · 0 amélioration(s)</small></article></td></tr></tbody></table></section><section class="report-section report-break-before"><h2 class="report-section-title">7. Analyse comparative par unité</h2><div class="report-table-wrap"><table class="report-table"><thead><tr><th>Unité</th><th>Agents</th><th>Tâches</th><th>Clôture</th><th>Retards</th><th>Présence</th><th>Couverture</th><th>Congés</th><th>Roadmap</th><th>Évaluation</th><th>Alertes</th></tr></thead><tbody><tr style="background-color: rgb(255, 255, 255);"><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid; background-color: rgb(247, 251, 248); font-weight: 700;">Service SI</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">2</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">10/11</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">91%</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">0</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">1%</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">1%</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">0 j</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">0%</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">0/100</td><td style="border-color: rgb(170, 200, 182); border-width: 1px; border-style: solid;">1</td></tr></tbody></table></div></section><section class="report-section"><h2 class="report-section-title">8. Acquis, alertes et plan d’action</h2><table class="report-word-layout-table" role="presentation"><tbody><tr><td style="width: 100%;"><article class="report-analysis-card"><strong>Acquis de la période</strong><ul class="report-list"><li>Exécution opérationnelle soutenue : 10/11 tâche(s) clôturée(s), soit 91 %.</li><li>2 nouvelle(s) prise(s) de fonction enregistrée(s) sur la période.</li></ul></article></td></tr><tr><td style="width: 100%;"><article class="report-analysis-card"><strong>Points de vigilance</strong><ul class="report-list"><li>115 journée(s)-agent ne disposent pas d’un pointage exploitable après neutralisation des congés approuvés.</li></ul></article></td></tr><tr><td style="width: 100%;"><article class="report-analysis-card"><strong>Recommandations</strong><ul class="report-list"><li>Maintenir une revue périodique des tâches prioritaires et de leur contribution aux objectifs.</li><li>Fiabiliser le pointage quotidien et traiter séparément les absences, les congés autorisés et les défauts de saisie.</li><li>Rattacher chaque Agent aux objectifs annuels et documenter les preuves de réalisation des feuilles de route.</li><li>Planifier les évaluations professionnelles du périmètre et garantir l’entretien contradictoire.</li><li>Présenter à la Direction un tableau limité de décisions attendues, avec responsable, échéance et indicateur de clôture.</li></ul></article></td></tr><tr><td style="width: 100%;"><article class="report-analysis-card"><strong>Priorités prochaine période</strong><ul class="report-list"><li>Clôturer ou replanifier les tâches échues et matérialiser les livrables.</li><li>Mettre à jour les feuilles de route et les preuves KPI avant la prochaine clôture.</li><li>Régulariser les données de présence, congés et documents administratifs en attente.</li><li>Suivre les décisions d’évaluation et mesurer leur effet sur la performance.</li></ul></article></td></tr></tbody></table></section><section class="report-section report-avoid-break"><h2 class="report-section-title"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"></path><path d="m9 12 2 2 4-4"></path></svg> Décisions attendues de la Direction</h2><ol class="report-list"><li>Décider d’un plan de fiabilisation du pointage et de régularisation des données manquantes.</li></ol></section><section class="report-section"><h2 class="report-section-title">Réserves méthodologiques</h2><div class="report-warning-box"><ul class="report-list"><li>Les données sont arrêtées au 2026-09-20; les jours futurs de la période ne sont pas comptabilisés.</li><li>Aucune feuille de route n'a été trouvée pour l'année du rapport.</li><li>Aucune évaluation professionnelle n'est disponible sur la période.</li><li>La couverture du pointage est faible; les taux de présence doivent être interprétés avec prudence.</li></ul></div></section><section class="report-section"><h2 class="report-section-title">Sources consolidées</h2><ul class="report-source-list"><li>Agents : 2 fiche(s)</li><li>Comptes utilisateurs : 0</li><li>Organisation : 2 unité(s)</li><li>Tâches : 11</li><li>Pointages : 1</li><li>Congés : 0 demande(s)</li><li>Feuilles de route : 0</li><li>Évaluations : 0</li><li>Documents RH : 0</li></ul></section><div class="report-signatures" aria-label="Visa et signatures"><div class="report-signature"><strong>Rédacteur / Responsable du rapport</strong><span>Nom, fonction, date et signature</span></div><div class="report-signature"><strong>Responsable RH / Direction</strong><span>Visa, observations et signature</span></div><div class="report-signature"><strong>Direction générale</strong><span>Décision, date, cachet et signature</span></div></div></article>
+</body>
+</html>

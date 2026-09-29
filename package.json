@@ -1,0 +1,22 @@
+{
+    "name": "fades-rh-platform",
+    "version": "0.1.0",
+    "private": true,
+    "description": "ERP multi-tenant",
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
+    "scripts": {
+        "dev:web": "npm run dev --workspace=@fades/web",
+        "dev:api": "npm run dev --workspace=@fades/api",
+        "build": "npm run build --workspaces --if-present",
+        "typecheck": "npm run typecheck --workspaces --if-present"
+    },
+    "engines": {
+        "node": ">=20.19.0"
+    },
+    "dependencies": {
+        "mongoose": "^9.7.3"
+    }
+}

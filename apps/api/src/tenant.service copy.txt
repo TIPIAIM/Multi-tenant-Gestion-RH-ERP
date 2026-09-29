@@ -1,0 +1,241 @@
+import bcrypt from "bcryptjs";
+import { env } from "../../config/env.js";
+import { AppError } from "../../core/errors/app-error.js";
+import { UserModel } from "../users/user.model.js";
+import {
+  TENANT_SELF_REGISTRATION_TERMS_VERSION,
+  TenantRegistrationAuditModel,
+} from "./tenant-registration.model.js";
+import {
+  isTenantSlugReserved,
+  normalizeTenantSlug,
+} from "./tenant-registration.utils.js";
+import { TenantModel } from "./tenant.model.js";
+import type { SelfRegisterTenantInput } from "./tenant.schema.js";
+import type {
+  PublicTenant,
+  TenantDocument,
+} from "./tenant.types.js";
+
+function serializePublicTenant(tenant: TenantDocument): PublicTenant {
+  return {
+    id: tenant.id,
+    name: tenant.name,
+    legalName: tenant.legalName,
+    slug: tenant.slug,
+    status: tenant.status,
+    branding: {
+      primaryColor: tenant.branding.primaryColor,
+      secondaryColor: tenant.branding.secondaryColor,
+      accentColor: tenant.branding.accentColor,
+      logoUrl: tenant.branding.logoUrl,
+    },
+  };
+}
+
+function isDuplicateKeyError(error: unknown): boolean {
+  return Boolean(
+    error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as { code?: number }).code === 11000,
+  );
+}
+
+function cleanOptionalText(value?: string): string | undefined {
+  const cleaned = value?.trim();
+  return cleaned || undefined;
+}
+
+export async function getPublicTenantBySlug(
+  rawSlug: string,
+): Promise<PublicTenant> {
+  const slug = normalizeTenantSlug(rawSlug);
+
+  const tenant = await TenantModel.findOne({
+    slug,
+    status: "ACTIVE",
+  }).exec();
+
+  if (!tenant) {
+    throw new AppError(
+      "Organisation introuvable ou inactive.",
+      404,
+      "TENANT_NOT_FOUND",
+    );
+  }
+
+  return serializePublicTenant(tenant);
+}
+
+export async function checkTenantSlugAvailability(rawSlug: string): Promise<{
+  slug: string;
+  available: boolean;
+  reason: "AVAILABLE" | "RESERVED" | "ALREADY_USED";
+}> {
+  const slug = normalizeTenantSlug(rawSlug);
+
+  if (isTenantSlugReserved(slug)) {
+    return { slug, available: false, reason: "RESERVED" };
+  }
+
+  const exists = await TenantModel.exists({ slug });
+  return {
+    slug,
+    available: !exists,
+    reason: exists ? "ALREADY_USED" : "AVAILABLE",
+  };
+}
+
+export async function registerTenantFromInterface(
+  input: SelfRegisterTenantInput,
+): Promise<{
+  tenant: PublicTenant;
+  administrator: {
+    id: string;
+    fullName: string;
+    email: string;
+    role: "TENANT_ADMIN";
+  };
+  onboarding: {
+    nextStep: "LOGIN";
+    settingsWillInitializeOnFirstAccess: true;
+  };
+}> {
+  const slug = normalizeTenantSlug(input.organization.slug);
+
+  if (isTenantSlugReserved(slug)) {
+    throw new AppError(
+      "Cet identifiant d’espace est réservé. Choisissez-en un autre.",
+      409,
+      "TENANT_SLUG_RESERVED",
+    );
+  }
+
+  const slugAlreadyExists = await TenantModel.exists({ slug });
+  if (slugAlreadyExists) {
+    throw new AppError(
+      "Cet identifiant d’espace est déjà utilisé.",
+      409,
+      "TENANT_SLUG_ALREADY_USED",
+    );
+  }
+
+  const passwordHash = await bcrypt.hash(
+    input.administrator.password,
+    env.passwordSaltRounds,
+  );
+
+  let tenant: TenantDocument | null = null;
+  let administratorId: string | null = null;
+
+  try {
+    tenant = await TenantModel.create({
+      name: input.organization.name.trim(),
+      legalName: input.organization.legalName.trim(),
+      slug,
+      status: "ACTIVE",
+      contactEmail: input.administrator.email.trim().toLowerCase(),
+      contactPhone: cleanOptionalText(input.organization.contactPhone),
+      address: cleanOptionalText(input.organization.address),
+      branding: {
+        primaryColor: input.branding?.primaryColor ?? "#046242",
+        secondaryColor: input.branding?.secondaryColor ?? "#0B2536",
+        accentColor: input.branding?.accentColor ?? "#E9B521",
+      },
+    });
+
+    const administrator = await (UserModel as any).create({
+      tenantId: tenant._id,
+      agentId: null,
+      fullName: input.administrator.fullName.trim(),
+      email: input.administrator.email.trim().toLowerCase(),
+      passwordHash,
+      role: "TENANT_ADMIN",
+      isActive: true,
+      mustChangePassword: false,
+      emailVerifiedAt: null,
+    });
+
+    administratorId = administrator.id ?? administrator._id.toString();
+
+    await TenantRegistrationAuditModel.create({
+      tenantId: tenant._id,
+      administratorUserId: administrator._id,
+      channel: "SELF_SERVICE",
+      termsVersion: TENANT_SELF_REGISTRATION_TERMS_VERSION,
+      termsAcceptedAt: new Date(),
+    });
+
+    return {
+      tenant: serializePublicTenant(tenant),
+      administrator: {
+        id: administratorId,
+        fullName: administrator.fullName,
+        email: administrator.email,
+        role: "TENANT_ADMIN",
+      },
+      onboarding: {
+        nextStep: "LOGIN",
+        settingsWillInitializeOnFirstAccess: true,
+      },
+    };
+  } catch (error) {
+    // Compensation : on ne laisse jamais un tenant incomplet sans administrateur.
+    if (tenant) {
+      await Promise.allSettled([
+        TenantRegistrationAuditModel.deleteMany({ tenantId: tenant._id }).exec(),
+        (UserModel as any).deleteMany({ tenantId: tenant._id }).exec(),
+        TenantModel.deleteOne({ _id: tenant._id }).exec(),
+      ]);
+    }
+
+    if (isDuplicateKeyError(error)) {
+      throw new AppError(
+        "Cet espace vient d’être réservé par une autre inscription. Choisissez un autre identifiant.",
+        409,
+        "TENANT_REGISTRATION_DUPLICATE",
+      );
+    }
+
+    throw error;
+  }
+}
+
+export async function seedFadesTenant(): Promise<PublicTenant> {
+  const fadesTenant = {
+    name: "FADES",
+    legalName: "Fonds d’Aide au Développement du Sport",
+    slug: "fades",
+    status: "ACTIVE" as const,
+    contactEmail: "contact@fadesgn.com",
+    contactPhone: "+224 654 32 26 52",
+    address:
+      "Cameroun, Commune de Dixinn – Résidence FEELA, 2ème étage, Conakry, République de Guinée",
+    branding: {
+      primaryColor: "#046242",
+      secondaryColor: "#1A7543",
+      accentColor: "#E9B521",
+    },
+  };
+
+  await TenantModel.updateOne(
+    { slug: fadesTenant.slug },
+    { $setOnInsert: fadesTenant },
+    { upsert: true, runValidators: true, setDefaultsOnInsert: true },
+  ).exec();
+
+  const tenant = await TenantModel.findOne({
+    slug: fadesTenant.slug,
+  }).exec();
+
+  if (!tenant) {
+    throw new AppError(
+      "Impossible d'initialiser le tenant FADES.",
+      500,
+      "TENANT_SEED_FAILED",
+    );
+  }
+
+  return serializePublicTenant(tenant);
+}
