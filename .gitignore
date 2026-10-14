@@ -17,4 +17,4 @@ apps/api/.env
 apps/web/.env
 
 apps/api/.env.example
-apps/web/.env.example
+apps/web/.env.exampl
