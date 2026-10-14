@@ -1,0 +1,39 @@
+.dashboard-communications-link { position: relative; }
+.dashboard-communication-status {
+  display: inline-flex; flex: 0 0 auto; align-items: center; gap: 5px;
+  margin-left: auto; padding: 4px 6px; border-radius: 999px;
+  background: rgba(255, 255, 255, .12); color: #d5ffea;
+}
+.dashboard-communication-status.has-unread { background: #fff4d0; color: #704d00; }
+.dashboard-communication-count {
+  display: inline-grid; min-width: 20px; height: 20px; padding: 0 4px;
+  place-items: center; border-radius: 999px; background: #b52d20; color: #fff;
+  font-size: 11px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums;
+}
+.dashboard-communication-dot {
+  display: block; width: 7px; height: 7px; flex: 0 0 7px;
+  border-radius: 50%; background: #35d58b;
+}
+.is-unknown .dashboard-communication-dot { background: #98a7b0; }
+.dashboard-communication-status.is-unknown { color: #c2cbd0; }
+.dashboard-communication-shortcut {
+  position: relative; display: inline-flex; align-items: center; justify-content: center;
+  width: 40px; height: 40px; flex: 0 0 40px; border: 1px solid #dbe8df;
+  border-radius: 12px; background: #f1f8f4; color: #046242; text-decoration: none;
+}
+.dashboard-communication-shortcut.has-unread { border-color: #ead393; background: #fff8e5; color: #704d00; }
+.dashboard-communication-shortcut .dashboard-communication-count,
+.dashboard-communication-shortcut .dashboard-communication-dot { position: absolute; top: -4px; right: -4px; }
+.dashboard-communication-shortcut .dashboard-communication-dot { top: 5px; right: 5px; }
+.dashboard-communication-shortcut:focus-visible { outline: 3px solid #e9b521; outline-offset: 3px; }
+.dashboard-sidebar.is-collapsed .dashboard-communication-status {
+  display: inline-flex !important;
+  position: absolute; top: 2px; right: 2px; margin: 0; padding: 1px;
+}
+.dashboard-sidebar.is-collapsed .dashboard-communication-status > svg { display: none; }
+.dashboard-sidebar.is-collapsed .dashboard-communication-count { display: inline-grid !important; min-width: 17px; height: 17px; font-size: 10px; }
+.dashboard-sidebar.is-collapsed .dashboard-communication-dot { display: block !important; }
+.communication-sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
+}

@@ -385,9 +385,9 @@ import {
               className="attendance-secondary-button"
               type="button"
               onClick={() => void refreshAttendance()}
-            >
+             data-ui-action="compact" aria-label="Actualiser" title="Actualiser">
               <RefreshCw size={18} />
-              <span>Actualiser</span>
+              <span className="ui-action-label">Actualiser</span>
             </button>
   
             {canCreateManualAttendance && (
@@ -809,7 +809,7 @@ import {
                     onClick={() =>
                       setAttendanceToView(attendance)
                     }
-                  >
+                   aria-label="Consulter l’historique">
                     <Eye size={17} />
                   </button>
   
@@ -822,7 +822,7 @@ import {
                         correctionMutation.reset();
                         setAttendanceToCorrect(attendance);
                       }}
-                    >
+                     aria-label="Corriger le pointage">
                       <Pencil size={17} />
                     </button>
                   )}
@@ -834,7 +834,7 @@ import {
                       title="Supprimer définitivement"
                       disabled={deleteMutation.isPending}
                       onClick={() => confirmDeleteAttendance(attendance)}
-                    >
+                     aria-label="Supprimer définitivement">
                       {deleteMutation.isPending ? (
                         <LoaderCircle
                           size={17}

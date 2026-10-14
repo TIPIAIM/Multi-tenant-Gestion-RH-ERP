@@ -25,7 +25,8 @@ export function TenantSettingsProvider({ children }: PropsWithChildren) {
     root.style.setProperty("--tenant-secondary", settings.branding.secondaryColor);
     root.style.setProperty("--tenant-accent", settings.branding.accentColor);
     root.style.setProperty("--tenant-danger", settings.branding.dangerColor);
-    document.title = settings.branding.appName || settings.institution.shortName;
+    document.title = (settings.branding.appName || settings.institution.shortName)
+      .replace(/\bfades(?:-rh)?\b/gi, "Plateforme RH");
   }, [query.data]);
 
   return (

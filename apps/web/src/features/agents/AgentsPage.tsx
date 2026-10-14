@@ -554,7 +554,7 @@ export default function AgentsPage() {
               statsQuery.isFetching ||
               scopeQuery.isFetching
             }
-          >
+           data-ui-action="compact" aria-label="Actualiser" title="Actualiser">
             <RefreshCw
               size={18}
               className={
@@ -565,7 +565,7 @@ export default function AgentsPage() {
                   : ""
               }
             />
-            <span>Actualiser</span>
+            <span className="ui-action-label">Actualiser</span>
           </button>
 
           {canManageAgents && (
@@ -579,7 +579,11 @@ export default function AgentsPage() {
                   ? "Créez d’abord une Direction active."
                   : "Créer un dossier agent"
               }
-            >
+             aria-label={
+                activeDirections.length === 0
+                  ? "Créez d’abord une Direction active."
+                  : "Créer un dossier agent"
+              } data-ui-action="compact">
               <Plus size={18} />
               <span>Nouvel Agent</span>
             </button>
@@ -826,9 +830,9 @@ export default function AgentsPage() {
                     className="agents-primary-button"
                     type="button"
                     onClick={openCreateModal}
-                  >
+                   data-ui-action="compact" aria-label="Créer un Agent" title="Créer un Agent">
                     <Plus size={18} />
-                    <span>Créer un Agent</span>
+                    <span className="ui-action-label">Créer un Agent</span>
                   </button>
                 )}
             </div>
@@ -901,9 +905,9 @@ export default function AgentsPage() {
                       className="agent-view-button"
                       type="button"
                       onClick={() => setSelectedAgentId(agent.id)}
-                    >
+                     data-ui-action="compact" aria-label="Voir" title="Voir">
                       <Eye size={17} />
-                      <span>Voir</span>
+                      <span className="ui-action-label">Voir</span>
                     </button>
 
                     {canManageAgents && (
@@ -912,7 +916,7 @@ export default function AgentsPage() {
                         type="button"
                         title="Modifier cet agent"
                         onClick={() => openEditModal(agent)}
-                      >
+                       aria-label="Modifier cet agent">
                         <BriefcaseBusiness size={17} />
                       </button>
                     )}
@@ -927,7 +931,7 @@ export default function AgentsPage() {
                           setAgentToDelete(agent);
                         }}
                         disabled={deleteMutation.isPending}
-                      >
+                       aria-label="Supprimer définitivement cet agent">
                         <Trash2 size={17} />
                       </button>
                     )}

@@ -834,7 +834,11 @@ export default function TaskFormModal({
                               ? "Ce KPI possède déjà un résultat."
                               : "Retirer ce KPI"
                           }
-                        >
+                         aria-label={
+                            submitted
+                              ? "Ce KPI possède déjà un résultat."
+                              : "Retirer ce KPI"
+                          }>
                           <Trash2 size={16} />
                         </button>
                       </header>

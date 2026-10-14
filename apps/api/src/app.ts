@@ -22,6 +22,8 @@ import { evaluationRouter } from "./modules/evaluations/evaluation.routes.js";
 import { managementReportRouter } from "./modules/reports/report.routes.js";
 import { settingsRouter } from "./modules/settings/settings.routes.js";
  
+import { pieceTransferRouter } from "./modules/piece-transfers/piece-transfer.routes.js";
+
 export const app = express();
 
 app.disable("x-powered-by");
@@ -73,6 +75,8 @@ app.use("/api/v1/roadmaps", roadmapRouter);
 app.use("/api/v1/evaluations", evaluationRouter);
 app.use("/api/v1/reports", managementReportRouter);
 app.use("/api/v1/settings", settingsRouter);
+
+app.use("/api/v1/piece-transfers", pieceTransferRouter);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

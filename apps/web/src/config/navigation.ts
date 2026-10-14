@@ -1,7 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Award,
-
+Send,
   Building2,
   CalendarDaysIcon,
   CheckSquare2,
@@ -69,14 +69,7 @@ const navigationGroups: NavigationGroup[] = [
   {
     label: "Organisation",
     items: [
-      //  {
-      //   label: "Structure ",
-      //   to: "/organisation",
-      //   icon: Building2,
-      //   roles: ["TENANT_ADMIN", "DIRECTION"],
-      //   available: false,
-      //   badge: "Bientôt",
-      //   },
+     
       {
         label: "Structure organisationnelle",
         to: "/organisation",
@@ -107,6 +100,14 @@ const navigationGroups: NavigationGroup[] = [
   {
     label: "Activités",
     items: [
+{
+  label: "Communications",
+  to: "/piece-transfers",
+  icon: Send,
+  roles: ["TENANT_ADMIN", "DIRECTION", "RH_MANAGER", "SERVICE_MANAGER", "AGENT"],
+  available: true,
+},
+
       {
         label: "Tâches",
         to: "/tasks",

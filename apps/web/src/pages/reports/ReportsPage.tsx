@@ -340,7 +340,7 @@ export default function ReportsPage() {
             Rapports <span>décisionnels.</span>
           </h2>
           <p>
-            Générez les rapports mensuels, semestriels et annuels du FADES à
+            Générez les rapports mensuels, semestriels et annuels de votre organisation à
             partir des Agents, comptes, documents RH, Tâches, Pointages, Congés,
             Feuilles de route et Évaluations.
           </p>
@@ -350,22 +350,22 @@ export default function ReportsPage() {
             className="report-secondary-button"
             type="button"
             onClick={() => void refreshAll()}
-          >
-            <RefreshCw size={18} /> Actualiser
-          </button>
+           data-ui-action="compact" aria-label="Actualiser" title="Actualiser">
+            <RefreshCw size={18} /><span className="ui-action-label"> Actualiser
+          </span></button>
           <button
             className="report-secondary-button"
             type="button"
             disabled={exportMutation.isPending}
             onClick={() => exportMutation.mutate()}
-          >
+           data-ui-action="compact" aria-label="Export Excel" title="Export Excel">
             {exportMutation.isPending ? (
               <LoaderCircle size={18} className="is-spinning" />
             ) : (
               <Download size={18} />
-            )}{" "}
+            )}{" "}<span className="ui-action-label">
             Export Excel
-          </button>
+          </span></button>
           {canCreate && (
             <button
               className="report-primary-button"
@@ -374,9 +374,9 @@ export default function ReportsPage() {
                 setEditingReport(null);
                 setFormMode("CREATE");
               }}
-            >
-              <FilePlus2 size={18} /> Nouveau rapport
-            </button>
+             data-ui-action="compact" aria-label="Nouveau rapport" title="Nouveau rapport">
+              <FilePlus2 size={18} /><span className="ui-action-label"> Nouveau rapport
+            </span></button>
           )}
         </div>
       </header>
@@ -584,7 +584,7 @@ export default function ReportsPage() {
                 <p>
                   {typeLabels[report.reportType]} ·{" "}
                   {report.scopeType === "INSTITUTION"
-                    ? "Institution FADES"
+                    ? "Organisation"
                     : report.scopeSnapshot.serviceName ??
                       report.scopeSnapshot.directionName}
                 </p>
@@ -619,7 +619,7 @@ export default function ReportsPage() {
                   type="button"
                   onClick={() => setSelectedId(report.id)}
                   title="Consulter"
-                >
+                 aria-label="Consulter">
                   <Eye size={17} />
                 </button>
                 {report.permissions.canEdit && (
@@ -630,7 +630,7 @@ export default function ReportsPage() {
                       setFormMode("EDIT");
                     }}
                     title="Compléter"
-                  >
+                   aria-label="Compléter">
                     <Pencil size={17} />
                   </button>
                 )}
@@ -640,7 +640,7 @@ export default function ReportsPage() {
                     className="is-danger"
                     onClick={() => setToDelete(report)}
                     title="Supprimer"
-                  >
+                   aria-label="Supprimer">
                     <Trash2 size={17} />
                   </button>
                 )}
@@ -743,14 +743,14 @@ export default function ReportsPage() {
                 className="report-danger-button"
                 disabled={deleteMutation.isPending}
                 onClick={() => deleteMutation.mutate(toDelete.id)}
-              >
+               data-ui-action="compact" aria-label="Supprimer" title="Supprimer">
                 {deleteMutation.isPending ? (
                   <LoaderCircle size={17} className="is-spinning" />
                 ) : (
                   <Trash2 size={17} />
-                )}{" "}
+                )}{" "}<span className="ui-action-label">
                 Supprimer
-              </button>
+              </span></button>
             </footer>
           </section>
         </div>

@@ -191,7 +191,7 @@ function safeExportFileName(
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
 
-  return normalized || "evaluation-fades";
+  return normalized || "evaluation-rh";
 }
 
 function collectDocumentStyles(): string {
@@ -514,7 +514,7 @@ function createEvaluationExportFrontMatter(
   cover.innerHTML = `
     <div class="evaluation-export-cover-topline">
       <div>
-        <span>FADES-RH</span>
+        <span>Plateforme RH</span>
         <strong>ÉVALUATION PROFESSIONNELLE</strong>
       </div>
       <small>${normalizeExportText(evaluation.reference)}</small>
@@ -1600,97 +1600,6 @@ async function printPrintableDocument(
    PDF — capture intégrale puis pagination contrôlée A4
    ------------------------------------------------------------------ */
 
-function collectEvaluationPdfBreakpoints(
-  root: HTMLElement,
-  scale: number,
-): number[] {
-  const rootRect =
-    root.getBoundingClientRect();
-
-  const selectors = [
-    ".evaluation-export-cover",
-    ".evaluation-export-toc",
-    ".evaluation-numbered-title",
-    ".print-header",
-    ".evaluation-score-band",
-    ".print-card",
-    ".evaluation-print-section > h4",
-    ".evaluation-print-section p",
-    ".evaluation-automatic-summary li",
-    ".smart-list-grid li",
-    ".criterion-automation-details li",
-    ".criterion-print",
-    ".leave-metrics-grid article",
-    ".leave-breakdown-list article",
-    ".smart-list-grid > div",
-    ".signature-grid",
-  ];
-
-  const points =
-    new Set<number>([0]);
-
-  root
-    .querySelectorAll<HTMLElement>(
-      selectors.join(","),
-    )
-    .forEach((element) => {
-      const rect =
-        element.getBoundingClientRect();
-
-      const bottom =
-        Math.round(
-          (rect.bottom -
-            rootRect.top) *
-            scale,
-        );
-
-      if (bottom > 0) {
-        points.add(bottom);
-      }
-    });
-
-  return Array.from(points).sort(
-    (first, second) =>
-      first - second,
-  );
-}
-
-function chooseEvaluationPdfSliceEnd(
-  start: number,
-  target: number,
-  total: number,
-  breakpoints: number[],
-): number {
-  if (target >= total) {
-    return total;
-  }
-
-  const usefulHeight =
-    target - start;
-
-  const minimum =
-    start +
-    usefulHeight * 0.72;
-
-  const candidates =
-    breakpoints.filter(
-      (point) =>
-        point > minimum &&
-        point <= target - 8,
-    );
-
-  if (candidates.length > 0) {
-    return candidates[
-      candidates.length - 1
-    ];
-  }
-
-  return Math.min(
-    target,
-    total,
-  );
-}
-
 type EvaluationPdfCursor = {
   y: number;
 };
@@ -2372,9 +2281,6 @@ function pdfDrawCover(
   const navy =
     EVALUATION_PDF_THEME.navy;
 
-  const gold =
-    EVALUATION_PDF_THEME.gold;
-
   // Barre supérieure
   pdfSetFillColor(
     pdf,
@@ -2414,7 +2320,7 @@ function pdfDrawCover(
   );
 
   pdf.text(
-    "FADES-RH · ÉVALUATION PROFESSIONNELLE",
+    "Plateforme RH · ÉVALUATION PROFESSIONNELLE",
     15,
     25,
   );
@@ -3527,9 +3433,9 @@ async function downloadEvaluationPdf(
     subject: `${evaluation.reference} — Évaluation professionnelle`,
     author:
       evaluation.agentSnapshot.fullName,
-    creator: "FADES-RH",
+    creator: "Plateforme RH",
     keywords:
-      "évaluation professionnelle, RH, FADES",
+      "évaluation professionnelle, RH",
   });
 
   const cursor: EvaluationPdfCursor = {
@@ -4744,7 +4650,7 @@ function docxCoverHeaderTable(
                 },
                 children: [
                   new docx.TextRun({
-                    text: "FADES-RH",
+                    text: "Plateforme RH",
                     bold: true,
                     color:
                       EVALUATION_DOCUMENT_THEME.primary,
@@ -7493,12 +7399,12 @@ async function downloadEvaluationWord(
 
   const document =
     new docx.Document({
-      creator: "FADES-RH",
+      creator: "Plateforme RH",
       title: evaluation.title,
       subject:
         evaluation.reference,
       description:
-        "Évaluation professionnelle FADES-RH",
+        "Évaluation professionnelle RH",
       styles: {
         default: {
           document: {
@@ -7749,7 +7655,7 @@ export default function EvaluationDetailsDrawer({
             disabled={Boolean(exporting)}
             onClick={() => void runExport("PDF")}
             title="Télécharger l’évaluation complète en PDF"
-          >
+           aria-label="Télécharger l’évaluation complète en PDF">
             {exporting === "PDF" ? (
               <LoaderCircle size={17} className="is-spinning" />
             ) : (
@@ -7764,7 +7670,7 @@ export default function EvaluationDetailsDrawer({
             disabled={Boolean(exporting)}
             onClick={() => void runExport("WORD")}
             title="Télécharger un véritable document Microsoft Word (.docx)"
-          >
+           aria-label="Télécharger un véritable document Microsoft Word (.docx)">
             {exporting === "WORD" ? (
               <LoaderCircle size={17} className="is-spinning" />
             ) : (
@@ -7779,7 +7685,7 @@ export default function EvaluationDetailsDrawer({
             disabled={Boolean(exporting)}
             onClick={() => void runExport("PRINT")}
             title="Ouvrir la version imprimable"
-          >
+           aria-label="Ouvrir la version imprimable">
             {exporting === "PRINT" ? (
               <LoaderCircle size={17} className="is-spinning" />
             ) : (

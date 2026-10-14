@@ -1,0 +1,1528 @@
+--- a/apps/api/src/modules/piece-transfers/piece-transfer.model.ts
++++ b/apps/api/src/modules/piece-transfers/piece-transfer.model.ts
+@@ -78,8 +78,6 @@
+ 
+       storagePublicId: {
+         type: String,
+-        unique: true,
+-        sparse: true,
+         trim: true,
+       },
+ 
+@@ -132,6 +130,12 @@
+       versionKey: false,
+     },
+   );
++
++pieceTransferSchema.index(
++  { storagePublicId: 1 },
++  { name: "storagePublicId_optional_unique", unique: true,
++    partialFilterExpression: { storagePublicId: { $type: "string" } } },
++);
+ 
+ pieceTransferSchema.index({
+   tenantId: 1,
+--- a/apps/api/src/modules/piece-transfers/piece-transfer.service.ts
++++ b/apps/api/src/modules/piece-transfers/piece-transfer.service.ts
+@@ -1,3 +1,4 @@
++import { ensureOptionalPieceTransferFileIndex } from "./piece-transfer-indexes.js";
+ import type {
+   Readable,
+ } from "node:stream";
+@@ -816,6 +817,8 @@
+       input.metadata,
+     );
+ 
++  await ensureOptionalPieceTransferFileIndex();
++
+   const uploaded =
+     input.file
+       ? await uploadPrivatePieceTransferDocument({
+@@ -859,18 +862,13 @@
+                 description:
+                   input.metadata.description ||
+                   undefined,
+-                originalFileName:
+-                  input.file?.originalname,
+-                mimeType:
+-                  input.file?.mimetype,
+-                bytes:
+-                  uploaded?.bytes,
+-                storagePublicId:
+-                  uploaded?.publicId,
+-                fileStatus:
+-                  uploaded
+-                    ? "AVAILABLE"
+-                    : undefined,
++                ...(uploaded && input.file ? {
++                  originalFileName: input.file.originalname,
++                  mimeType: input.file.mimetype,
++                  bytes: uploaded.bytes,
++                  storagePublicId: uploaded.publicId,
++                  fileStatus: "AVAILABLE" as const,
++                } : {}),
+                 audienceMode:
+                   input.metadata.audienceMode,
+                 recipientCount:
+@@ -2344,7 +2342,8 @@
+       })
+         .sort({
+           createdAt:
+-            1,
++            -1,
++          _id: -1,
+         })
+         .skip(skip)
+         .limit(
+@@ -2362,7 +2361,7 @@
+ 
+   return {
+     items:
+-      messages.map(
++      messages.reverse().map(
+         (message) =>
+           serializeMessage(
+             message,
+@@ -3242,22 +3241,32 @@
+ }
+ 
+ export async function listAdminCommunicationFiles(
+-  tenant:
+-    TenantDocument,
+-  actor:
+-    Actor,
+-  query:
+-    ListPieceTransfersQuery,
++  tenant: TenantDocument,
++  actor: Actor,
++  query: ListPieceTransfersQuery,
+ ) {
+-  await getActorUser(
+-    tenant,
+-    actor,
+-  );
+-
+-  assertTenantAdmin(
+-    actor,
+-  );
+-
++  await getActorUser(tenant, actor);
++  assertTenantAdmin(actor);
++  return collectCommunicationFiles(tenant, query);
++}
++
++export async function listMyCommunicationFiles(
++  tenant: TenantDocument,
++  actor: Actor,
++  query: ListPieceTransfersQuery,
++  direction: "SENT" | "INBOX",
++) {
++  await getActorUser(tenant, actor);
++  const userId = new Types.ObjectId(actor.userId);
++  const transferIds = await getParticipantTransferIds(tenant._id, userId);
++  return collectCommunicationFiles(tenant, query, { transferIds, userId, direction });
++}
++
++async function collectCommunicationFiles(
++  tenant: TenantDocument,
++  query: ListPieceTransfersQuery,
++  scope?: { transferIds: Types.ObjectId[]; userId: Types.ObjectId; direction: "SENT" | "INBOX" },
++) {
+   const searchRegex =
+     query.search
+       ? new RegExp(
+@@ -3322,6 +3331,15 @@
+       },
+     ],
+   };
++
++  if (scope) {
++    // Scope both collections to participation BEFORE reading their file metadata.
++    transferFilter._id = { $in: scope.transferIds };
++    messageFilter.transferId = { $in: scope.transferIds };
++    const senderFilter = scope.direction === "SENT" ? scope.userId : { $ne: scope.userId };
++    transferFilter.senderUserId = senderFilter;
++    messageFilter.senderUserId = senderFilter;
++  }
+ 
+   const [
+     transferFiles,
+@@ -3543,22 +3561,26 @@
+ }
+ 
+ export async function listAdminCommunicationMessages(
+-  tenant:
+-    TenantDocument,
+-  actor:
+-    Actor,
+-  query:
+-    ListPieceTransfersQuery,
++  tenant: TenantDocument, actor: Actor, query: ListPieceTransfersQuery,
+ ) {
+-  await getActorUser(
+-    tenant,
+-    actor,
+-  );
+-
+-  assertTenantAdmin(
+-    actor,
+-  );
+-
++  await getActorUser(tenant, actor);
++  assertTenantAdmin(actor);
++  return collectCommunicationMessages(tenant, query);
++}
++
++export async function listMyCommunicationMessages(
++  tenant: TenantDocument, actor: Actor, query: ListPieceTransfersQuery, direction: "SENT" | "INBOX",
++) {
++  await getActorUser(tenant, actor);
++  const userId = new Types.ObjectId(actor.userId);
++  const transferIds = await getParticipantTransferIds(tenant._id, userId);
++  return collectCommunicationMessages(tenant, query, { transferIds, userId, direction });
++}
++
++async function collectCommunicationMessages(
++  tenant: TenantDocument, query: ListPieceTransfersQuery,
++  scope?: { transferIds: Types.ObjectId[]; userId: Types.ObjectId; direction: "SENT" | "INBOX" },
++) {
+   const searchRegex =
+     query.search
+       ? new RegExp(
+@@ -3617,6 +3639,14 @@
+           searchRegex,
+       },
+     ];
++  }
++
++  if (scope) {
++    transferFilter._id = { $in: scope.transferIds };
++    messageFilter.transferId = { $in: scope.transferIds };
++    const senderFilter = scope.direction === "SENT" ? scope.userId : { $ne: scope.userId };
++    transferFilter.senderUserId = senderFilter;
++    messageFilter.senderUserId = senderFilter;
+   }
+ 
+   const [
+@@ -3783,8 +3813,7 @@
+               message.deletedAt,
+             ),
+           canDeleteMessage:
+-            message.status ===
+-            "ACTIVE",
++            !scope && message.status === "ACTIVE",
+         }),
+       ),
+     ].sort(
+--- a/apps/api/src/modules/piece-transfers/piece-transfer.controller.ts
++++ b/apps/api/src/modules/piece-transfers/piece-transfer.controller.ts
+@@ -31,6 +31,8 @@
+   getPieceTransferMessageFileDelivery,
+   getPieceTransferStats,
+   listAdminCommunicationFiles,
++  listMyCommunicationFiles,
++  listMyCommunicationMessages,
+   listAdminCommunicationMessages,
+   listPieceTransferInbox,
+   listPieceTransferMessages,
+@@ -1128,3 +1130,37 @@
+     );
+   }
+ }
++
++export async function listMyCommunicationFilesController(
++  request: Request,
++  response: Response,
++  next: NextFunction,
++): Promise<void> {
++  try {
++    const { tenant, actor } = context(request);
++    const query = listPieceTransfersQuerySchema.parse(request.query);
++    const direction = request.query.direction;
++    if (direction !== "SENT" && direction !== "INBOX") {
++      throw new AppError("Choisissez les fichiers envoyés ou reçus.", 400, "PIECE_TRANSFER_DIRECTION_INVALID");
++    }
++    const result = await listMyCommunicationFiles(tenant, actor, query, direction);
++    response.json({ success: true, data: result });
++  } catch (error) {
++    next(error);
++  }
++}
++
++export async function listMyCommunicationMessagesController(
++  request: Request, response: Response, next: NextFunction,
++): Promise<void> {
++  try {
++    const { tenant, actor } = context(request);
++    const query = listPieceTransfersQuerySchema.parse(request.query);
++    const direction = request.query.direction;
++    if (direction !== "SENT" && direction !== "INBOX") {
++      throw new AppError("Choisissez les messages envoyés ou reçus.", 400, "PIECE_TRANSFER_DIRECTION_INVALID");
++    }
++    const result = await listMyCommunicationMessages(tenant, actor, query, direction);
++    response.json({ success: true, data: result });
++  } catch (error) { next(error); }
++}
+--- a/apps/api/src/modules/piece-transfers/piece-transfer.routes.ts
++++ b/apps/api/src/modules/piece-transfers/piece-transfer.routes.ts
+@@ -18,6 +18,8 @@
+   getPieceTransferController,
+   getPieceTransferStatsController,
+   listAdminCommunicationFilesController,
++  listMyCommunicationFilesController,
++  listMyCommunicationMessagesController,
+   listAdminCommunicationMessagesController,
+   listPieceTransferInboxController,
+   listPieceTransferMessagesController,
+@@ -64,6 +66,16 @@
+ pieceTransferRouter.get(
+   "/sent",
+   listPieceTransferSentController,
++);
++
++pieceTransferRouter.get(
++  "/files",
++  listMyCommunicationFilesController,
++);
++
++pieceTransferRouter.get(
++  "/messages",
++  listMyCommunicationMessagesController,
+ );
+ 
+ /* Supervision TENANT_ADMIN */
+--- a/apps/web/src/features/piece-transfers/piece-transfer.api.ts
++++ b/apps/web/src/features/piece-transfers/piece-transfer.api.ts
+@@ -6,6 +6,8 @@
+ } from "../auth/auth.types";
+ import type {
+   CreatePieceTransferInput,
++  PieceTransferPagination,
++  PieceTransferAdminFile,
+   PieceTransferAdminFilesResult,
+   PieceTransferAdminMessagesResult,
+   PieceTransferAdminOverview,
+@@ -161,6 +163,7 @@
+ export async function getPieceTransferMessages(
+   transferId:
+     string,
++  page = 1,
+ ): Promise<PieceTransferMessagesResult> {
+   const response =
+     await api.get<
+@@ -169,10 +172,8 @@
+       `${BASE}/${transferId}/messages`,
+       {
+         params: {
+-          page:
+-            1,
+-          limit:
+-            100,
++          page,
++          limit: 50,
+         },
+       },
+     );
+@@ -496,3 +497,22 @@
+     `${BASE}/admin/messages/${messageId}`,
+   );
+ }
++
++export async function getMyCommunicationFiles(params: {
++  direction: "SENT" | "INBOX";
++  search?: string;
++  page?: number;
++  limit?: number;
++}): Promise<{ items: PieceTransferAdminFile[]; pagination: PieceTransferPagination }> {
++  const response = await api.get<ApiSuccess<{ items: PieceTransferAdminFile[]; pagination: PieceTransferPagination }>>(
++    `${BASE}/files`, { params },
++  );
++  return response.data.data;
++}
++
++export async function getMyCommunicationMessages(params: {
++  direction: "SENT" | "INBOX"; search?: string; page?: number; limit?: number;
++}): Promise<PieceTransferAdminMessagesResult> {
++  const response = await api.get<ApiSuccess<PieceTransferAdminMessagesResult>>(`${BASE}/messages`, { params });
++  return response.data.data;
++}
+--- a/apps/web/src/pages/piece-transfers/PieceTransfersPage.tsx
++++ b/apps/web/src/pages/piece-transfers/PieceTransfersPage.tsx
+@@ -1,4 +1,5 @@
+ import {
++  useEffect,
+   useMemo,
+   useState,
+   type ReactNode,
+@@ -20,8 +21,11 @@
+   ShieldCheck,
+   Trash2,
+   UsersRound,
++  X,
+ } from "lucide-react";
+ import {
++  useIsFetching,
++  useInfiniteQuery,
+   useMutation,
+   useQuery,
+   useQueryClient,
+@@ -39,6 +43,8 @@
+   getPieceTransferInbox,
+   getPieceTransferSent,
+   getPieceTransferStats,
++  getMyCommunicationFiles,
++  getMyCommunicationMessages,
+   revokePieceTransfer,
+   viewPieceTransferFile,
+   viewPieceTransferMessageFile,
+@@ -56,8 +62,8 @@
+ import PieceTransferDetailsDrawer from "./PieceTransferDetailsDrawer";
+ import "./piece-transfers-page.css";
+ 
+-type UserFilter = "ALL" | "INBOX" | "SENT";
+-type Workspace = "CHATS" | "ADMIN";
++type UserFilter = "ALL" | "INBOX" | "SENT" | "UNREAD";
++type Workspace = "CHATS" | "ADMIN" | "FILES" | "MESSAGES";
+ type AdminView = "STATS" | "MESSAGES" | "FILES";
+ 
+ function formatBytes(value?: number): string {
+@@ -113,6 +119,15 @@
+   return labels[value] ?? value;
+ }
+ 
++function useDebouncedSearch(value: string): string {
++  const [debounced, setDebounced] = useState(value);
++  useEffect(() => {
++    const timer = window.setTimeout(() => setDebounced(value.trim()), 300);
++    return () => window.clearTimeout(timer);
++  }, [value]);
++  return debounced;
++}
++
+ export default function PieceTransfersPage() {
+   const { user } = useAuth();
+   const queryClient = useQueryClient();
+@@ -123,6 +138,13 @@
+   const [adminView, setAdminView] = useState<AdminView>("STATS");
+   const [search, setSearch] = useState("");
+   const [adminSearch, setAdminSearch] = useState("");
++  const [fileDirection, setFileDirection] = useState<"SENT" | "INBOX">("INBOX");
++  const [filesSearch, setFilesSearch] = useState("");
++  const [filesPage, setFilesPage] = useState(1);
++  const [notice, setNotice] = useState<string | null>(null);
++  const debouncedSearch = useDebouncedSearch(search);
++  const debouncedAdminSearch = useDebouncedSearch(adminSearch);
++  const debouncedFilesSearch = useDebouncedSearch(filesSearch);
+   const [adminPage, setAdminPage] = useState(1);
+   const [composerOpen, setComposerOpen] = useState(false);
+   const [selectedTransferId, setSelectedTransferId] = useState<string | null>(null);
+@@ -131,47 +153,68 @@
+   const [actionError, setActionError] = useState<string | null>(null);
+ 
+   const statsQuery = useQuery({
+-    queryKey: ["piece-transfers", "stats"],
++    queryKey: ["piece-transfers", "stats", user?.id],
+     queryFn: getPieceTransferStats,
+     staleTime: 15_000,
+-  });
+-
+-  const inboxQuery = useQuery({
+-    queryKey: ["piece-transfers", "inbox", search],
+-    queryFn: () =>
+-      getPieceTransferInbox({
+-        search: search || undefined,
+-        page: 1,
+-        limit: 100,
+-      }),
+-    enabled: workspace === "CHATS",
+-    staleTime: 8_000,
+-  });
+-
+-  const sentQuery = useQuery({
+-    queryKey: ["piece-transfers", "sent", search],
+-    queryFn: () =>
+-      getPieceTransferSent({
+-        search: search || undefined,
+-        page: 1,
+-        limit: 100,
+-      }),
+-    enabled: workspace === "CHATS",
+-    staleTime: 8_000,
++    refetchInterval: 30_000,
++  });
++
++  const inboxQuery = useInfiniteQuery({
++    queryKey: ["piece-transfers", "inbox", user?.id, debouncedSearch, filter === "UNREAD"],
++    queryFn: ({ pageParam }) => getPieceTransferInbox({
++      search: debouncedSearch || undefined,
++      unreadOnly: filter === "UNREAD" || undefined,
++      page: pageParam, limit: 30,
++    }),
++    initialPageParam: 1,
++    getNextPageParam: (lastPage) => lastPage.pagination.page < lastPage.pagination.pages
++      ? lastPage.pagination.page + 1 : undefined,
++    enabled: workspace === "CHATS" && filter !== "SENT",
++    staleTime: 15_000,
++    refetchInterval: 30_000,
++  });
++
++  const sentQuery = useInfiniteQuery({
++    queryKey: ["piece-transfers", "sent", user?.id, debouncedSearch],
++    queryFn: ({ pageParam }) => getPieceTransferSent({
++      search: debouncedSearch || undefined, page: pageParam, limit: 30,
++    }),
++    initialPageParam: 1,
++    getNextPageParam: (lastPage) => lastPage.pagination.page < lastPage.pagination.pages
++      ? lastPage.pagination.page + 1 : undefined,
++    enabled: workspace === "CHATS" && (filter === "ALL" || filter === "SENT"),
++    staleTime: 15_000,
++    refetchInterval: 30_000,
++  });
++
++  const myFilesQuery = useQuery({
++    queryKey: ["piece-transfers", "my-files", user?.id, fileDirection, filesPage, debouncedFilesSearch],
++    queryFn: () => getMyCommunicationFiles({
++      direction: fileDirection, search: debouncedFilesSearch || undefined, page: filesPage, limit: 20,
++    }),
++    enabled: workspace === "FILES",
++    staleTime: 15_000,
++    refetchInterval: 30_000,
++  });
++
++  const myMessagesQuery = useQuery({
++    queryKey: ["piece-transfers", "my-messages", user?.id, fileDirection, filesPage, debouncedFilesSearch],
++    queryFn: () => getMyCommunicationMessages({ direction: fileDirection, search: debouncedFilesSearch || undefined, page: filesPage, limit: 20 }),
++    enabled: workspace === "MESSAGES", staleTime: 15_000, refetchInterval: 30_000,
+   });
+ 
+   const adminOverviewQuery = useQuery({
+-    queryKey: ["piece-transfers", "admin-overview"],
++    queryKey: ["piece-transfers", "admin-overview", user?.id],
+     queryFn: getAdminCommunicationOverview,
+     enabled: isAdmin && workspace === "ADMIN",
+     staleTime: 15_000,
+   });
+ 
+   const adminFilesQuery = useQuery({
+-    queryKey: ["piece-transfers", "admin-files", adminPage, adminSearch],
++    queryKey: ["piece-transfers", "admin-files", user?.id, adminPage, debouncedAdminSearch],
+     queryFn: () =>
+       getAdminCommunicationFiles({
+-        search: adminSearch || undefined,
++        search: debouncedAdminSearch || undefined,
+         page: adminPage,
+         limit: 20,
+       }),
+@@ -180,10 +223,10 @@
+   });
+ 
+   const adminMessagesQuery = useQuery({
+-    queryKey: ["piece-transfers", "admin-messages", adminPage, adminSearch],
++    queryKey: ["piece-transfers", "admin-messages", user?.id, adminPage, debouncedAdminSearch],
+     queryFn: () =>
+       getAdminCommunicationMessages({
+-        search: adminSearch || undefined,
++        search: debouncedAdminSearch || undefined,
+         page: adminPage,
+         limit: 20,
+       }),
+@@ -197,6 +240,8 @@
+       setComposerOpen(false);
+       setWorkspace("CHATS");
+       setFilter("SENT");
++      setSearch("");
++      setNotice("Communication envoyée. Vous pouvez poursuivre la discussion.");
+       setSelectedTransferId(created.id);
+       await queryClient.invalidateQueries({ queryKey: ["piece-transfers"] });
+     },
+@@ -234,14 +279,15 @@
+   });
+ 
+   const conversations = useMemo(() => {
+-    const inbox = inboxQuery.data?.items ?? [];
+-    const sent = sentQuery.data?.items ?? [];
++    const inbox = inboxQuery.data?.pages.flatMap((page) => page.items) ?? [];
++    const sent = sentQuery.data?.pages.flatMap((page) => page.items) ?? [];
+     const merged = new Map<string, PieceTransferListItem>();
+ 
+     [...inbox, ...sent].forEach((item) => merged.set(item.id, item));
+ 
+     return [...merged.values()]
+       .filter((item) => {
++        if (filter === "UNREAD") return item.direction === "INBOX" && item.isRead === false;
+         if (filter === "INBOX") return item.direction === "INBOX";
+         if (filter === "SENT") return item.direction === "SENT";
+         return true;
+@@ -251,13 +297,13 @@
+           new Date(b.createdAt ?? 0).getTime() -
+           new Date(a.createdAt ?? 0).getTime(),
+       );
+-  }, [inboxQuery.data?.items, sentQuery.data?.items, filter]);
++  }, [inboxQuery.data, sentQuery.data, filter]);
+ 
+   const stats = statsQuery.data;
+   const userQueryError =
+-    inboxQuery.isError
++    filter !== "SENT" && inboxQuery.isError
+       ? getApiErrorMessage(inboxQuery.error)
+-      : sentQuery.isError
++      : (filter === "ALL" || filter === "SENT") && sentQuery.isError
+         ? getApiErrorMessage(sentQuery.error)
+         : null;
+ 
+@@ -281,6 +327,36 @@
+   const detailError = revokeMutation.isError
+     ? getApiErrorMessage(revokeMutation.error)
+     : actionError;
++
++  const loadingConversations = (filter !== "SENT" && inboxQuery.isLoading) ||
++    ((filter === "ALL" || filter === "SENT") && sentQuery.isLoading);
++  const hasMore = (filter !== "SENT" && inboxQuery.hasNextPage) ||
++    ((filter === "ALL" || filter === "SENT") && sentQuery.hasNextPage);
++  const loadingMore = inboxQuery.isFetchingNextPage || sentQuery.isFetchingNextPage;
++  const refreshing = useIsFetching({ queryKey: ["piece-transfers"] }) > 0;
++
++  function openConversations(next: UserFilter): void {
++    setWorkspace("CHATS"); setFilter(next); setSearch("");
++    setSelectedTransferId(null); setActionError(null);
++  }
++  function openFiles(direction: "SENT" | "INBOX", resource: "FILES" | "MESSAGES" = "FILES"): void {
++    setWorkspace(resource); setFileDirection(direction); setFilesPage(1);
++    setFilesSearch(""); setSelectedTransferId(null); setActionError(null);
++  }
++  async function loadMore(): Promise<void> {
++    await Promise.all([
++      filter !== "SENT" && inboxQuery.hasNextPage ? inboxQuery.fetchNextPage() : Promise.resolve(),
++      (filter === "ALL" || filter === "SENT") && sentQuery.hasNextPage ? sentQuery.fetchNextPage() : Promise.resolve(),
++    ]);
++  }
++  function openComposer(): void {
++    createMutation.reset(); setComposerOpen(true);
++  }
++  useEffect(() => {
++    if (!notice) return;
++    const timer = window.setTimeout(() => setNotice(null), 6000);
++    return () => window.clearTimeout(timer);
++  }, [notice]);
+ 
+   async function refresh(): Promise<void> {
+     await queryClient.invalidateQueries({ queryKey: ["piece-transfers"] });
+@@ -397,8 +473,8 @@
+         </div>
+ 
+         <div className="piece-transfer-appbar-actions">
+-          <button type="button" onClick={() => void refresh()} title="Actualiser">
+-            <RefreshCw size={18} />
++          <button type="button" disabled={refreshing} aria-label="Actualiser les communications" onClick={() => void refresh()} title="Actualiser">
++            <RefreshCw size={18} className={refreshing ? "is-spinning" : ""} />
+           </button>
+ 
+           {isAdmin && (
+@@ -409,6 +485,7 @@
+                 setWorkspace((current) => (current === "ADMIN" ? "CHATS" : "ADMIN"));
+                 setSelectedTransferId(null);
+               }}
++              aria-label="Administration"
+               title="Administration"
+             >
+               <ShieldCheck size={18} />
+@@ -418,7 +495,8 @@
+           <button
+             type="button"
+             className="is-primary"
+-            onClick={() => setComposerOpen(true)}
++            onClick={openComposer}
++            aria-label="Nouvelle communication"
+             title="Nouvelle communication"
+           >
+             <Plus size={19} />
+@@ -426,24 +504,41 @@
+         </div>
+       </header>
+ 
+-      {workspace === "CHATS" ? (
++      {notice && <div className="piece-transfer-notice" role="status"><Check size={17} /><span>{notice}</span><button type="button" onClick={() => setNotice(null)} aria-label="Fermer la notification"><X size={15} /></button></div>}
++
++      {workspace === "FILES" || workspace === "MESSAGES" ? (
++        <section className="piece-transfer-personal-files">
++          <header><div><span>{workspace === "FILES" ? "MES PIÈCES JOINTES" : "MES MESSAGES"}</span><h2>{workspace === "FILES" ? (fileDirection === "SENT" ? "Fichiers envoyés" : "Fichiers reçus") : (fileDirection === "SENT" ? "Messages envoyés" : "Messages reçus")}</h2><p>{workspace === "FILES" ? "Retrouvez les pièces initiales et celles partagées dans les discussions." : "Retrouvez les messages de toutes vos conversations."}</p></div><button type="button" onClick={() => openConversations("ALL")}>Retour aux conversations</button></header>
++          <nav className="piece-transfer-conversation-filters" aria-label="Direction des éléments">
++            <button type="button" aria-pressed={fileDirection === "INBOX"} className={fileDirection === "INBOX" ? "is-active" : ""} onClick={() => { setFileDirection("INBOX"); setFilesPage(1); }}>Reçus</button>
++            <button type="button" aria-pressed={fileDirection === "SENT"} className={fileDirection === "SENT" ? "is-active" : ""} onClick={() => { setFileDirection("SENT"); setFilesPage(1); }}>Envoyés</button>
++          </nav>
++          <label className="piece-transfer-conversation-search"><Search size={17}/><input aria-label="Rechercher mes éléments" placeholder="Rechercher…" value={filesSearch} onChange={(event) => { setFilesSearch(event.target.value); setFilesPage(1); }}/></label>
++          {(actionError || (workspace === "FILES" ? myFilesQuery.isError : myMessagesQuery.isError)) && <div className="piece-transfer-error" role="alert">{actionError || getApiErrorMessage(workspace === "FILES" ? myFilesQuery.error : myMessagesQuery.error)}</div>}
++          {(workspace === "FILES" ? myFilesQuery.isLoading : myMessagesQuery.isLoading) ? <div className="piece-transfer-chat-list-state" role="status"><LoaderCircle className="is-spinning" size={22}/><span>Chargement…</span></div> : workspace === "FILES" ? <AdminFilesView items={myFilesQuery.data?.items ?? []} action={adminFileAction} deleting={false} onView={handleAdminFileView} onDownload={handleAdminFileDownload}/> : <AdminMessagesView items={myMessagesQuery.data?.items ?? []} onOpen={setSelectedTransferId}/>}
++          <AdminPagination page={(workspace === "FILES" ? myFilesQuery.data : myMessagesQuery.data)?.pagination.page ?? 1} pages={(workspace === "FILES" ? myFilesQuery.data : myMessagesQuery.data)?.pagination.pages ?? 1} onPage={setFilesPage}/>
++          {selectedTransferId && <PieceTransferDetailsDrawer transferId={selectedTransferId} pendingAction={revokeMutation.isPending ? "REVOKE" : fileAction} error={detailError} onClose={() => setSelectedTransferId(null)} onView={handleView} onDownload={handleDownload} onRevoke={handleRevoke}/>}
++        </section>
++      ) : workspace === "CHATS" ? (
+         <section
+           className={`piece-transfer-chat-shell ${selectedTransferId ? "has-selection" : ""}`}
+         >
+           <aside className="piece-transfer-conversations-pane">
+             <div className="piece-transfer-quick-stats" aria-label="Statistiques personnelles">
+-              <MiniStat icon={<Send size={15} />} value={stats?.messagesSent ?? 0} title="Messages envoyés" />
+-              <MiniStat icon={<Inbox size={15} />} value={stats?.messagesReceived ?? 0} title="Messages reçus" />
+-              <MiniStat icon={<FileText size={15} />} value={stats?.filesSent ?? 0} title="Fichiers envoyés" />
+-              <MiniStat icon={<Download size={15} />} value={stats?.filesReceived ?? 0} title="Fichiers reçus" />
++              <MiniStat icon={<Send size={17} />} value={stats?.messagesSent} title="Messages envoyés" onClick={() => openFiles("SENT", "MESSAGES")} />
++              <MiniStat icon={<Inbox size={17} />} value={stats?.messagesReceived} title="Messages reçus" onClick={() => openFiles("INBOX", "MESSAGES")} />
++              <MiniStat icon={<FileText size={17} />} value={stats?.filesSent} title="Fichiers envoyés" onClick={() => openFiles("SENT")} />
++              <MiniStat icon={<Download size={17} />} value={stats?.filesReceived} title="Fichiers reçus" onClick={() => openFiles("INBOX")} />
+             </div>
+ 
++            {statsQuery.isError && <div className="piece-transfer-error" role="alert">{getApiErrorMessage(statsQuery.error)}</div>}
+             <div className="piece-transfer-conversation-search">
+               <Search size={17} />
+               <input
+                 value={search}
+                 onChange={(event) => setSearch(event.target.value)}
+-                placeholder="Rechercher"
++                aria-label="Rechercher une communication"
++                placeholder="Objet, expéditeur…"
+               />
+             </div>
+ 
+@@ -452,6 +547,7 @@
+                 type="button"
+                 className={filter === "ALL" ? "is-active" : ""}
+                 onClick={() => setFilter("ALL")}
++                aria-pressed={filter === "ALL"}
+               >
+                 Tous
+               </button>
+@@ -459,6 +555,7 @@
+                 type="button"
+                 className={filter === "INBOX" ? "is-active" : ""}
+                 onClick={() => setFilter("INBOX")}
++                aria-pressed={filter === "INBOX"}
+               >
+                 Reçus
+               </button>
+@@ -466,22 +563,28 @@
+                 type="button"
+                 className={filter === "SENT" ? "is-active" : ""}
+                 onClick={() => setFilter("SENT")}
++                aria-pressed={filter === "SENT"}
+               >
+                 Envoyés
+               </button>
++              <button type="button" aria-pressed={filter === "UNREAD"} className={filter === "UNREAD" ? "is-active" : ""} onClick={() => setFilter("UNREAD")}>
++                Non lus {stats?.unread ? <span className="piece-transfer-unread-badge">{stats.unread}</span> : null}
++              </button>
+             </nav>
+ 
+             {userQueryError && <div className="piece-transfer-error">{userQueryError}</div>}
+ 
+             <div className="piece-transfer-conversation-list">
+-              {inboxQuery.isLoading || sentQuery.isLoading ? (
++              {loadingConversations ? (
+                 <div className="piece-transfer-chat-list-state">
+-                  <LoaderCircle size={22} className="is-spinning" />
++                  <LoaderCircle size={22} className="is-spinning" /><span>Chargement des conversations…</span>
+                 </div>
+               ) : conversations.length === 0 ? (
+                 <div className="piece-transfer-chat-list-state">
+                   <MessageCircle size={28} />
+-                  <span>Aucune communication</span>
++                  <strong>{search ? "Aucun résultat" : filter === "UNREAD" ? "Tout est à jour" : "Aucune communication"}</strong>
++                  <span>{search ? "Essayez un autre objet ou un autre expéditeur." : filter === "UNREAD" ? "Vous avez consulté toutes vos communications." : "Commencez une discussion avec vos collègues."}</span>
++                  <button type="button" onClick={search ? () => setSearch("") : openComposer}>{search ? "Effacer la recherche" : "Nouvelle communication"}</button>
+                 </div>
+               ) : (
+                 conversations.map((item) => (
+@@ -493,6 +596,7 @@
+                   />
+                 ))
+               )}
++              {hasMore && <button className="piece-transfer-load-more" type="button" disabled={loadingMore} onClick={() => void loadMore()}>{loadingMore ? "Chargement…" : "Charger davantage"}</button>}
+             </div>
+           </aside>
+ 
+@@ -580,7 +684,7 @@
+             adminOverviewQuery.isLoading ? (
+               <div className="piece-transfer-chat-list-state"><LoaderCircle size={22} className="is-spinning" /></div>
+             ) : (
+-              <AdminStatsView overview={adminOverviewQuery.data} />
++              <AdminStatsView overview={adminOverviewQuery.data} onNavigate={(view) => { setAdminView(view); setAdminSearch(""); setAdminPage(1); }} />
+             )
+           ) : adminView === "MESSAGES" ? (
+             adminMessagesQuery.isLoading ? (
+@@ -644,28 +748,19 @@
+         open={composerOpen}
+         pending={createMutation.isPending}
+         error={createError}
+-        onClose={() => setComposerOpen(false)}
++        onClose={() => { if (!createMutation.isPending) setComposerOpen(false); }}
+         onSubmit={(input: CreatePieceTransferInput) => createMutation.mutate(input)}
+       />
+     </main>
+   );
+ }
+ 
+-function MiniStat({
+-  icon,
+-  value,
+-  title,
+-}: {
+-  icon: ReactNode;
+-  value: number;
+-  title: string;
++function MiniStat({ icon, value, title, active = false, onClick }: {
++  icon: ReactNode; value?: number; title: string; active?: boolean; onClick: () => void;
+ }) {
+-  return (
+-    <div className="piece-transfer-mini-stat" title={title} aria-label={`${title}: ${value}`}>
+-      {icon}
+-      <strong>{value}</strong>
+-    </div>
+-  );
++  return <button type="button" className={`piece-transfer-mini-stat ${active ? "is-active" : ""}`} onClick={onClick} aria-pressed={active} aria-label={`${title} : ${value ?? "chargement"}. Ouvrir`}>
++    <span className="piece-transfer-stat-icon">{icon}</span><strong>{value === undefined ? "—" : new Intl.NumberFormat("fr-FR").format(value)}</strong><span>{title}</span>
++  </button>;
+ }
+ 
+ function ConversationItem({
+@@ -684,6 +779,7 @@
+   return (
+     <button
+       type="button"
++      aria-current={active ? "true" : undefined}
+       className={`piece-transfer-conversation-item ${active ? "is-active" : ""} ${item.isRead === false ? "is-unread" : ""}`}
+       onClick={onClick}
+     >
+@@ -716,7 +812,9 @@
+ 
+ function AdminStatsView({
+   overview,
++  onNavigate,
+ }: {
++  onNavigate: (view: "MESSAGES" | "FILES") => void;
+   overview:
+     | {
+         totals: {
+@@ -738,12 +836,12 @@
+   return (
+     <div className="piece-transfer-admin-stats-v5">
+       <div className="piece-transfer-admin-summary-v5">
+-        <AdminMetric label="Messages E." value={overview.totals.messagesSent} />
+-        <AdminMetric label="Messages R." value={overview.totals.messagesReceived} />
+-        <AdminMetric label="Fichiers E." value={overview.totals.filesSent} />
+-        <AdminMetric label="Fichiers R." value={overview.totals.filesReceived} />
+-        <AdminMetric label="Communic. E." value={overview.totals.communicationsStarted} />
+-        <AdminMetric label="Communic. R." value={overview.totals.communicationsReceived} />
++        <AdminMetric label="Messages envoyés" value={overview.totals.messagesSent} onClick={() => onNavigate("MESSAGES")} />
++        <AdminMetric label="Messages reçus" value={overview.totals.messagesReceived} onClick={() => onNavigate("MESSAGES")} />
++        <AdminMetric label="Fichiers envoyés" value={overview.totals.filesSent} onClick={() => onNavigate("FILES")} />
++        <AdminMetric label="Fichiers reçus" value={overview.totals.filesReceived} onClick={() => onNavigate("FILES")} />
++        <AdminMetric label="Communications initiées" value={overview.totals.communicationsStarted} onClick={() => onNavigate("MESSAGES")} />
++        <AdminMetric label="Communications reçues" value={overview.totals.communicationsReceived} onClick={() => onNavigate("MESSAGES")} />
+       </div>
+ 
+       <div className="piece-transfer-agent-table-v5">
+@@ -788,13 +886,8 @@
+   );
+ }
+ 
+-function AdminMetric({ label, value }: { label: string; value: number }) {
+-  return (
+-    <article>
+-      <span>{label}</span>
+-      <strong>{value}</strong>
+-    </article>
+-  );
++function AdminMetric({ label, value, onClick }: { label: string; value: number; onClick: () => void }) {
++  return <button type="button" onClick={onClick} aria-label={`${label} : ${value}. Consulter`}><span>{label}</span><strong>{new Intl.NumberFormat("fr-FR").format(value)}</strong><small>Consulter →</small></button>;
+ }
+ 
+ function AdminMessagesView({
+@@ -806,7 +899,7 @@
+   items: PieceTransferAdminMessage[];
+   deletingId?: string;
+   onOpen: (transferId: string) => void;
+-  onDelete: (item: PieceTransferAdminMessage) => void;
++  onDelete?: (item: PieceTransferAdminMessage) => void;
+ }) {
+   if (items.length === 0) {
+     return <div className="piece-transfer-chat-list-state">Aucun message.</div>;
+@@ -834,7 +927,7 @@
+             </span>
+           </button>
+ 
+-          {item.canDeleteMessage && item.messageId && (
++          {onDelete && item.canDeleteMessage && item.messageId && (
+             <button
+               type="button"
+               className="piece-transfer-admin-danger-icon"
+@@ -868,7 +961,7 @@
+   deleting: boolean;
+   onView: (item: PieceTransferAdminFile) => Promise<void>;
+   onDownload: (item: PieceTransferAdminFile) => Promise<void>;
+-  onDelete: (item: PieceTransferAdminFile) => void;
++  onDelete?: (item: PieceTransferAdminFile) => void;
+ }) {
+   if (items.length === 0) {
+     return <div className="piece-transfer-chat-list-state">Aucun fichier.</div>;
+@@ -880,7 +973,7 @@
+         <article key={item.id} className={item.fileStatus === "DELETED" ? "is-deleted" : ""}>
+           <FileText size={20} />
+           <div>
+-            <strong>{item.fileName}</strong>
++            <strong>{item.fileName}</strong><small>{item.title}{item.fileStatus === "DELETED" ? " · Pièce supprimée" : ""}</small>
+             <span>{item.senderName} · {formatBytes(item.bytes)} · {formatDateTime(item.createdAt)}</span>
+           </div>
+           <div>
+@@ -888,6 +981,7 @@
+               type="button"
+               disabled={item.fileStatus === "DELETED" || Boolean(action)}
+               onClick={() => void onView(item)}
++              aria-label={`Voir ${item.fileName}`}
+               title="Voir"
+             >
+               {action === `view:${item.id}` ? <LoaderCircle size={15} className="is-spinning" /> : <Eye size={15} />}
+@@ -896,11 +990,12 @@
+               type="button"
+               disabled={item.fileStatus === "DELETED" || Boolean(action)}
+               onClick={() => void onDownload(item)}
++              aria-label={`Télécharger ${item.fileName}`}
+               title="Télécharger"
+             >
+               {action === `download:${item.id}` ? <LoaderCircle size={15} className="is-spinning" /> : <Download size={15} />}
+             </button>
+-            <button
++            {onDelete && <button
+               type="button"
+               className="is-danger"
+               disabled={deleting || item.fileStatus === "DELETED"}
+@@ -908,7 +1003,7 @@
+               title="Supprimer"
+             >
+               <Trash2 size={15} />
+-            </button>
++            </button>}
+           </div>
+         </article>
+       ))}
+--- a/apps/web/src/pages/piece-transfers/PieceTransferComposer.tsx
++++ b/apps/web/src/pages/piece-transfers/PieceTransferComposer.tsx
+@@ -1,6 +1,7 @@
+ import {
+   useEffect,
+   useMemo,
++  useRef,
+   useState,
+   type FormEvent,
+ } from "react";
+@@ -15,6 +16,8 @@
+   UsersRound,
+   X,
+ } from "lucide-react";
++import { getApiErrorMessage } from "../../features/auth/auth.api";
++import { useAuth } from "../../features/auth/auth.context";
+ import { useQuery } from "@tanstack/react-query";
+ import { getPieceTransferRecipients } from "../../features/piece-transfers/piece-transfer.api";
+ import type {
+@@ -50,6 +53,15 @@
+   onClose,
+   onSubmit,
+ }: Props) {
++  const { user } = useAuth();
++  const formRef = useRef<HTMLFormElement | null>(null);
++  const closeRef = useRef(onClose);
++  const pendingRef = useRef(pending);
++  closeRef.current = onClose;
++  pendingRef.current = pending;
++  const [fileError, setFileError] = useState<string | null>(null);
++  const [debouncedSearch, setDebouncedSearch] = useState("");
++  const [selectedContacts, setSelectedContacts] = useState<Map<string, PieceTransferRecipientOption>>(() => new Map());
+   const [title, setTitle] = useState("");
+   const [description, setDescription] = useState("");
+   const [file, setFile] = useState<File | null>(null);
+@@ -70,13 +82,43 @@
+     setAudienceMode("SELECTED");
+     setSearch("");
+     setSelectedIds(new Set());
++    setSelectedContacts(new Map());
++    setFileError(null);
+   }, [open]);
+ 
++  useEffect(() => {
++    const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
++    return () => window.clearTimeout(timer);
++  }, [search]);
++
++  useEffect(() => {
++    if (!open) return;
++    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
++    const dialog = formRef.current;
++    dialog?.querySelector<HTMLInputElement>("input")?.focus();
++    const handleKey = (event: KeyboardEvent) => {
++      if (event.key === "Escape") {
++        event.preventDefault();
++        if (!pendingRef.current) closeRef.current();
++      }
++      if (event.key !== "Tab" || !dialog) return;
++      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(
++        'button:not(:disabled), input:not(:disabled), textarea:not(:disabled), [tabindex="0"]',
++      )).filter((element) => element.getClientRects().length > 0);
++      const first = focusable[0];
++      const last = focusable[focusable.length - 1];
++      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
++      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
++    };
++    document.addEventListener("keydown", handleKey);
++    return () => { document.removeEventListener("keydown", handleKey); previous?.focus(); };
++  }, [open]);
++
+   const recipientsQuery = useQuery({
+-    queryKey: ["piece-transfers", "recipients", search],
++    queryKey: ["piece-transfers", "recipients", user?.id, debouncedSearch],
+     queryFn: () =>
+       getPieceTransferRecipients({
+-        search: search || undefined,
++        search: debouncedSearch || undefined,
+         page: 1,
+         limit: 100,
+       }),
+@@ -89,14 +131,13 @@
+ 
+   const canSubmit =
+     Boolean(
+-      title.trim() &&
++      title.trim().length >= 2 &&
+         (audienceMode === "ALL" || selectedCount > 0),
+-    ) && !pending;
++    ) && !pending && !fileError;
+ 
+   const selectedFromResults = useMemo(
+-    () =>
+-      items.filter((item) => selectedIds.has(item.userId)),
+-    [items, selectedIds],
++    () => [...selectedContacts.values()],
++    [selectedContacts],
+   );
+ 
+   if (!open) {
+@@ -106,6 +147,13 @@
+   function toggleRecipient(
+     recipient: PieceTransferRecipientOption,
+   ): void {
++    if (pending) return;
++    setSelectedContacts((current) => {
++      const next = new Map(current);
++      if (next.has(recipient.userId)) next.delete(recipient.userId);
++      else next.set(recipient.userId, recipient);
++      return next;
++    });
+     setSelectedIds((current) => {
+       const next = new Set(current);
+ 
+@@ -146,11 +194,11 @@
+         }
+       }}
+     >
+-      <form className="piece-transfer-composer piece-transfer-composer-v5" onSubmit={submit}>
++      <form ref={formRef} role="dialog" aria-modal="true" aria-labelledby="piece-transfer-compose-title" aria-busy={pending} className="piece-transfer-composer piece-transfer-composer-v5" onSubmit={submit}>
+         <header className="piece-transfer-composer-header">
+           <div>
+             <span>NOUVELLE COMMUNICATION</span>
+-            <h2>Écrire</h2>
++            <h2 id="piece-transfer-compose-title">Nouvelle discussion</h2>
+           </div>
+ 
+           <button
+@@ -164,16 +212,17 @@
+           </button>
+         </header>
+ 
++        <fieldset disabled={pending} className="piece-transfer-compose-fields">
+         <div className="piece-transfer-compose-grid">
+           <label className="piece-transfer-field">
+             <span>Objet</span>
+             <input
+               value={title}
+               onChange={(event) => setTitle(event.target.value)}
++              minLength={2}
+               maxLength={180}
+               placeholder="Objet de la communication"
+               required
+-              autoFocus
+             />
+           </label>
+ 
+@@ -189,15 +238,23 @@
+                 placeholder="Ajouter un message…"
+               />
+             </div>
++            <small className="piece-transfer-character-count">{description.length}/2 000</small>
+           </label>
+ 
+           <label className={`piece-transfer-optional-file ${file ? "has-file" : ""}`}>
+             <input
+               type="file"
+               accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+-              onChange={(event) =>
+-                setFile(event.target.files?.[0] ?? null)
+-              }
++              onChange={(event) => {
++                const selected = event.target.files?.[0];
++                setFileError(null);
++                if (selected && selected.size > 10 * 1024 * 1024) {
++                  setFileError("Cette pièce dépasse 10 Mo. Choisissez un fichier plus léger.");
++                  event.target.value = "";
++                  return;
++                }
++                setFile(selected ?? null);
++              }}
+             />
+             <Paperclip size={18} />
+             <span>{file ? file.name : "Joindre un fichier"}</span>
+@@ -209,6 +266,7 @@
+                   event.preventDefault();
+                   event.stopPropagation();
+                   setFile(null);
++                  setFileError(null);
+                 }}
+                 aria-label="Retirer la pièce"
+               >
+@@ -246,6 +304,7 @@
+                 <input
+                   value={search}
+                   onChange={(event) => setSearch(event.target.value)}
++                  aria-label="Rechercher un destinataire"
+                   placeholder="Rechercher un membre…"
+                 />
+               </label>
+@@ -271,11 +330,15 @@
+                 </div>
+               )}
+ 
++              <p className="piece-transfer-selection-summary" role="status">{selectedCount} destinataire{selectedCount > 1 ? "s" : ""} sélectionné{selectedCount > 1 ? "s" : ""}</p>
++              {recipientsQuery.isError && <div className="piece-transfer-error" role="alert">{getApiErrorMessage(recipientsQuery.error)}</div>}
+               <div className="piece-transfer-recipient-list piece-transfer-recipient-list-v5">
+                 {recipientsQuery.isLoading ? (
+                   <div className="piece-transfer-list-state">
+                     <LoaderCircle size={19} className="is-spinning" />
+                   </div>
++                ) : items.length === 0 ? (
++                  <div className="piece-transfer-list-state">Aucun destinataire trouvé. Essayez un autre nom.</div>
+                 ) : (
+                   items.map((item) => {
+                     const selected = selectedIds.has(item.userId);
+@@ -283,6 +346,7 @@
+                       <button
+                         key={item.userId}
+                         type="button"
++                        aria-pressed={selected}
+                         className={`piece-transfer-recipient-row ${selected ? "is-selected" : ""}`}
+                         onClick={() => toggleRecipient(item)}
+                       >
+@@ -321,7 +385,9 @@
+           )}
+         </section>
+ 
+-        {error && <div className="piece-transfer-error">{error}</div>}
++        </fieldset>
++        {fileError && <div className="piece-transfer-error" role="alert">{fileError}</div>}
++        {error && <div className="piece-transfer-error" role="alert">{error}</div>}
+ 
+         <footer className="piece-transfer-composer-footer piece-transfer-composer-footer-v5">
+           <span className="piece-transfer-compose-hint">
+--- a/apps/web/src/pages/piece-transfers/PieceTransferDetailsDrawer.tsx
++++ b/apps/web/src/pages/piece-transfers/PieceTransferDetailsDrawer.tsx
+@@ -27,6 +27,8 @@
+   X,
+ } from "lucide-react";
+ import {
++  useInfiniteQuery,
++  type InfiniteData,
+   useMutation,
+   useQuery,
+   useQueryClient,
+@@ -44,6 +46,7 @@
+ import { useAuth } from "../../features/auth/auth.context";
+ import type {
+   PieceTransferMessage,
++  PieceTransferMessagesResult,
+   SendPieceTransferMessageInput,
+ } from "../../features/piece-transfers/piece-transfer.types";
+ 
+@@ -118,6 +121,14 @@
+   const { user } = useAuth();
+   const queryClient = useQueryClient();
+   const endRef = useRef<HTMLDivElement | null>(null);
++  const drawerRef = useRef<HTMLElement | null>(null);
++  const closeRef = useRef(onClose);
++  closeRef.current = onClose;
++  const nearBottomRef = useRef(true);
++  const messageScrollRef = useRef<HTMLDivElement | null>(null);
++  const currentTransferRef = useRef(transferId);
++  currentTransferRef.current = transferId;
++  const [hasNewMessages, setHasNewMessages] = useState(false);
+ 
+   const [now, setNow] = useState(Date.now());
+   const [messageBody, setMessageBody] = useState("");
+@@ -128,17 +139,24 @@
+   const [localError, setLocalError] = useState<string | null>(null);
+   const [showInfo, setShowInfo] = useState(false);
+   const [showMenu, setShowMenu] = useState(false);
++  const draftsRef = useRef(new Map<string, { body: string; files: File[] }>());
++  const previousTransferRef = useRef<string | null>(null);
++  const currentDraftRef = useRef({ body: messageBody, files: messageFiles });
++  currentDraftRef.current = { body: messageBody, files: messageFiles };
+ 
+   const detailQuery = useQuery({
+-    queryKey: ["piece-transfers", "detail", transferId],
++    queryKey: ["piece-transfers", "detail", transferId, user?.id],
+     queryFn: () => getPieceTransferById(transferId!),
+     enabled: Boolean(transferId),
+     refetchOnWindowFocus: true,
+   });
+ 
+-  const messagesQuery = useQuery({
+-    queryKey: ["piece-transfers", "messages", transferId],
+-    queryFn: () => getPieceTransferMessages(transferId!),
++  const messagesQuery = useInfiniteQuery({
++    queryKey: ["piece-transfers", "messages", transferId, user?.id],
++    queryFn: ({ pageParam }) => getPieceTransferMessages(transferId!, pageParam),
++    initialPageParam: 1,
++    getNextPageParam: (lastPage) => lastPage.pagination.page < lastPage.pagination.pages
++      ? lastPage.pagination.page + 1 : undefined,
+     enabled: Boolean(transferId),
+     staleTime: 5_000,
+     refetchInterval: transferId ? 15_000 : false,
+@@ -146,11 +164,24 @@
+   });
+ 
+   const sendMessageMutation = useMutation({
+-    mutationFn: (input: SendPieceTransferMessageInput) =>
+-      sendPieceTransferMessage(transferId!, input),
+-    onSuccess: async () => {
+-      setMessageBody("");
+-      setMessageFiles([]);
++    mutationFn: ({ id, input }: { id: string; input: SendPieceTransferMessageInput }) =>
++      sendPieceTransferMessage(id, input),
++    onSuccess: async (message, variables) => {
++      queryClient.setQueryData<InfiniteData<PieceTransferMessagesResult>>(
++        ["piece-transfers", "messages", variables.id, user?.id],
++        (current) => current ? {
++          ...current,
++          pages: current.pages.map((page, index) => index === 0 ? {
++            ...page,
++            items: page.items.some((item) => item.id === message.id) ? page.items : [...page.items, message],
++          } : page),
++        } : current,
++      );
++      draftsRef.current.delete(variables.id);
++      if (currentTransferRef.current === variables.id) {
++        setMessageBody(""); setMessageFiles([]); nearBottomRef.current = true;
++        endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
++      }
+       await queryClient.invalidateQueries({ queryKey: ["piece-transfers"] });
+     },
+   });
+@@ -173,7 +204,14 @@
+   });
+ 
+   const transfer = detailQuery.data;
+-  const messages = messagesQuery.data?.items ?? [];
++  const messages = useMemo(() => {
++    const unique = new Map<string, PieceTransferMessage>();
++    for (const page of messagesQuery.data?.pages ?? []) {
++      for (const message of page.items) if (!unique.has(message.id)) unique.set(message.id, message);
++    }
++    return [...unique.values()].sort((a, b) => new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime() || a.id.localeCompare(b.id));
++  }, [messagesQuery.data]);
++  const latestMessageId = messages[messages.length - 1]?.id;
+ 
+   useEffect(() => {
+     if (!transferId) return;
+@@ -182,21 +220,29 @@
+   }, [transferId]);
+ 
+   useEffect(() => {
+-    setMessageBody("");
+-    setMessageFiles([]);
++    const previousId = previousTransferRef.current;
++    if (previousId) draftsRef.current.set(previousId, currentDraftRef.current);
++    previousTransferRef.current = transferId;
++    const draft = transferId ? draftsRef.current.get(transferId) : undefined;
++    setMessageBody(draft?.body ?? "");
++    setMessageFiles(draft?.files ?? []);
+     setEditingMessageId(null);
+     setEditingBody("");
+     setLocalError(null);
+     setShowInfo(false);
+     setShowMenu(false);
++    setHasNewMessages(false);
++    nearBottomRef.current = true;
+   }, [transferId]);
+ 
+   useEffect(() => {
+-    if (!transferId) return;
+-    window.setTimeout(() => {
++    if (!transferId || messages.length === 0) return;
++    if (!nearBottomRef.current) { setHasNewMessages(true); return; }
++    const timer = window.setTimeout(() => {
+       endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+     }, 60);
+-  }, [transferId, messages.length]);
++    return () => window.clearTimeout(timer);
++  }, [transferId, latestMessageId]);
+ 
+   useEffect(() => {
+     if (!transfer?.currentUser.isRecipient || transfer.currentUser.isRead !== true) {
+@@ -206,6 +252,24 @@
+     void queryClient.invalidateQueries({ queryKey: ["piece-transfers", "stats"] });
+     void queryClient.invalidateQueries({ queryKey: ["piece-transfers", "inbox"] });
+   }, [queryClient, transfer?.id, transfer?.currentUser.isRecipient, transfer?.currentUser.isRead]);
++
++  useEffect(() => {
++    if (embedded || !transfer?.id) return;
++    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
++    const drawer = drawerRef.current;
++    drawer?.focus();
++    const handleKey = (event: KeyboardEvent) => {
++      if (event.key === "Escape") { event.preventDefault(); closeRef.current(); }
++      if (event.key !== "Tab" || !drawer) return;
++      const elements = Array.from(drawer.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), [tabindex="0"]'))
++        .filter((element) => element.getClientRects().length > 0);
++      const first = elements[0]; const last = elements[elements.length - 1];
++      if (event.shiftKey && (document.activeElement === first || document.activeElement === drawer)) { event.preventDefault(); last?.focus(); }
++      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
++    };
++    document.addEventListener("keydown", handleKey);
++    return () => { document.removeEventListener("keydown", handleKey); previous?.focus(); };
++  }, [embedded, transfer?.id]);
+ 
+   const mutationError = useMemo(() => {
+     if (sendMessageMutation.isError) return getApiErrorMessage(sendMessageMutation.error);
+@@ -250,11 +314,11 @@
+ 
+   function submitMessage(event: FormEvent): void {
+     event.preventDefault();
+-    if (!canSend) return;
++    if (!canSend || !transferId) return;
+ 
+     sendMessageMutation.mutate({
+-      body: messageBody.trim() || undefined,
+-      files: messageFiles,
++      id: transferId,
++      input: { body: messageBody.trim() || undefined, files: messageFiles },
+     });
+   }
+ 
+@@ -523,7 +587,11 @@
+         </div>
+       )}
+ 
+-      <div className="piece-transfer-chat-messages">
++      <div ref={messageScrollRef} className="piece-transfer-chat-messages" onScroll={(event) => {
++        const node = event.currentTarget;
++        nearBottomRef.current = node.scrollHeight - node.scrollTop - node.clientHeight < 100;
++        if (nearBottomRef.current) setHasNewMessages(false);
++      }}>
+         <div className="piece-transfer-chat-day-chip">
+           {formatDateTime(transfer.createdAt)}
+         </div>
+@@ -566,6 +634,15 @@
+             </button>
+           </article>
+         )}
++
++        {messagesQuery.hasNextPage && <button className="piece-transfer-load-more" type="button" disabled={messagesQuery.isFetchingNextPage} onClick={async () => {
++          const node = messageScrollRef.current;
++          const height = node?.scrollHeight ?? 0;
++          const top = node?.scrollTop ?? 0;
++          nearBottomRef.current = false;
++          await messagesQuery.fetchNextPage();
++          window.requestAnimationFrame(() => { if (node) node.scrollTop = top + node.scrollHeight - height; });
++        }}>{messagesQuery.isFetchingNextPage ? "Chargement…" : "Afficher les messages précédents"}</button>}
+ 
+         {messagesQuery.isLoading ? (
+           <div className="piece-transfer-chat-loading-inline">
+@@ -744,6 +821,11 @@
+         </div>
+       )}
+ 
++      {hasNewMessages && <button className="piece-transfer-new-messages" type="button" onClick={() => {
++        nearBottomRef.current = true; setHasNewMessages(false);
++        endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
++      }}>Nouveaux messages ↓</button>}
++
+       {transfer.permissions.canSendMessage ? (
+         <form className="piece-transfer-chat-composer" onSubmit={submitMessage}>
+           {messageFiles.length > 0 && (
+@@ -783,6 +865,8 @@
+             <input
+               type="file"
+               multiple
++              disabled={sendMessageMutation.isPending}
++              aria-label="Joindre des fichiers au message"
+               accept=".pdf,.jpg,.jpeg,.png,.webp,.txt,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+               onChange={(event) => {
+                 addMessageFiles(Array.from(event.target.files ?? []));
+@@ -794,12 +878,14 @@
+ 
+           <textarea
+             value={messageBody}
++            aria-label="Votre message"
++            disabled={sendMessageMutation.isPending}
+             onChange={(event) => setMessageBody(event.target.value)}
+             maxLength={4000}
+             rows={1}
+             placeholder="Message"
+             onKeyDown={(event) => {
+-              if (event.key === "Enter" && !event.shiftKey) {
++              if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+                 event.preventDefault();
+                 if (canSend) submitMessage(event as unknown as FormEvent);
+               }
+@@ -810,7 +896,8 @@
+             type="submit"
+             className="piece-transfer-chat-send"
+             disabled={!canSend}
+-            title="Envoyer"
++            aria-label="Envoyer le message"
++            title="Envoyer · Entrée (Maj + Entrée : nouvelle ligne)"
+           >
+             {sendMessageMutation.isPending ? (
+               <LoaderCircle size={19} className="is-spinning" />
+@@ -851,7 +938,7 @@
+         if (event.target === event.currentTarget) onClose();
+       }}
+     >
+-      <aside className="piece-transfer-drawer piece-transfer-drawer-wide">
++      <aside ref={drawerRef} tabIndex={-1} role="dialog" aria-modal="true" aria-label={transfer?.title ?? "Communication"} className="piece-transfer-drawer piece-transfer-drawer-wide">
+         {content}
+       </aside>
+     </div>
+--- a/apps/web/src/pages/piece-transfers/piece-transfers-page.css
++++ b/apps/web/src/pages/piece-transfers/piece-transfers-page.css
+@@ -1694,3 +1694,55 @@
+     max-width: 100%;
+   }
+ }
++
++/* Communications — interactive statistics and accessible workspace */
++.piece-transfer-quick-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; padding: 14px; }
++.piece-transfer-mini-stat { min-height: 91px; display: grid; grid-template-columns: 28px 1fr; gap: 6px 9px; padding: 12px; text-align: left; cursor: pointer; font: inherit; transition: border-color .18s, box-shadow .18s, background .18s; }
++.piece-transfer-stat-icon { display: grid; place-items: center; width: 28px; height: 28px; background: #e7f2ec; border-radius: 8px; }
++.piece-transfer-mini-stat strong { font-size: 1.3rem; line-height: 1.15; }
++.piece-transfer-mini-stat > span:last-child { grid-column: 1 / -1; color: #48626a; font-size: .72rem; font-weight: 650; }
++.piece-transfer-mini-stat:hover, .piece-transfer-mini-stat.is-active { border-color: var(--pt-green); background: #edf7f1; box-shadow: 0 4px 12px #04624212; }
++.piece-transfer-conversation-filters { flex-wrap: wrap; }
++.piece-transfer-unread-badge { display: inline-grid; place-items: center; min-width: 18px; padding: 2px 5px; margin-left: 3px; border-radius: 20px; background: var(--pt-green); color: #fff; font-size: .65rem; }
++.piece-transfers-page button:focus-visible, .piece-transfer-modal-layer button:focus-visible, .piece-transfer-modal-layer input:focus-visible, .piece-transfer-modal-layer textarea:focus-visible, .piece-transfer-drawer-layer button:focus-visible { outline: 3px solid #e9b521; outline-offset: 3px; }
++.piece-transfers-page input:focus-visible, .piece-transfers-page textarea:focus-visible { outline: 2px solid var(--pt-green); outline-offset: 2px; }
++.piece-transfer-chat-list-state span { max-width: 260px; text-align: center; line-height: 1.5; }
++.piece-transfer-chat-list-state button, .piece-transfer-load-more, .piece-transfer-personal-files > header button { padding: 10px 14px; border: 1px solid var(--pt-border); border-radius: 9px; color: var(--pt-green); background: #fff; font: inherit; font-size: .76rem; font-weight: 650; cursor: pointer; }
++.piece-transfer-load-more { display: block; margin: 12px auto; }
++.piece-transfer-notice { display: flex; align-items: center; gap: 9px; padding: 12px 16px; margin-bottom: 12px; border: 1px solid #a7cfb6; border-radius: 12px; background: #edf8f1; color: #046242; font-size: .82rem; }
++.piece-transfer-notice button { margin-left: auto; border: 0; background: transparent; color: inherit; display: grid; place-items: center; cursor: pointer; }
++.piece-transfer-personal-files { background: #fff; border: 1px solid var(--pt-border); border-radius: 16px; padding: 20px; }
++.piece-transfer-personal-files > header { display: flex; gap: 20px; justify-content: space-between; align-items: center; margin-bottom: 18px; }
++.piece-transfer-personal-files > header span { font-size: .62rem; letter-spacing: .1em; font-weight: 800; color: var(--pt-green); }
++.piece-transfer-personal-files h2 { margin: 5px 0; font-size: 1.25rem; color: var(--pt-navy); }
++.piece-transfer-personal-files p { margin: 0; color: #526c75; font-size: .8rem; }
++.piece-transfer-personal-files .piece-transfer-conversation-search { margin: 14px 0; }
++.piece-transfer-admin-files-v5 article > div:nth-child(2) small { display: block; margin: 4px 0; color: #526c75; font-size: .72rem; }
++.piece-transfer-admin-summary-v5 button { min-height: 112px; padding: 16px; border: 1px solid var(--pt-border); border-radius: 0 12px 0 12px; background: #fff; text-align: left; font: inherit; cursor: pointer; transition: background .18s, border-color .18s; }
++.piece-transfer-admin-summary-v5 button:hover { border-color: var(--pt-green); background: #edf7f1; }
++.piece-transfer-admin-summary-v5 button small { display: block; margin-top: 7px; font-size: .7rem; font-weight: 650; color: var(--pt-green); }
++.piece-transfer-compose-fields { border: 0; margin: 0; padding: 0; min-width: 0; }
++.piece-transfer-character-count { display: block; text-align: right; color: #526c75; font-size: .66rem; margin-top: 4px; }
++.piece-transfer-selection-summary { font-size: .72rem; color: #526c75; margin: 8px 0; }
++.piece-transfer-new-messages { align-self: center; margin: 6px auto; padding: 9px 16px; border: 1px solid #a7cfb6; border-radius: 24px; background: #fff; color: var(--pt-green); font: inherit; font-size: .76rem; cursor: pointer; box-shadow: 0 3px 12px #0b253612; }
++.piece-transfers-page button:disabled, .piece-transfer-modal-layer button:disabled { cursor: not-allowed; }
++@media (max-width: 650px) {
++  .piece-transfer-personal-files { padding: 14px; }
++  .piece-transfer-personal-files > header { align-items: flex-start; flex-direction: column; gap: 12px; }
++  .piece-transfer-chat-shell { min-height: 540px; height: calc(100dvh - 135px); }
++}
++@media (prefers-reduced-motion: reduce) {
++  .piece-transfers-page *, .piece-transfer-modal-layer *, .piece-transfer-drawer-layer * { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
++}
++.piece-transfer-admin-summary-v5 { grid-template-columns: repeat(auto-fit, minmax(145px, 1fr)); gap: 12px; }
++.piece-transfer-admin-summary-v5 span { color: #48626a; font-size: .74rem; line-height: 1.4; }
++.piece-transfer-admin-summary-v5 strong { margin-top: 8px; font-size: 1.4rem; }
++.piece-transfer-personal-files .piece-transfer-admin-files-v5 article > div:nth-child(2) { min-width: 0; }
++.piece-transfer-personal-files .piece-transfer-admin-files-v5 article strong { overflow-wrap: anywhere; }
++.piece-transfer-recipient-search-v5 { display: flex; align-items: center; gap: 9px; min-height: 42px; padding: 0 12px; border: 1px solid var(--pt-border); border-radius: 0 10px 0 10px; background: #f7faf8; color: var(--pt-muted); }
++.piece-transfer-recipient-search-v5 input { width: 100%; min-width: 0; padding: 9px 0; border: 0; background: transparent; color: var(--pt-text); font: inherit; font-size: .78rem; }
++.piece-transfer-recipient-search-v5:focus-within { border-color: var(--pt-green); box-shadow: 0 0 0 2px #04624214; }
++.piece-transfer-chat-panel, .piece-transfer-drawer-wide { display: flex; flex-direction: column; }
++.piece-transfer-chat-panel.piece-transfer-chat-empty { align-items: center; justify-content: center; }
++.piece-transfer-chat-messages { flex: 1; min-height: 0; }
++.piece-transfer-chat-header, .piece-transfer-chat-composer, .piece-transfer-chat-closed { flex-shrink: 0; }
+--- /dev/null
++++ b/apps/api/src/modules/piece-transfers/piece-transfer-indexes.ts
+@@ -0,0 +1,67 @@
++import { AppError } from "../../core/errors/app-error.js";
++import { PieceTransferModel } from "./piece-transfer.model.js";
++
++const OPTIONAL_FILE_INDEX = "storagePublicId_optional_unique";
++let indexPreparation: Promise<void> | undefined;
++
++/** Repair only the historical optional-file index, preserving file uniqueness. */
++export async function ensureOptionalPieceTransferFileIndex(): Promise<void> {
++  if (!indexPreparation) {
++    indexPreparation = prepareIndex().catch((error: unknown) => {
++      indexPreparation = undefined; // Allow a retry after an operator fixes permissions.
++      console.error("[piece-transfers] Optional-file index preparation failed", error);
++      throw new AppError(
++        "La création est temporairement indisponible. Réessayez ou contactez l’administrateur.",
++        503,
++        "PIECE_TRANSFER_INDEX_NOT_READY",
++      );
++    });
++  }
++  await indexPreparation;
++}
++
++async function prepareIndex(): Promise<void> {
++  const collection = PieceTransferModel.collection;
++  const indexes = await collection.listIndexes().toArray().catch((error: unknown) => {
++    if (typeof error === "object" && error !== null && "code" in error && error.code === 26) {
++      return [];
++    }
++    throw error;
++  });
++
++  const storageIndexes = indexes.filter((index) =>
++    index.key && Object.keys(index.key).length === 1 && index.key.storagePublicId === 1,
++  );
++  const healthy = storageIndexes.find((index) =>
++    index.name === OPTIONAL_FILE_INDEX && index.unique &&
++    index.partialFilterExpression?.storagePublicId?.$type === "string",
++  );
++  const legacy = storageIndexes.filter((index) =>
++    index.unique && !index.partialFilterExpression,
++  );
++
++  if (storageIndexes.some((index) =>
++    !index.unique || (index.partialFilterExpression && index !== healthy),
++  )) {
++    throw new Error("Unexpected storagePublicId index definition; manual inspection required.");
++  }
++
++  if (!healthy) {
++    // Build first; if creation fails, the historical unique constraint stays in place.
++    // Index only actual string identifiers; optional missing/null values are ignored.
++    await collection.createIndex(
++      { storagePublicId: 1 },
++      { name: OPTIONAL_FILE_INDEX, unique: true,
++        partialFilterExpression: { storagePublicId: { $type: "string" } } },
++    );
++  }
++
++  for (const index of legacy) {
++    if (!index.name) throw new Error("Historical index name is missing.");
++    await collection.dropIndex(index.name).catch((error: unknown) => {
++      // Another API instance may already have removed exactly this legacy index.
++      if (typeof error === "object" && error !== null && "code" in error && error.code === 27) return;
++      throw error;
++    });
++  }
++}

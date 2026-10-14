@@ -951,7 +951,7 @@ export default function TasksPage() {
               void handleManualRefresh()
             }
             disabled={isRefreshing}
-          >
+           data-ui-action="compact" aria-label="Actualiser" title="Actualiser">
             <RefreshCw
               size={18}
               className={
@@ -975,9 +975,9 @@ export default function TasksPage() {
               disabled={
                 !canOpenCreateModal
               }
-            >
+             data-ui-action="compact" aria-label="Nouvelle tâche" title="Nouvelle tâche">
               <Plus size={18} />
-              <span>
+              <span className="ui-action-label">
                 Nouvelle tâche
               </span>
             </button>

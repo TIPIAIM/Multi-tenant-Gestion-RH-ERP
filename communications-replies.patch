@@ -1,0 +1,353 @@
+--- a/apps/web/src/pages/piece-transfers/PieceTransferDetailsDrawer.tsx
++++ b/apps/web/src/pages/piece-transfers/PieceTransferDetailsDrawer.tsx
+@@ -7,6 +7,9 @@
+   type FormEvent,
+ } from "react";
+ import {
++  Reply,
++  Forward,
++  Smile,
+   ArrowLeft,
+   Ban,
+   Check,
+@@ -37,6 +40,8 @@
+ import {
+   deletePieceTransferMessageAsAdmin,
+   downloadPieceTransferMessageFile,
++  getPieceTransferInbox,
++  getPieceTransferSent,
+   getPieceTransferById,
+   getPieceTransferMessages,
+   markPieceTransferRead,
+@@ -142,6 +147,30 @@
+ 
+   const [now, setNow] = useState(Date.now());
+   const [messageBody, setMessageBody] = useState("");
++  const [replyTarget, setReplyTarget] = useState<PieceTransferMessage | null>(null);
++  const [forwardTarget, setForwardTarget] = useState<PieceTransferMessage | null>(null);
++  const [forwardSearch, setForwardSearch] = useState("");
++  const [forwardDestination, setForwardDestination] = useState("");
++  const [openMessageMenu, setOpenMessageMenu] = useState<string | null>(null);
++  const [emojiOpen, setEmojiOpen] = useState(false);
++  const composerRef = useRef<HTMLTextAreaElement | null>(null);
++  const replyDraftsRef = useRef(new Map<string, PieceTransferMessage | null>());
++  const replyRef = useRef(replyTarget);
++  replyRef.current = replyTarget;
++  const forwardQuery = useQuery({
++    queryKey: ["piece-transfers", "forward-destinations", user?.id, forwardSearch],
++    enabled: Boolean(forwardTarget && user?.id),
++    queryFn: async () => {
++      const params = { page: 1, limit: 30, search: forwardSearch || undefined };
++      const [inbox, sent] = await Promise.all([getPieceTransferInbox(params), getPieceTransferSent(params)]);
++      return [...new Map([...inbox.items, ...sent.items].map(item => [item.id, item])).values()].filter(item => item.id !== transferId && item.status === "ACTIVE");
++    },
++  });
++  const forwardMutation = useMutation({
++    mutationFn: ({ destination, source, messageId }: { destination: string; source: string; messageId: string }) =>
++      sendPieceTransferMessage(destination, { forwardTransferId: source, forwardMessageId: messageId }),
++    onSuccess: async () => { setForwardTarget(null); setForwardDestination(""); await queryClient.invalidateQueries({ queryKey: ["piece-transfers"] }); },
++  });
+   const [messageFiles, setMessageFiles] = useState<File[]>([]);
+   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+   const [editingBody, setEditingBody] = useState("");
+@@ -189,7 +218,7 @@
+       );
+       draftsRef.current.delete(variables.id);
+       if (currentTransferRef.current === variables.id) {
+-        setMessageBody(""); setMessageFiles([]); nearBottomRef.current = true;
++        setMessageBody(""); setMessageFiles([]); setReplyTarget(null); replyDraftsRef.current.delete(variables.id); nearBottomRef.current = true;
+         endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+       }
+       await queryClient.invalidateQueries({ queryKey: ["piece-transfers"] });
+@@ -253,7 +282,9 @@
+ 
+   useEffect(() => {
+     const previousId = previousTransferRef.current;
+-    if (previousId) draftsRef.current.set(previousId, currentDraftRef.current);
++    if (previousId) { draftsRef.current.set(previousId, currentDraftRef.current); replyDraftsRef.current.set(previousId, replyRef.current); }
++    setReplyTarget(transferId ? replyDraftsRef.current.get(transferId) ?? null : null);
++    setForwardTarget(null); setOpenMessageMenu(null); setEmojiOpen(false);
+     previousTransferRef.current = transferId;
+     const draft = transferId ? draftsRef.current.get(transferId) : undefined;
+     setMessageBody(draft?.body ?? "");
+@@ -352,7 +383,7 @@
+ 
+     sendMessageMutation.mutate({
+       id: transferId,
+-      input: { body: messageBody.trim() || undefined, files: messageFiles },
++      input: { body: messageBody.trim() || undefined, files: messageFiles, replyToMessageId: replyTarget?.id },
+     });
+   }
+ 
+@@ -690,6 +721,8 @@
+             return (
+               <article
+                 key={message.id}
++                id={`communication-message-${message.id}`}
++                tabIndex={-1}
+                 className={`piece-transfer-bubble ${mine ? "is-mine" : "is-theirs"} ${message.status === "DELETED" ? "is-deleted" : ""}`}
+               >
+                 {!mine && message.status !== "DELETED" && (
+@@ -739,6 +772,23 @@
+                   </div>
+                 ) : (
+                   <>
++                    {message.forwarded && <span className="communication-forwarded"><Forward size={12} /> Transféré</span>}
++                    {message.replyTo && <button type="button" className="communication-quote" title="Retrouver le message cité" onClick={async () => {
++                      nearBottomRef.current = false;
++                      let node = document.getElementById(`communication-message-${message.replyTo!.messageId}`);
++                      if (!node) {
++                        let page = messagesQuery.data?.pages.at(-1);
++                        while (!node && page && page.pagination.page < page.pagination.pages) {
++                          const result = await messagesQuery.fetchNextPage();
++                          page = result.data?.pages.at(-1);
++                          await new Promise<void>(resolve => window.requestAnimationFrame(() => resolve()));
++                          node = document.getElementById(`communication-message-${message.replyTo!.messageId}`);
++                          if (result.isError) break;
++                        }
++                      }
++                      if (node) { node.scrollIntoView({ behavior: "smooth", block: "center" }); node.focus({ preventScroll: true }); }
++                      else setLocalError("Le message cité n’est plus disponible.");
++                    }}><strong>{message.replyTo.senderName}</strong><span>{message.replyTo.body || message.replyTo.attachmentName || "Message"}</span></button>}
+                     {message.body && <p>{message.body}</p>}
+ 
+                     {message.attachments.length > 0 && (
+@@ -764,6 +814,15 @@
+                   <time>{formatTime(message.createdAt)}</time>
+                   {mine && message.status !== "DELETED" && <Check size={13} />}
+ 
++                  {message.status !== "DELETED" && !editing && transfer.permissions.canSendMessage && (
++                    <div className="communication-message-actions">
++                      <button type="button" aria-label="Actions du message" aria-expanded={openMessageMenu === message.id} onClick={() => setOpenMessageMenu(current => current === message.id ? null : message.id)}><MoreVertical size={16} /></button>
++                      {openMessageMenu === message.id && <div className="communication-message-menu">
++                        <button type="button" onClick={() => { setReplyTarget(message); setOpenMessageMenu(null); composerRef.current?.focus(); }}><Reply size={15} /> Répondre</button>
++                        <button type="button" onClick={() => { setForwardTarget(message); setForwardSearch(""); setForwardDestination(""); forwardMutation.reset(); setOpenMessageMenu(null); }}><Forward size={15} /> Transférer</button>
++                      </div>}
++                    </div>
++                  )}
+                   {editableNow && !editing && (
+                     <button
+                       type="button"
+@@ -798,6 +857,16 @@
+         <div ref={endRef} />
+       </div>
+ 
++      {forwardTarget && <section className="communication-forward-panel" aria-label="Transférer un message">
++        <header><strong><Forward size={16} /> Transférer ce message</strong><button type="button" disabled={forwardMutation.isPending} aria-label="Fermer le transfert" onClick={() => setForwardTarget(null)}><X size={18} /></button></header>
++        <p>{forwardTarget.body || "Pièces jointes"}</p>
++        <small>{forwardTarget.attachments.length} pièce(s) jointe(s) · une copie indépendante sera envoyée.</small>
++        <input aria-label="Rechercher une discussion destinataire" placeholder="Rechercher une discussion…" value={forwardSearch} disabled={forwardMutation.isPending} onChange={event => { setForwardSearch(event.target.value); setForwardDestination(""); }} />
++        {forwardQuery.isLoading ? <p>Chargement…</p> : forwardQuery.isError ? <p role="alert">Discussions indisponibles. <button type="button" onClick={() => void forwardQuery.refetch()}>Réessayer</button></p> : <select aria-label="Discussion destinataire" value={forwardDestination} disabled={forwardMutation.isPending} onChange={event => setForwardDestination(event.target.value)}><option value="">Choisir une discussion</option>{forwardQuery.data?.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select>}
++        <small>Discussions actives dont vous êtes participant. Affinez la recherche si nécessaire.</small>
++        {forwardMutation.isError && <p role="alert">{getApiErrorMessage(forwardMutation.error)}</p>}
++        <button type="button" disabled={!forwardDestination || forwardMutation.isPending} onClick={() => { if (transferId) forwardMutation.mutate({ destination: forwardDestination, source: transferId, messageId: forwardTarget.id }); }}>{forwardMutation.isPending ? "Transfert…" : "Confirmer le transfert"}</button>
++      </section>}
+       {(error || mutationError || localError) && (
+         <div className="piece-transfer-chat-error">
+           {error || mutationError || localError}
+@@ -811,6 +880,14 @@
+ 
+       {transfer.permissions.canSendMessage ? (
+         <form className="piece-transfer-chat-composer" onSubmit={submitMessage}>
++          {replyTarget && <div className="communication-reply-preview" role="status"><Reply size={18} /><div><strong>Réponse à {replyTarget.senderName}</strong><span>{replyTarget.body || replyTarget.attachments[0]?.originalFileName || "Message"}</span></div><button type="button" aria-label="Annuler la réponse citée" disabled={sendMessageMutation.isPending} onClick={() => setReplyTarget(null)}><X size={18} /></button></div>}
++          {emojiOpen && <div className="communication-emoji-picker" aria-label="Insérer un emoji">{["👍", "✅", "🙏", "📌", "📎", "🙂", "👏", "🤝"].map(emoji => <button type="button" key={emoji} aria-label={`Insérer ${emoji}`} onClick={() => {
++            const node = composerRef.current; const start = node?.selectionStart ?? messageBody.length; const end = node?.selectionEnd ?? start;
++            if (messageBody.length - (end - start) + emoji.length > 4000) return;
++            setMessageBody(messageBody.slice(0, start) + emoji + messageBody.slice(end)); setEmojiOpen(false);
++            window.requestAnimationFrame(() => { node?.focus(); node?.setSelectionRange(start + emoji.length, start + emoji.length); });
++          }}>{emoji}</button>)}</div>}
++          <button type="button" className="communication-emoji-toggle" aria-label="Choisir un emoji" aria-expanded={emojiOpen} disabled={sendMessageMutation.isPending} onClick={() => setEmojiOpen(value => !value)}><Smile size={20} /></button>
+           {messageFiles.length > 0 && (
+             <div className="piece-transfer-chat-files-preview">
+               <div className="piece-transfer-chat-files-summary">
+@@ -860,6 +937,7 @@
+           </label>
+ 
+           <textarea
++            ref={composerRef}
+             value={messageBody}
+             aria-label="Votre message"
+             disabled={sendMessageMutation.isPending}
+--- a/apps/web/src/pages/piece-transfers/piece-transfers-page.css
++++ b/apps/web/src/pages/piece-transfers/piece-transfers-page.css
+@@ -1803,3 +1803,31 @@
+   .communication-admin-summary > :last-child { grid-column: 1 / -1; }
+   .communication-read-result::after { content: " · Faites défiler le tableau →"; color: #046242; }
+ }
++
++/* Réponses ciblées, transferts et médias compacts */
++.communication-attachment-card.is-image { width: min(230px, 100%); }
++.communication-attachment-image { height: 112px; object-fit: cover; }
++.communication-quote, .communication-reply-preview { border: 0; border-left: 3px solid #046242; border-radius: 8px; padding: 9px 12px; background: #eaf3ed; color: #0b2536; text-align: left; }
++.communication-quote { display: grid; gap: 4px; width: 100%; cursor: pointer; margin-bottom: 8px; }
++.communication-quote span, .communication-reply-preview span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; font-size: .78rem; }
++.communication-reply-preview { display: flex; align-items: center; gap: 10px; flex: 0 0 100%; min-width: 0; }
++.communication-reply-preview > div { flex: 1; min-width: 0; }
++.communication-reply-preview button, .communication-emoji-toggle { border: 0; background: transparent; color: #046242; cursor: pointer; min-width: 36px; min-height: 36px; }
++.communication-forwarded { display: flex; gap: 5px; align-items: center; font-size: .7rem; opacity: .7; margin-bottom: 6px; }
++.communication-message-actions { position: relative; }
++.communication-message-menu { position: absolute; bottom: 30px; right: 0; z-index: 5; display: grid; min-width: 140px; padding: 5px; background: white; border: 1px solid #cddcd4; border-radius: 10px; box-shadow: 0 6px 18px #0b25361c; }
++.communication-message-menu button { display: flex; align-items: center; gap: 8px; padding: 10px !important; font-size: .8rem !important; min-height: 40px; color: #0b2536 !important; }
++.communication-emoji-picker { display: flex; flex: 0 0 100%; flex-wrap: wrap; gap: 5px; }
++.communication-emoji-picker button { border: 1px solid #d5e3db; border-radius: 8px; background: white; font-size: 1.2rem; min-width: 38px; min-height: 38px; cursor: pointer; }
++.communication-forward-panel { display: grid; gap: 9px; padding: 16px; margin: 8px 12px; border: 1px solid #cddcd4; border-radius: 12px; background: #f4faf6; max-height: 45dvh; overflow: auto; }
++.communication-forward-panel header { display: flex; justify-content: space-between; align-items: center; }
++.communication-forward-panel header strong { display: flex; gap: 7px; align-items: center; }
++.communication-forward-panel p { margin: 0; white-space: pre-wrap; max-height: 65px; overflow: auto; overflow-wrap: anywhere; }
++.communication-forward-panel input, .communication-forward-panel select, .communication-forward-panel button { padding: 8px; border: 1px solid #cddcd4; border-radius: 8px; font: inherit; min-width: 0; }
++.communication-forward-panel button { cursor: pointer; }
++.communication-forward-panel small { color: #54666d; }
++.piece-transfer-bubble:focus { outline: 2px solid #e9b521; outline-offset: 3px; }
++.communication-quote:focus-visible, .communication-message-menu button:focus-visible { outline: 2px solid #046242; }
++.piece-transfer-chat-composer { grid-template-columns: auto auto minmax(0, 1fr) auto; }
++.communication-reply-preview, .communication-emoji-picker { grid-column: 1 / -1; }
++.communication-message-actions > button { min-width: 30px; min-height: 30px; }
+--- a/apps/web/src/features/piece-transfers/piece-transfer.api.ts
++++ b/apps/web/src/features/piece-transfers/piece-transfer.api.ts
+@@ -196,6 +196,9 @@
+       "",
+   );
+ 
++  if (input.replyToMessageId) formData.append("replyToMessageId", input.replyToMessageId);
++  if (input.forwardMessageId) formData.append("forwardMessageId", input.forwardMessageId);
++  if (input.forwardTransferId) formData.append("forwardTransferId", input.forwardTransferId);
+   for (const file of input.files ?? []) {
+     formData.append(
+       "files",
+--- a/apps/web/src/features/piece-transfers/piece-transfer.types.ts
++++ b/apps/web/src/features/piece-transfers/piece-transfer.types.ts
+@@ -76,6 +76,8 @@
+ };
+ 
+ export type PieceTransferMessage = {
++  replyTo?: { messageId: string; senderName: string; body?: string; attachmentName?: string };
++  forwarded?: boolean;
+   id: string;
+ 
+   senderUserId: string;
+@@ -322,6 +324,9 @@
+ };
+ 
+ export type SendPieceTransferMessageInput = {
++  replyToMessageId?: string;
++  forwardMessageId?: string;
++  forwardTransferId?: string;
+   body?: string;
+   files?: File[];
+ };
+--- a/apps/api/src/modules/piece-transfers/piece-transfer.schema.ts
++++ b/apps/api/src/modules/piece-transfers/piece-transfer.schema.ts
+@@ -108,6 +108,9 @@
+ 
+ export const createPieceTransferMessageSchema =
+   z.object({
++    replyToMessageId: objectIdSchema.optional(),
++    forwardMessageId: objectIdSchema.optional(),
++    forwardTransferId: objectIdSchema.optional(),
+     body: z
+       .string()
+       .trim()
+--- a/apps/api/src/modules/piece-transfers/piece-transfer.types.ts
++++ b/apps/api/src/modules/piece-transfers/piece-transfer.types.ts
+@@ -132,6 +132,8 @@
+ }
+ 
+ export interface PieceTransferMessage {
++  replyTo?: { messageId: string; senderName: string; body?: string; attachmentName?: string };
++  forwarded?: boolean;
+   tenantId: Types.ObjectId;
+   transferId: Types.ObjectId;
+ 
+@@ -241,6 +243,8 @@
+ };
+ 
+ export type PublicPieceTransferMessage = {
++  replyTo?: { messageId: string; senderName: string; body?: string; attachmentName?: string };
++  forwarded?: boolean;
+   id: string;
+ 
+   senderUserId: string;
+--- a/apps/api/src/modules/piece-transfers/piece-transfer.service.ts
++++ b/apps/api/src/modules/piece-transfers/piece-transfer.service.ts
+@@ -2221,6 +2221,8 @@
+         );
+ 
+   return {
++    replyTo: deleted ? undefined : message.replyTo,
++    forwarded: deleted ? undefined : message.forwarded,
+     id:
+       message.id,
+ 
+@@ -2446,13 +2448,45 @@
+     );
+   }
+ 
+-  const body =
+-    input.metadata.body?.trim() ||
+-    undefined;
+-
+-  const files =
+-    input.files ??
+-    [];
++  let body = input.metadata.body?.trim() || undefined;
++  let files = input.files ?? [];
++  let replyTo: PublicPieceTransferMessage["replyTo"];
++  if (input.metadata.replyToMessageId) {
++    const original = await PieceTransferMessageModel.findOne({ _id: input.metadata.replyToMessageId, tenantId: input.tenant._id, transferId: transfer._id, status: "ACTIVE" });
++    if (!original) throw new AppError("Le message cité est indisponible.", 404, "REPLY_MESSAGE_NOT_FOUND");
++    replyTo = { messageId: original.id, senderName: original.senderNameSnapshot, body: original.body?.slice(0, 280), attachmentName: getStoredMessageAttachments(original)[0]?.originalFileName };
++  }
++  const { forwardMessageId, forwardTransferId } = input.metadata;
++  if (Boolean(forwardMessageId) !== Boolean(forwardTransferId) || (forwardMessageId && input.metadata.replyToMessageId)) {
++    throw new AppError("Référence de transfert invalide.", 400, "INVALID_FORWARD_REFERENCE");
++  }
++  if (forwardMessageId && forwardTransferId) {
++    const sourceAccess = await getTransferAndAccess(input.tenant, input.actor, forwardTransferId);
++    if ((!sourceAccess.isSender && !sourceAccess.recipient) || sourceAccess.transfer.status !== "ACTIVE") {
++      throw new AppError("Ce message ne peut pas être transféré.", 403, "FORWARD_NOT_ALLOWED");
++    }
++    const original = await PieceTransferMessageModel.findOne({ _id: forwardMessageId, tenantId: input.tenant._id, transferId: sourceAccess.transfer._id, status: "ACTIVE" });
++    if (!original) throw new AppError("Message source indisponible.", 404, "FORWARD_MESSAGE_NOT_FOUND");
++    if (files.length) throw new AppError("Transférez le message sans ajout de fichiers.", 400, "INVALID_FORWARD_FILES");
++    body = original.body;
++    files = [];
++    let total = 0;
++    for (const attachment of getStoredMessageAttachments(original)) {
++      if (attachment.status !== "AVAILABLE") continue;
++      const source = await openPrivateCommunicationDocumentStream({ publicId: attachment.storagePublicId, originalFileName: attachment.originalFileName });
++      const chunks: Buffer[] = [];
++      try {
++        for await (const chunk of source.stream) {
++          const bytes = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
++          total += bytes.length;
++          if (total > 20 * 1024 * 1024) throw new AppError("Pièces trop volumineuses.", 400, "FORWARD_TOO_LARGE");
++          chunks.push(bytes);
++        }
++      } finally { source.stream.destroy(); }
++      const buffer = Buffer.concat(chunks);
++      files.push({ originalname: attachment.originalFileName, mimetype: attachment.mimeType, buffer, size: buffer.length } as Express.Multer.File);
++    }
++  }
+ 
+   if (
+     files.length >
+@@ -2551,6 +2585,8 @@
+         senderRoleSnapshot:
+           sender.role,
+         body,
++        replyTo,
++        forwarded: Boolean(forwardMessageId),
+         status:
+           "ACTIVE",
+         editCount:
+--- a/apps/api/src/modules/piece-transfers/piece-transfer.model.ts
++++ b/apps/api/src/modules/piece-transfers/piece-transfer.model.ts
+@@ -359,6 +359,8 @@
+ const pieceTransferMessageSchema =
+   new Schema<PieceTransferMessage>(
+     {
++      replyTo: { type: new Schema({ messageId: { type: String, required: true }, senderName: { type: String, required: true }, body: String, attachmentName: String }, { _id: false }), required: false },
++      forwarded: { type: Boolean, default: false },
+       tenantId: {
+         type: Schema.Types.ObjectId,
+         ref: "Tenant",

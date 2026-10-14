@@ -1,0 +1,174 @@
+/* Harmonisation commune. Les vues imprimées/exportées gardent leurs styles métier. */
+@media screen {
+:root :is(.home-dashboard,.agents-page,.organization-page,.tasks-page,.attendance-page,.leaves-page,.roadmaps-page,.evaluations-page,.reports-page,.users-page,.settings-page,.piece-transfers-page) { width: 100%; min-width: 0; max-width: 1600px; margin-inline: auto; padding: 0; background: transparent; gap: 16px; }
+:root :is(.home-dashboard,.agents-page,.organization-page,.tasks-page,.attendance-page,.leaves-page,.roadmaps-page,.evaluations-page,.reports-page,.users-page,.settings-page,.piece-transfers-page) > * { min-width: 0; max-width: 100%; }
+:root :is(.home-dashboard-hero,.agents-hero,.organization-hero,.tasks-hero,.attendance-hero,.leaves-hero,.roadmaps-hero,.evaluations-hero,.reports-hero,.users-hero,.settings-hero) { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; padding: clamp(18px, 2.4vw, 28px); border-radius: 16px; background: linear-gradient(120deg, var(--tenant-primary, var(--ui-primary)), var(--ui-navy)); box-shadow: var(--ui-shadow); }
+:root :is(.home-dashboard-hero,.agents-hero,.organization-hero,.tasks-hero,.attendance-hero,.leaves-hero,.roadmaps-hero,.evaluations-hero,.reports-hero,.users-hero,.settings-hero) > div:first-child { min-width: 0; flex: 1 1 280px; }
+:root :is(.home-dashboard-hero,.agents-hero,.organization-hero,.tasks-hero,.attendance-hero,.leaves-hero,.roadmaps-hero,.evaluations-hero,.reports-hero,.users-hero,.settings-hero) :is(h1,h2) { font-size: clamp(1.2rem, 2.2vw, 1.65rem); line-height: 1.25; letter-spacing: -.025em; margin-block: 6px 0; }
+:root :is(.home-dashboard-hero,.agents-hero,.organization-hero,.tasks-hero,.attendance-hero,.leaves-hero,.roadmaps-hero,.evaluations-hero,.reports-hero,.users-hero,.settings-hero) > div > p:last-child:not([class$="eyebrow"]) { max-width: 72ch; font-size: .875rem; line-height: 1.6; color: #e5eee9; }
+:root :is(.home-dashboard-hero,.agents-hero,.organization-hero,.tasks-hero,.attendance-hero,.leaves-hero,.roadmaps-hero,.evaluations-hero,.reports-hero,.users-hero,.settings-hero)::after { display: none; }
+:root :is(.agents-hero-actions,.organization-hero-actions,.tasks-hero-actions,.attendance-hero-actions,.leaves-hero-actions,.roadmaps-hero-actions,.evaluations-hero-actions,.reports-hero-actions,.users-hero-actions,.settings-hero-actions) { display: flex; flex: 0 1 auto; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0; }
+:root :is(.agent-primary-button,.agents-primary-button,.attendance-primary-button,.evaluation-primary-button,.leave-primary-button,.organization-primary-button,.piece-transfer-primary-button,.primary-button,.report-primary-button,.roadmap-primary-button,.roadmaps-primary-button,.settings-primary-button,.task-primary-button,.tasks-primary-button,.workspace-primary-button,.agent-cancel-button,.agent-document-cancel-button,.agents-clear-button,.agents-secondary-button,.attendance-cancel-button,.attendance-secondary-button,.evaluation-cancel-button,.evaluation-clear-button,.evaluation-secondary-button,.leave-cancel-button,.leave-secondary-action,.organization-cancel-button,.organization-secondary-button,.piece-transfer-secondary-button,.report-cancel-button,.report-clear-button,.report-secondary-button,.roadmap-cancel-button,.roadmap-secondary-action,.roadmaps-clear-button,.roadmaps-secondary-button,.secondary-button,.settings-cancel-button,.settings-secondary-button,.task-cancel-button,.task-secondary-action,.task-secondary-light-button,.tasks-clear-button,.tasks-secondary-button,.workspace-secondary-button,.agent-delete-danger-button,.agent-document-danger-button,.evaluation-danger-button,.leave-danger-button,.piece-transfer-danger-button,.report-danger-button,.roadmap-danger-button) { min-height: 40px; padding: 9px 14px; border-radius: 10px; font-size: .8125rem; line-height: 1.3; font-weight: 650; gap: 8px; box-shadow: none; transition: background-color 140ms ease, border-color 140ms ease; }
+:root :is(.agent-primary-button,.agents-primary-button,.attendance-primary-button,.evaluation-primary-button,.leave-primary-button,.organization-primary-button,.piece-transfer-primary-button,.primary-button,.report-primary-button,.roadmap-primary-button,.roadmaps-primary-button,.settings-primary-button,.task-primary-button,.tasks-primary-button,.workspace-primary-button) { background: var(--tenant-primary, var(--ui-primary)); border: 1px solid var(--tenant-primary, var(--ui-primary)); color: #fff; }
+:root :is(.agent-cancel-button,.agent-document-cancel-button,.agents-clear-button,.agents-secondary-button,.attendance-cancel-button,.attendance-secondary-button,.evaluation-cancel-button,.evaluation-clear-button,.evaluation-secondary-button,.leave-cancel-button,.leave-secondary-action,.organization-cancel-button,.organization-secondary-button,.piece-transfer-secondary-button,.report-cancel-button,.report-clear-button,.report-secondary-button,.roadmap-cancel-button,.roadmap-secondary-action,.roadmaps-clear-button,.roadmaps-secondary-button,.secondary-button,.settings-cancel-button,.settings-secondary-button,.task-cancel-button,.task-secondary-action,.task-secondary-light-button,.tasks-clear-button,.tasks-secondary-button,.workspace-secondary-button) { background: #fff; border: 1px solid var(--ui-border); color: var(--ui-navy); }
+:root :is(.agent-delete-danger-button,.agent-document-danger-button,.evaluation-danger-button,.leave-danger-button,.piece-transfer-danger-button,.report-danger-button,.roadmap-danger-button) { background: #fff2f0; border: 1px solid #f0c7c3; color: var(--ui-danger); }
+:root :is(.home-dashboard-hero,.agents-hero,.organization-hero,.tasks-hero,.attendance-hero,.leaves-hero,.roadmaps-hero,.evaluations-hero,.reports-hero,.users-hero,.settings-hero) :is(.agent-cancel-button,.agent-document-cancel-button,.agents-clear-button,.agents-secondary-button,.attendance-cancel-button,.attendance-secondary-button,.evaluation-cancel-button,.evaluation-clear-button,.evaluation-secondary-button,.leave-cancel-button,.leave-secondary-action,.organization-cancel-button,.organization-secondary-button,.piece-transfer-secondary-button,.report-cancel-button,.report-clear-button,.report-secondary-button,.roadmap-cancel-button,.roadmap-secondary-action,.roadmaps-clear-button,.roadmaps-secondary-button,.secondary-button,.settings-cancel-button,.settings-secondary-button,.task-cancel-button,.task-secondary-action,.task-secondary-light-button,.tasks-clear-button,.tasks-secondary-button,.workspace-secondary-button,.agent-primary-button,.agents-primary-button,.attendance-primary-button,.evaluation-primary-button,.leave-primary-button,.organization-primary-button,.piece-transfer-primary-button,.primary-button,.report-primary-button,.roadmap-primary-button,.roadmaps-primary-button,.settings-primary-button,.task-primary-button,.tasks-primary-button,.workspace-primary-button) { background: #fff; color: var(--ui-primary); border-color: #fff; }
+:root :is(.agent-icon-button,.attendance-icon-button,.evaluation-icon-button,.leave-icon-button,.organization-danger-icon-button,.organization-modal-close,.piece-transfer-icon-button,.report-icon-button,.roadmap-icon-button,.task-icon-button) { display: inline-flex; align-items: center; justify-content: center; width: 40px; min-width: 40px; height: 40px; padding: 0; border-radius: 10px; flex-shrink: 0; }
+ :root [data-ui-action="compact"] { min-width: 40px; }
+:root [data-ui-action="compact"] svg { width: 18px; height: 18px; }
+:root :is(.dashboard-content,[role="dialog"],.auth-page,.workspace-registration-page) :is(input,textarea,select) { max-width: 100%; min-width: 0; }
+:root :is(.dashboard-content,[role="dialog"]) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]),select,textarea) { border-radius: 10px; }
+:root :is(.dashboard-content,[role="dialog"]) :is(p,dd,dt,h3,h4,label) { overflow-wrap: anywhere; }
+:root :is(.dashboard-content,[role="dialog"]) :is(button,a,input,textarea,select):focus-visible { outline: 3px solid #397ca4; outline-offset: 3px; }
+:root :is(.dashboard-metrics-grid,.agents-metrics-grid,.organization-metrics-grid,.tasks-stats-grid,.attendance-stats-grid,.leave-kpis,.roadmap-stats-grid,.evaluations-metrics-grid,.reports-metrics-grid,.users-stats-grid,.settings-overview-grid) { display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,180px),1fr)); gap: 12px; }
+:root :is(.dashboard-metrics-grid,.agents-metrics-grid,.organization-metrics-grid,.tasks-stats-grid,.attendance-stats-grid,.leave-kpis,.roadmap-stats-grid,.evaluations-metrics-grid,.reports-metrics-grid,.users-stats-grid,.settings-overview-grid) > :is(article,button,a) { min-width: 0; padding: 16px; border-radius: 12px; border-color: var(--ui-border); box-shadow: var(--ui-shadow); }
+:root :is(.dashboard-metrics-grid,.agents-metrics-grid,.organization-metrics-grid,.tasks-stats-grid,.attendance-stats-grid,.leave-kpis,.roadmap-stats-grid,.evaluations-metrics-grid,.reports-metrics-grid,.users-stats-grid,.settings-overview-grid) > :is(article,button,a) > strong { font-size: clamp(1.25rem,2vw,1.6rem); line-height: 1.2; }
+:root :is(.communication-admin-read-table,.piece-transfer-table-scroll,.report-table-wrap,.users-table-wrap) { width: 100%; min-width: 0; max-width: 100%; overflow: auto; overscroll-behavior-inline: contain; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
+:root :is(.communication-admin-read-table,.piece-transfer-table-scroll,.report-table-wrap,.users-table-wrap) :is(th,td) { font-size: .8125rem; }
+:root :is(.agent-form-grid,.attendance-form-grid,.leave-form-grid,.roadmap-form-grid,.roadmap-line-grid,.task-form-grid,.users-form-grid,.organization-form-grid,.evaluation-form-grid,.report-form-grid,.settings-form-grid,.workspace-form-grid.two-columns) { min-width: 0; gap: 14px; }
+:root :is(.agent-form-grid,.attendance-form-grid,.leave-form-grid,.roadmap-form-grid,.roadmap-line-grid,.task-form-grid,.users-form-grid,.organization-form-grid,.evaluation-form-grid,.report-form-grid,.settings-form-grid,.workspace-form-grid.two-columns) > * { min-width: 0; }
+:root :is(.agent-modal,.agent-delete-modal,.agent-preview-modal,.attendance-modal,.leave-modal,.roadmap-modal,.task-modal,.task-delete-modal,.users-modal,.organization-modal,.evaluation-modal,.evaluation-delete-modal,.report-modal,.report-delete-modal,.report-validation-modal,.settings-publish-modal,.settings-restore-modal,.piece-transfer-composer,.communication-forward-panel,.communication-image-dialog) { min-width: 0; max-width: 100%; min-height: 0; max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); overflow-y: auto; overscroll-behavior: contain; border-radius: 16px; box-shadow: 0 20px 70px rgb(11 37 54 / 18%); }
+:root :is(.agent-details-drawer,.attendance-drawer,.leave-drawer,.roadmap-details-drawer,.task-drawer,.users-drawer,.evaluation-drawer,.report-drawer,.settings-history-drawer,.piece-transfer-drawer) { min-width: 0; max-width: 100%; height: 100vh; height: 100dvh; max-height: 100dvh; overscroll-behavior: contain; border-radius: 16px 0 0 16px; }
+:root :is(.agent-drawer-header,.agent-modal-header,.attendance-drawer-header,.attendance-modal-header,.evaluation-drawer-header,.evaluation-modal-header,.leave-drawer-header,.leave-modal-header,.organization-modal-header,.report-drawer-header,.report-modal-header,.roadmap-drawer-header,.roadmap-modal-header,.task-drawer-header,.task-modal-header,.users-drawer-header,.users-modal-header) { gap: 12px; padding: 18px 20px; }
+:root :is(.agent-drawer-header,.agent-modal-header,.attendance-drawer-header,.attendance-modal-header,.evaluation-drawer-header,.evaluation-modal-header,.leave-drawer-header,.leave-modal-header,.organization-modal-header,.report-drawer-header,.report-modal-header,.roadmap-drawer-header,.roadmap-modal-header,.task-drawer-header,.task-modal-header,.users-drawer-header,.users-modal-header) > div { min-width: 0; }
+:root :is(.agent-drawer-header,.agent-modal-header,.attendance-drawer-header,.attendance-modal-header,.evaluation-drawer-header,.evaluation-modal-header,.leave-drawer-header,.leave-modal-header,.organization-modal-header,.report-drawer-header,.report-modal-header,.roadmap-drawer-header,.roadmap-modal-header,.task-drawer-header,.task-modal-header,.users-drawer-header,.users-modal-header) h3 { font-size: 1.125rem; line-height: 1.35; }
+:root :is(.agent-modal-footer,.attendance-modal-footer,.evaluation-modal-footer,.leave-modal-footer,.organization-modal-footer,.report-modal-footer,.roadmap-modal-footer,.task-modal-footer,.users-modal-actions) { display: flex; flex-wrap: wrap; gap: 8px; padding: 16px 20px; padding-bottom: max(16px,env(safe-area-inset-bottom)); }
+
+:root .piece-transfer-chat-shell { height: calc(100vh - 176px); height: calc(100dvh - 176px); min-height: 380px; border-radius: 14px; grid-template-columns: minmax(240px,310px) minmax(0,1fr); }
+:root .piece-transfer-appbar { border-radius: 12px; flex-wrap: wrap; gap: 8px; }
+:root .piece-transfer-appbar > div:first-child { min-width: 0; flex: 1; }
+:root .piece-transfer-chat-title { min-width: 0; }
+:root .piece-transfer-chat-shell > * { min-width: 0; min-height: 0; }
+:root .piece-transfer-bubble { max-width: min(85%,660px); border-radius: 12px; }
+:root .piece-transfer-bubble :is(p,.piece-transfer-bubble-body) { font-size: .875rem; line-height: 1.55; }
+:root .communication-audio-card { max-width: 100%; }
+:root .communication-forward-body { overflow-y: auto; min-height: 0; }
+:root .piece-transfer-chat-compose :is(textarea,input) { min-width: 0; }
+:root .piece-transfer-chat-header { gap: 8px; }
+:root .auth-brand-panel { min-height: auto; padding: 28px 24px; }
+:root .brand-copy { margin-top: 0; }
+:root .brand-copy h1 { font-size: clamp(1.6rem,3.5vw,2.7rem); line-height: 1.2; }
+:root .brand-copy p { font-size: .9375rem; line-height: 1.65; }
+:root .auth-form-panel { padding: 28px 20px; }
+:root .form-heading h2 { font-size: 1.5rem; line-height: 1.3; }
+:root .auth-footer { font-size: .75rem; }
+:root .workspace-registration-aside :is(h1,h2) { font-size: clamp(1.65rem,3vw,2.5rem); }
+:root .workspace-registration-page { padding: clamp(12px,3vw,32px); }
+:root .workspace-registration-shell { min-width: 0; }
+:root .workspace-registration-card { min-width: 0; padding: clamp(18px,3vw,30px); }
+:root .users-page { --users-radius: 12px; --users-radius-lg: 16px; }
+:root :is(.home-dashboard,.organization-page,.agents-page,.tasks-page,.users-page) > * { animation-duration: 180ms; animation-delay: 0ms; }
+}
+@media screen and (max-width: 767px) {
+:root :is(.home-dashboard-hero,.agents-hero,.organization-hero,.tasks-hero,.attendance-hero,.leaves-hero,.roadmaps-hero,.evaluations-hero,.reports-hero,.users-hero,.settings-hero) { padding: 18px; gap: 14px; }
+:root :is(.agents-hero-actions,.organization-hero-actions,.tasks-hero-actions,.attendance-hero-actions,.leaves-hero-actions,.roadmaps-hero-actions,.evaluations-hero-actions,.reports-hero-actions,.users-hero-actions,.settings-hero-actions) { width: 100%; flex: 1 1 100%; justify-content: flex-end; }
+:root :is(.agent-form-grid,.attendance-form-grid,.leave-form-grid,.roadmap-form-grid,.roadmap-line-grid,.task-form-grid,.users-form-grid,.organization-form-grid,.evaluation-form-grid,.report-form-grid,.settings-form-grid,.workspace-form-grid.two-columns) { grid-template-columns: minmax(0,1fr); }
+:root :is(.agent-form-grid,.attendance-form-grid,.leave-form-grid,.roadmap-form-grid,.roadmap-line-grid,.task-form-grid,.users-form-grid,.organization-form-grid,.evaluation-form-grid,.report-form-grid,.settings-form-grid,.workspace-form-grid.two-columns) > * { grid-column: auto; }
+:root :is(.agent-modal,.agent-delete-modal,.agent-preview-modal,.attendance-modal,.leave-modal,.roadmap-modal,.task-modal,.task-delete-modal,.users-modal,.organization-modal,.evaluation-modal,.evaluation-delete-modal,.report-modal,.report-delete-modal,.report-validation-modal,.settings-publish-modal,.settings-restore-modal,.piece-transfer-composer,.communication-forward-panel,.communication-image-dialog) { width: 100%; max-height: calc(100dvh - 20px); border-radius: 14px; }
+:root :is(.agent-details-drawer,.attendance-drawer,.leave-drawer,.roadmap-details-drawer,.task-drawer,.users-drawer,.evaluation-drawer,.report-drawer,.settings-history-drawer,.piece-transfer-drawer) { width: 100%; border-radius: 0; }
+
+:root :is(.dashboard-content,[role="dialog"],.auth-page,.workspace-registration-page) :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),select,textarea) { font-size: 16px; }
+:root [data-ui-action="compact"] { display: inline-flex; flex: 0 0 44px; width: 44px; min-width: 44px; min-height: 44px; padding: 0; align-items: center; justify-content: center; }
+:root [data-ui-action="compact"] .ui-action-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+:root .piece-transfer-chat-shell { min-height: 300px; grid-template-columns: minmax(0,1fr); height: calc(100dvh - 180px); }
+:root .piece-transfer-chat-panel { min-height: 0; }
+:root .piece-transfer-chat-messages { padding: 12px; }
+:root .piece-transfer-bubble { max-width: 94%; }
+:root .piece-transfer-admin-summary-v5 { grid-template-columns: repeat(2,minmax(0,1fr)); }
+:root .piece-transfer-admin-head-v5 { flex-wrap: wrap; }
+:root .piece-transfer-chat-info { max-height: 25dvh; overflow-y: auto; }
+:root .auth-brand-panel { padding: 24px 20px; }
+:root .brand-copy p { margin-top: 12px; }
+:root .brand-benefits { display: none; }
+:root .workspace-registration-header { flex-wrap: wrap; gap: 12px; }
+}
+@media screen and (max-width: 479px) {
+:root :is(.dashboard-metrics-grid,.agents-metrics-grid,.organization-metrics-grid,.tasks-stats-grid,.attendance-stats-grid,.leave-kpis,.roadmap-stats-grid,.evaluations-metrics-grid,.reports-metrics-grid,.users-stats-grid,.settings-overview-grid) { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+:root :is(.dashboard-metrics-grid,.agents-metrics-grid,.organization-metrics-grid,.tasks-stats-grid,.attendance-stats-grid,.leave-kpis,.roadmap-stats-grid,.evaluations-metrics-grid,.reports-metrics-grid,.users-stats-grid,.settings-overview-grid) > :is(article,button,a) { padding: 12px; }
+:root :is(.agent-modal-footer,.attendance-modal-footer,.evaluation-modal-footer,.leave-modal-footer,.organization-modal-footer,.report-modal-footer,.roadmap-modal-footer,.task-modal-footer,.users-modal-actions) { gap: 8px; padding-inline: 14px; }
+:root :is(.agent-drawer-header,.agent-modal-header,.attendance-drawer-header,.attendance-modal-header,.evaluation-drawer-header,.evaluation-modal-header,.leave-drawer-header,.leave-modal-header,.organization-modal-header,.report-drawer-header,.report-modal-header,.roadmap-drawer-header,.roadmap-modal-header,.task-drawer-header,.task-modal-header,.users-drawer-header,.users-modal-header) { padding-inline: 14px; }
+
+:root .piece-transfer-chat-shell { height: calc(100dvh - 170px); }
+:root .piece-transfer-conversation-filters { flex-wrap: wrap; }
+:root .communication-agent-list label { overflow-wrap: anywhere; }
+}
+@media screen and (pointer: coarse) {
+:root :is(.agent-primary-button,.agents-primary-button,.attendance-primary-button,.evaluation-primary-button,.leave-primary-button,.organization-primary-button,.piece-transfer-primary-button,.primary-button,.report-primary-button,.roadmap-primary-button,.roadmaps-primary-button,.settings-primary-button,.task-primary-button,.tasks-primary-button,.workspace-primary-button,.agent-cancel-button,.agent-document-cancel-button,.agents-clear-button,.agents-secondary-button,.attendance-cancel-button,.attendance-secondary-button,.evaluation-cancel-button,.evaluation-clear-button,.evaluation-secondary-button,.leave-cancel-button,.leave-secondary-action,.organization-cancel-button,.organization-secondary-button,.piece-transfer-secondary-button,.report-cancel-button,.report-clear-button,.report-secondary-button,.roadmap-cancel-button,.roadmap-secondary-action,.roadmaps-clear-button,.roadmaps-secondary-button,.secondary-button,.settings-cancel-button,.settings-secondary-button,.task-cancel-button,.task-secondary-action,.task-secondary-light-button,.tasks-clear-button,.tasks-secondary-button,.workspace-secondary-button,.agent-delete-danger-button,.agent-document-danger-button,.evaluation-danger-button,.leave-danger-button,.piece-transfer-danger-button,.report-danger-button,.roadmap-danger-button,.agent-icon-button,.attendance-icon-button,.evaluation-icon-button,.leave-icon-button,.organization-danger-icon-button,.organization-modal-close,.piece-transfer-icon-button,.report-icon-button,.roadmap-icon-button,.task-icon-button) { min-height: 44px; }
+
+:root :is(.piece-transfer-appbar-actions,.piece-transfer-chat-header-actions,.communication-message-actions,.piece-transfer-bubble-meta) button { min-width: 44px; min-height: 44px; }
+:root .communication-audio-compact :is(.communication-audio-speed,.communication-audio-download) { min-width: 36px; min-height: 44px; }
+}
+/* Les grilles suivent la place disponible, même lorsque la sidebar est ouverte. */
+@media screen {
+  :root :is(.agents-filters,.roadmap-filters,.reports-filters,.evaluations-filters,.tasks-filters,.attendance-filters-grid,.leave-filter-grid,.users-filters-panel) {
+    display: grid; grid-template-columns: repeat(auto-fit,minmax(min(100%,170px),1fr)); gap: 12px; min-width: 0;
+  }
+  :root :is(.agents-filters,.roadmap-filters,.reports-filters,.evaluations-filters,.tasks-filters,.attendance-filters-grid,.leave-filter-grid,.users-filters-panel) > * { min-width: 0; max-width: 100%; }
+  :root .tasks-metrics-grid { grid-template-columns: repeat(auto-fit,minmax(min(100%,180px),1fr)); gap: 12px; }
+  :root .tasks-metrics-grid > * { min-width: 0; padding: 16px; border-radius: 12px; }
+  :root .tasks-board { grid-template-columns: repeat(auto-fit,minmax(min(100%,210px),1fr)); min-width: 0; }
+  :root :is(.home-dashboard-hero,.agents-hero,.organization-hero,.tasks-hero,.attendance-hero,.leaves-hero,.roadmaps-hero,.evaluations-hero,.reports-hero,.users-hero,.settings-hero)::before { animation: none; }
+  :root .attendance-today-top { flex-wrap: wrap; }
+  :root .attendance-live-clock { min-width: 0; max-width: 100%; }
+}
+@media screen and (max-width: 767px) {
+  :root :is(.agents-hero-actions,.organization-hero-actions,.tasks-hero-actions,.attendance-hero-actions,.leaves-hero-actions,.roadmaps-hero-actions,.evaluations-hero-actions,.reports-hero-actions,.users-hero-actions,.settings-hero-actions) > button[data-ui-action="compact"] {
+    display: inline-flex; align-items: center; justify-content: center; width: 44px; min-width: 44px; min-height: 44px; flex: 0 0 44px; padding: 0; font-size: 0; gap: 0;
+  }
+  :root .tasks-kanban-column { min-height: 150px; }
+}
+@media screen and (max-width: 479px) {
+  :root .tasks-metrics-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; }
+  :root .tasks-metrics-grid > * { padding: 12px; }
+}
+@media screen and (max-height: 600px) {
+  :root .piece-transfer-chat-shell { min-height: 0; height: calc(100dvh - 150px); }
+}
+@media screen {
+  :root :is(.dashboard-metrics-grid,.agents-metrics-grid,.organization-metrics-grid,.tasks-metrics-grid,.attendance-stats-grid,.leave-kpis,.roadmap-stats-grid,.evaluations-metrics-grid,.reports-metrics-grid,.users-stats-grid,.settings-overview-grid) > * > * {
+    min-width: 0; overflow-wrap: anywhere;
+  }
+}
+@media screen and (max-width: 479px) {
+  :root .attendance-stat-card { flex-direction: column; align-items: flex-start; gap: 10px; }
+  :root .attendance-stat-card > div { width: 100%; }
+}
+@media screen {
+  :root .dashboard-communication-shortcut { width: 44px; height: 44px; min-width: 44px; }
+  :root .password-label-row { flex-wrap: wrap; gap: 8px; }
+  :root .piece-transfer-conversation-item strong { font-size: .8125rem; }
+  :root .piece-transfer-conversation-item :is(small,time), :root .piece-transfer-bubble-meta { font-size: .75rem; }
+  :root .piece-transfer-chat-info :is(p,span,strong) { font-size: .75rem; }
+}
+@media screen {
+  :root :is(.agents-filter-panel,.agents-list-panel,.attendance-filters-panel,.attendance-list-panel,.dashboard-panel,.evaluations-filter-panel,.evaluations-list-panel,.leave-panel,.organization-guide-panel,.organization-panel,.organization-tree-panel,.reports-filter-panel,.reports-list-panel,.roadmap-filters-panel,.roadmap-list-panel,.settings-preview-panel,.tasks-filter-panel,.tasks-list-panel,.users-filters-panel,.users-table-card) {
+    min-width: 0; border-radius: 14px; border-color: var(--ui-border); box-shadow: var(--ui-shadow);
+  }
+}
+@media screen and (max-width: 767px) {
+  :root :is(.agent-modal-layer,.attendance-modal-layer,.leave-modal-layer,.roadmap-modal-layer,.task-modal-layer,.users-modal-layer,.organization-modal-layer,.evaluation-modal-layer,.evaluation-delete-layer,.report-modal-layer,.report-delete-layer,.settings-modal-layer,.piece-transfer-modal-layer) {
+    padding: max(10px,env(safe-area-inset-top)) max(10px,env(safe-area-inset-right)) max(10px,env(safe-area-inset-bottom)) max(10px,env(safe-area-inset-left));
+  }
+}
+
+@media screen {
+  :root .agent-identity-cell > div { min-width: 0; flex: 1; }
+  :root :is(.agent-row,.agent-cell,.task-list-row,.task-list-task-cell) { min-width: 0; }
+}
+@media screen and (max-width: 767px) {
+  :root .agent-row { grid-template-columns: minmax(0,1fr); }
+  :root .agent-identity-cell strong { white-space: normal; overflow-wrap: anywhere; }
+}
+@media screen {
+  :root :is(.agents-table,.tasks-list-table) { min-width: 0; max-width: 100%; overflow-x: auto; overscroll-behavior-inline: contain; }
+  :root .agents-list-panel { container-type: inline-size; container-name: agent-list; }
+}
+@container agent-list (max-width: 820px) {
+  :root .agents-table-header { display: none; }
+  :root .agent-row { grid-template-columns: minmax(0,1fr); gap: 12px; border: 1px solid var(--ui-border); border-radius: 12px; }
+  :root .agent-cell-label { display: block; }
+  :root .agent-identity-cell strong { white-space: normal; overflow-wrap: anywhere; }
+}
+@media screen and (max-width: 479px) {
+  :root :is(.dashboard-metrics-grid,.agents-metrics-grid,.organization-metrics-grid,.tasks-metrics-grid,.attendance-stats-grid,.leave-kpis,.roadmap-stats-grid,.evaluations-metrics-grid,.reports-metrics-grid,.users-stats-grid,.settings-overview-grid) > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+}

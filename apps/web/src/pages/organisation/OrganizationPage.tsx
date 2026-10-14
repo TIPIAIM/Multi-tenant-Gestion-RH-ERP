@@ -355,7 +355,7 @@ import {
               type="button"
               onClick={() => void organizationQuery.refetch()}
               disabled={organizationQuery.isFetching}
-            >
+             data-ui-action="compact" aria-label="Actualiser" title="Actualiser">
               <RefreshCw
                 size={18}
                 className={organizationQuery.isFetching ? "is-spinning" : ""}
@@ -373,9 +373,9 @@ import {
                 className="organization-primary-button"
                 type="button"
                 onClick={openCreateDirectionModal}
-              >
+               data-ui-action="compact" aria-label="Nouvelle Direction" title="Nouvelle Direction">
                 <Plus size={18} />
-                <span>Nouvelle Direction</span>
+                <span className="ui-action-label">Nouvelle Direction</span>
               </button>
             )}
           </div>
@@ -483,9 +483,9 @@ import {
                       className="organization-primary-button"
                       type="button"
                       onClick={openCreateDirectionModal}
-                    >
+                     data-ui-action="compact" aria-label="Créer une Direction" title="Créer une Direction">
                       <Plus size={18} />
-                      <span>Créer une Direction</span>
+                      <span className="ui-action-label">Créer une Direction</span>
                     </button>
                   )}
                 </div>
@@ -564,7 +564,7 @@ import {
                                 type="button"
                                 title="Modifier cette Direction"
                                 onClick={() => openEditModal(direction)}
-                              >
+                               aria-label="Modifier cette Direction">
                                 <Pencil size={16} />
                               </button>
 
@@ -576,7 +576,11 @@ import {
                                     : "Activer cette Direction"
                                 }
                                 onClick={() => void toggleUnitStatus(direction)}
-                              >
+                               aria-label={
+                                  direction.status === "ACTIVE"
+                                    ? "Désactiver cette Direction"
+                                    : "Activer cette Direction"
+                                }>
                                 {direction.status === "ACTIVE" ? (
                                   <ToggleRight size={19} />
                                 ) : (
@@ -593,7 +597,7 @@ import {
                               title="Supprimer cette Direction et son arborescence"
                               disabled={deleteMutation.isPending}
                               onClick={() => void deleteUnit(direction)}
-                            >
+                             aria-label="Supprimer cette Direction et son arborescence">
                               <Trash2 size={16} />
                             </button>
                           )}
@@ -672,7 +676,7 @@ import {
                                         type="button"
                                         title="Modifier ce Service"
                                         onClick={() => openEditModal(service)}
-                                      >
+                                       aria-label="Modifier ce Service">
                                         <Pencil size={16} />
                                       </button>
 
@@ -686,7 +690,11 @@ import {
                                         onClick={() =>
                                           void toggleUnitStatus(service)
                                         }
-                                      >
+                                       aria-label={
+                                          service.status === "ACTIVE"
+                                            ? "Désactiver ce Service"
+                                            : "Activer ce Service"
+                                        }>
                                         {service.status === "ACTIVE" ? (
                                           <ToggleRight size={19} />
                                         ) : (
@@ -703,7 +711,7 @@ import {
                                       title="Supprimer ce Service"
                                       disabled={deleteMutation.isPending}
                                       onClick={() => void deleteUnit(service)}
-                                    >
+                                     aria-label="Supprimer ce Service">
                                       <Trash2 size={16} />
                                     </button>
                                   )}
@@ -720,9 +728,9 @@ import {
                             onClick={() =>
                               openCreateServiceModal(direction.id)
                             }
-                          >
+                           data-ui-action="compact" aria-label="Ajouter un Service" title="Ajouter un Service">
                             <Plus size={16} />
-                            <span>Ajouter un Service</span>
+                            <span className="ui-action-label">Ajouter un Service</span>
                           </button>
                         )}
                       </div>

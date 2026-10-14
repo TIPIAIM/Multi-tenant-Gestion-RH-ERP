@@ -1,0 +1,462 @@
+--- a/apps/api/src/modules/piece-transfers/piece-transfer.service.ts
++++ b/apps/api/src/modules/piece-transfers/piece-transfer.service.ts
+@@ -1,3 +1,4 @@
++import { computeCommunicationReadStats } from "./piece-transfer-read-stats.js";
+ import { PieceTransferReadModel } from "./piece-transfer-read.model.js";
+ import { ensureOptionalPieceTransferFileIndex } from "./piece-transfer-indexes.js";
+ import type {
+@@ -3908,6 +3909,7 @@
+     transfers,
+     recipients,
+     messages,
++    readReceipts,
+   ] =
+     await Promise.all([
+       (
+@@ -3955,7 +3957,7 @@
+           tenant._id,
+       })
+         .select(
+-          "_id senderUserId storagePublicId",
++          "_id senderUserId storagePublicId status",
+         )
+         .lean()
+         .exec(),
+@@ -3965,7 +3967,7 @@
+           tenant._id,
+       })
+         .select(
+-          "transferId recipientUserId",
++          "transferId recipientUserId status isRead firstReadAt",
+         )
+         .lean()
+         .exec(),
+@@ -3975,11 +3977,16 @@
+           tenant._id,
+       })
+         .select(
+-          "transferId senderUserId attachment attachments",
++          "_id transferId senderUserId attachment attachments status createdAt",
+         )
+         .lean()
+         .exec(),
++      PieceTransferReadModel.find({ tenantId: tenant._id }).lean().exec(),
+     ]);
++
++  const readStats = computeCommunicationReadStats(
++    transfers as any[], recipients as any[], messages as any[], readReceipts as any[],
++  );
+ 
+   const stats =
+     new Map<
+@@ -4443,6 +4450,15 @@
+ 
+           filesReceived:
+             row.filesReceived,
++
++          ...row.userIds.reduce((total, userId) => {
++            const reading = readStats.get(userId);
++            total.activeMessagesReceived += reading?.activeMessagesReceived ?? 0;
++            total.messagesRead += reading?.messagesRead ?? 0;
++            total.messagesUnread += reading?.messagesUnread ?? 0;
++            total.unreadCommunications += reading?.unreadCommunications ?? 0;
++            return total;
++          }, { activeMessagesReceived: 0, messagesRead: 0, messagesUnread: 0, unreadCommunications: 0 }),
+ 
+           totalActivity:
+             row.messagesSent +
+@@ -4488,9 +4504,17 @@
+         accumulator.communicationsReceived +=
+           row.communicationsReceived;
+ 
++        accumulator.activeMessagesReceived += row.activeMessagesReceived;
++        accumulator.messagesRead += row.messagesRead;
++        accumulator.messagesUnread += row.messagesUnread;
++        accumulator.agentsWithUnread += row.messagesUnread > 0 ? 1 : 0;
+         return accumulator;
+       },
+       {
++        activeMessagesReceived: 0,
++        messagesRead: 0,
++        messagesUnread: 0,
++        agentsWithUnread: 0,
+         messagesSent:
+           0,
+         messagesReceived:
+--- a/apps/api/src/modules/piece-transfers/piece-transfer.types.ts
++++ b/apps/api/src/modules/piece-transfers/piece-transfer.types.ts
+@@ -381,6 +381,10 @@
+ };
+ 
+ export type PublicPieceTransferAgentStats = {
++  activeMessagesReceived: number;
++  messagesRead: number;
++  messagesUnread: number;
++  unreadCommunications: number;
+   entityId: string;
+   agentId?: string;
+   userIds: string[];
+@@ -410,6 +414,10 @@
+ 
+ export type PublicPieceTransferAdminOverview = {
+   totals: {
++    activeMessagesReceived: number;
++    messagesRead: number;
++    messagesUnread: number;
++    agentsWithUnread: number;
+     messagesSent: number;
+     messagesReceived: number;
+     filesSent: number;
+--- a/apps/web/src/features/piece-transfers/piece-transfer.api.ts
++++ b/apps/web/src/features/piece-transfers/piece-transfer.api.ts
+@@ -530,3 +530,13 @@
+ export async function markPieceTransferRead(id: string, messageId?: string): Promise<void> {
+   await api.post(`${BASE}/${id}/read`, { messageId });
+ }
++
++export async function getCommunicationAttachmentPreview(
++  transferId: string, messageId: string | undefined, index: number, signal?: AbortSignal,
++): Promise<Blob> {
++  const path = messageId
++    ? `${BASE}/${transferId}/messages/${messageId}/files/${index}/view`
++    : `${BASE}/${transferId}/view`;
++  const response = await api.get<Blob>(path, { responseType: "blob", signal });
++  return response.data;
++}
+--- a/apps/web/src/features/piece-transfers/piece-transfer.types.ts
++++ b/apps/web/src/features/piece-transfers/piece-transfer.types.ts
+@@ -241,6 +241,10 @@
+ };
+ 
+ export type PieceTransferAgentStats = {
++  activeMessagesReceived: number;
++  messagesRead: number;
++  messagesUnread: number;
++  unreadCommunications: number;
+   entityId: string;
+   agentId?: string;
+   userIds: string[];
+@@ -270,6 +274,10 @@
+ 
+ export type PieceTransferAdminOverview = {
+   totals: {
++    activeMessagesReceived: number;
++    messagesRead: number;
++    messagesUnread: number;
++    agentsWithUnread: number;
+     messagesSent: number;
+     messagesReceived: number;
+     filesSent: number;
+--- a/apps/web/src/pages/piece-transfers/PieceTransferDetailsDrawer.tsx
++++ b/apps/web/src/pages/piece-transfers/PieceTransferDetailsDrawer.tsx
+@@ -1,3 +1,4 @@
++import CommunicationAttachmentCard from "./CommunicationAttachmentCard";
+ import {
+   useEffect,
+   useMemo,
+@@ -650,21 +651,14 @@
+           <article
+             className={`piece-transfer-bubble piece-transfer-bubble-file ${transfer.senderUserId === user?.id ? "is-mine" : "is-theirs"}`}
+           >
+-            <button
+-              type="button"
+-              disabled={!transfer.permissions.canView}
+-              onClick={() => onView(transfer.id)}
+-            >
+-              <FileText size={21} />
+-              <span>
+-                <strong>{transfer.originalFileName}</strong>
+-                <small>
+-                  {transfer.fileStatus === "DELETED"
+-                    ? "Fichier supprimé"
+-                    : formatBytes(transfer.bytes)}
+-                </small>
+-              </span>
+-            </button>
++            <CommunicationAttachmentCard
++              transferId={transfer.id}
++              attachment={{ originalFileName: transfer.originalFileName!, mimeType: transfer.mimeType,
++                bytes: transfer.bytes, status: transfer.fileStatus,
++                canView: transfer.permissions.canView, canDownload: transfer.permissions.canDownload }}
++              busy={pendingAction === "VIEW" || pendingAction === "DOWNLOAD" ? pendingAction : null}
++              onView={() => onView(transfer.id)} onDownload={() => onDownload(transfer.id, transfer.originalFileName!)}
++            />
+           </article>
+         )}
+ 
+@@ -750,59 +744,15 @@
+                     {message.attachments.length > 0 && (
+                       <div className="piece-transfer-bubble-attachments">
+                         {message.attachments.map((attachment) => (
+-                          <div
++                          <CommunicationAttachmentCard
+                             key={`${message.id}:${attachment.index}`}
+-                            className={`piece-transfer-bubble-attachment ${attachment.status === "DELETED" ? "is-deleted" : ""}`}
+-                          >
+-                            <FileText size={19} />
+-                            <span>
+-                              <strong>{attachment.originalFileName}</strong>
+-                              <small>
+-                                {attachment.status === "DELETED"
+-                                  ? "Fichier supprimé"
+-                                  : formatBytes(attachment.bytes)}
+-                              </small>
+-                            </span>
+-                            <div>
+-                              <button
+-                                type="button"
+-                                disabled={!attachment.canView || Boolean(messageFileAction)}
+-                                onClick={() =>
+-                                  void viewMessageFile(
+-                                    message.id,
+-                                    attachment.index,
+-                                  )
+-                                }
+-                                title="Voir"
+-                              >
+-                                {messageFileAction ===
+-                                `view:${message.id}:${attachment.index}` ? (
+-                                  <LoaderCircle size={14} className="is-spinning" />
+-                                ) : (
+-                                  <Eye size={14} />
+-                                )}
+-                              </button>
+-                              <button
+-                                type="button"
+-                                disabled={!attachment.canDownload || Boolean(messageFileAction)}
+-                                onClick={() =>
+-                                  void downloadMessageFile(
+-                                    message.id,
+-                                    attachment.index,
+-                                    attachment.originalFileName,
+-                                  )
+-                                }
+-                                title="Télécharger"
+-                              >
+-                                {messageFileAction ===
+-                                `download:${message.id}:${attachment.index}` ? (
+-                                  <LoaderCircle size={14} className="is-spinning" />
+-                                ) : (
+-                                  <Download size={14} />
+-                                )}
+-                              </button>
+-                            </div>
+-                          </div>
++                            transferId={transfer.id} messageId={message.id} index={attachment.index}
++                            attachment={attachment} pending={Boolean(messageFileAction)}
++                            busy={messageFileAction === `view:${message.id}:${attachment.index}` ? "VIEW"
++                              : messageFileAction === `download:${message.id}:${attachment.index}` ? "DOWNLOAD" : null}
++                            onView={() => void viewMessageFile(message.id, attachment.index)}
++                            onDownload={() => void downloadMessageFile(message.id, attachment.index, attachment.originalFileName)}
++                          />
+                         ))}
+                       </div>
+                     )}
+--- a/apps/web/src/pages/piece-transfers/PieceTransfersPage.tsx
++++ b/apps/web/src/pages/piece-transfers/PieceTransfersPage.tsx
+@@ -1,3 +1,4 @@
++import CommunicationAdminReadStats from "./CommunicationAdminReadStats";
+ import { useSearchParams } from "react-router-dom";
+ import { usePieceTransferNotifications } from "../../features/piece-transfers/use-piece-transfer-notifications";
+ import {
+@@ -22,7 +23,6 @@
+   Send,
+   ShieldCheck,
+   Trash2,
+-  UsersRound,
+   X,
+ } from "lucide-react";
+ import {
+@@ -56,7 +56,6 @@
+   CreatePieceTransferInput,
+   PieceTransferAdminFile,
+   PieceTransferAdminMessage,
+-  PieceTransferAgentStats,
+   PieceTransferListItem,
+ } from "../../features/piece-transfers/piece-transfer.types";
+ import { getApiErrorMessage } from "../../features/auth/auth.api";
+@@ -109,17 +108,6 @@
+     .slice(0, 2)
+     .map((part) => part[0]?.toUpperCase())
+     .join("") || "C";
+-}
+-
+-function formatRole(value: string): string {
+-  const labels: Record<string, string> = {
+-    TENANT_ADMIN: "Administrateur",
+-    RH_MANAGER: "Responsable RH",
+-    DIRECTION: "Direction",
+-    SERVICE_MANAGER: "Chef de service",
+-    AGENT: "Agent",
+-  };
+-  return labels[value] ?? value;
+ }
+ 
+ function useDebouncedSearch(value: string): string {
+@@ -229,6 +217,7 @@
+     queryFn: getAdminCommunicationOverview,
+     enabled: isAdmin && workspace === "ADMIN",
+     staleTime: 15_000,
++    refetchInterval: 30_000,
+   });
+ 
+   const adminFilesQuery = useQuery({
+@@ -705,7 +694,7 @@
+             adminOverviewQuery.isLoading ? (
+               <div className="piece-transfer-chat-list-state"><LoaderCircle size={22} className="is-spinning" /></div>
+             ) : (
+-              <AdminStatsView overview={adminOverviewQuery.data} onNavigate={(view) => { setAdminView(view); setAdminSearch(""); setAdminPage(1); }} />
++              <CommunicationAdminReadStats overview={adminOverviewQuery.data} onNavigate={(view) => { setAdminView(view); setAdminSearch(""); setAdminPage(1); }} />
+             )
+           ) : adminView === "MESSAGES" ? (
+             adminMessagesQuery.isLoading ? (
+@@ -829,86 +818,6 @@
+       </span>
+     </button>
+   );
+-}
+-
+-function AdminStatsView({
+-  overview,
+-  onNavigate,
+-}: {
+-  onNavigate: (view: "MESSAGES" | "FILES") => void;
+-  overview:
+-    | {
+-        totals: {
+-          messagesSent: number;
+-          messagesReceived: number;
+-          filesSent: number;
+-          filesReceived: number;
+-          communicationsStarted: number;
+-          communicationsReceived: number;
+-        };
+-        agents: PieceTransferAgentStats[];
+-      }
+-    | undefined;
+-}) {
+-  if (!overview) {
+-    return <div className="piece-transfer-chat-list-state">Aucune donnée.</div>;
+-  }
+-
+-  return (
+-    <div className="piece-transfer-admin-stats-v5">
+-      <div className="piece-transfer-admin-summary-v5">
+-        <AdminMetric label="Messages envoyés" value={overview.totals.messagesSent} onClick={() => onNavigate("MESSAGES")} />
+-        <AdminMetric label="Messages reçus" value={overview.totals.messagesReceived} onClick={() => onNavigate("MESSAGES")} />
+-        <AdminMetric label="Fichiers envoyés" value={overview.totals.filesSent} onClick={() => onNavigate("FILES")} />
+-        <AdminMetric label="Fichiers reçus" value={overview.totals.filesReceived} onClick={() => onNavigate("FILES")} />
+-        <AdminMetric label="Communications initiées" value={overview.totals.communicationsStarted} onClick={() => onNavigate("MESSAGES")} />
+-        <AdminMetric label="Communications reçues" value={overview.totals.communicationsReceived} onClick={() => onNavigate("MESSAGES")} />
+-      </div>
+-
+-      <div className="piece-transfer-agent-table-v5">
+-        <header>
+-          <UsersRound size={18} />
+-          <strong>Activité par agent</strong>
+-        </header>
+-        <div className="piece-transfer-table-scroll">
+-          <table>
+-            <thead>
+-              <tr>
+-                <th>Agent</th>
+-                <th>Structure</th>
+-                <th>Msg E.</th>
+-                <th>Msg R.</th>
+-                <th>Fich. E.</th>
+-                <th>Fich. R.</th>
+-              </tr>
+-            </thead>
+-            <tbody>
+-              {overview.agents.map((row) => (
+-                <tr key={row.entityId}>
+-                  <td>
+-                    <strong>{row.fullName}</strong>
+-                    <span>{row.matricule || formatRole(row.role)}</span>
+-                  </td>
+-                  <td>
+-                    <strong>{row.directionName || "—"}</strong>
+-                    <span>{row.serviceName || row.jobTitle || "—"}</span>
+-                  </td>
+-                  <td>{row.messagesSent}</td>
+-                  <td>{row.messagesReceived}</td>
+-                  <td>{row.filesSent}</td>
+-                  <td>{row.filesReceived}</td>
+-                </tr>
+-              ))}
+-            </tbody>
+-          </table>
+-        </div>
+-      </div>
+-    </div>
+-  );
+-}
+-
+-function AdminMetric({ label, value, onClick }: { label: string; value: number; onClick: () => void }) {
+-  return <button type="button" onClick={onClick} aria-label={`${label} : ${value}. Consulter`}><span>{label}</span><strong>{new Intl.NumberFormat("fr-FR").format(value)}</strong><small>Consulter →</small></button>;
+ }
+ 
+ function AdminMessagesView({
+--- a/apps/web/src/pages/piece-transfers/piece-transfers-page.css
++++ b/apps/web/src/pages/piece-transfers/piece-transfers-page.css
+@@ -1746,3 +1746,60 @@
+ .piece-transfer-chat-panel.piece-transfer-chat-empty { align-items: center; justify-content: center; }
+ .piece-transfer-chat-messages { flex: 1; min-height: 0; }
+ .piece-transfer-chat-header, .piece-transfer-chat-composer, .piece-transfer-chat-closed { flex-shrink: 0; }
++.communication-read-explanation, .communication-read-result {
++  margin: 12px 16px; color: #54666d; font-size: .8rem; line-height: 1.5;
++}
++.communication-admin-filters { display: flex; flex-wrap: wrap; gap: 12px; padding: 4px 16px 12px; align-items: end; }
++.communication-admin-filters label { display: grid; gap: 5px; color: #405861; font-size: .75rem; }
++.communication-admin-filters input, .communication-admin-filters select {
++  min-height: 40px; border: 1px solid #cddcd4; border-radius: 10px; padding: 8px 10px; background: #fff; color: #0b2536;
++}
++.communication-admin-filters .communication-admin-search { display: flex; align-items: center; flex: 1 1 250px; gap: 8px; }
++.communication-admin-search input { width: 100%; min-width: 0; }
++.communication-read-pill { display: inline-flex !important; align-items: center; justify-content: center; min-width: 28px; padding: 4px 8px; border-radius: 999px; font-weight: 800; }
++.communication-read-pill.is-read, .communication-read-pill.is-clear { background: #e8f7ee; color: #046242; }
++.communication-read-pill.is-unread { background: #fff0db; color: #805000; }
++.communication-read-rate { display: grid; gap: 5px; min-width: 82px; }
++.communication-read-rate progress { width: 90px; height: 7px; accent-color: #046242; }
++.communication-admin-filters :focus-visible { outline: 3px solid #e9b521; outline-offset: 2px; }
++.communication-attachment-card {
++  position: relative; display: flex; align-items: stretch; width: min(340px, 100%); min-width: 0;
++  overflow: hidden; border: 1px solid rgba(4,98,66,.16); border-radius: 13px; background: #f4f8f6;
++}
++.communication-attachment-card .communication-attachment-main {
++  display: flex; flex: 1; min-width: 0; align-items: center; gap: 10px;
++  border: 0; background: transparent; text-align: left; padding: 12px; color: #0b2536; cursor: pointer;
++}
++.communication-attachment-icon { display: grid; flex: 0 0 42px; min-height: 48px; place-items: center; border-radius: 9px; background: #e5edf3; color: #254f70; }
++.communication-attachment-icon.file-pdf { background: #ffe9e5; color: #a33425; }
++.communication-attachment-icon.file-xlsx, .communication-attachment-icon.file-xls, .communication-attachment-icon.file-csv { background: #dcefe1; color: #046242; }
++.communication-attachment-copy { display: grid; gap: 4px; min-width: 0; }
++.communication-attachment-copy strong { font-size: .8rem; overflow-wrap: anywhere; }
++.communication-attachment-copy small { color: #576d71; font-size: .7rem; }
++.communication-attachment-copy > span { color: #046242; font-size: .68rem; }
++.communication-attachment-card .communication-attachment-download { align-self: end; flex: 0 0 38px; width: 38px; height: 38px; margin: 6px; display: grid; place-items: center; border: 1px solid #c4d6ca; border-radius: 50%; background: white; color: #046242; cursor: pointer; }
++.communication-attachment-card.is-image .communication-attachment-main { display: grid; gap: 8px; padding: 6px 6px 10px; }
++.communication-attachment-image { width: 100%; height: 180px; object-fit: cover; border-radius: 9px; background: #e9efeb; }
++.communication-attachment-card.is-deleted { opacity: .65; }
++.communication-attachment-card button:disabled { cursor: default; }
++.communication-attachment-card button:focus-visible { outline: 3px solid #e9b521; outline-offset: -3px; }
++.communication-image-dialog { width: min(920px, 92vw); max-height: 90dvh; padding: 16px; border: 0; border-radius: 18px; background: #fff; color: #0b2536; }
++.communication-image-dialog::backdrop { background: rgba(11,37,54,.8); }
++.communication-image-dialog header, .communication-image-dialog footer { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
++.communication-image-dialog header strong { overflow-wrap: anywhere; min-width: 0; }
++.communication-image-dialog img { display: block; width: 100%; max-height: 65dvh; object-fit: contain; margin: 14px 0; }
++.communication-image-dialog button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 38px; border: 1px solid #d5e3db; border-radius: 9px; padding: 6px 10px; background: #f5faf7; color: #046242; cursor: pointer; }
++.communication-image-dialog footer { flex-wrap: wrap; }
++.communication-image-dialog :focus-visible { outline: 3px solid #e9b521; outline-offset: 2px; }
++
++.communication-admin-summary { grid-template-columns: repeat(3, minmax(0, 1fr)); }
++.communication-admin-read-table table { min-width: 1050px; }
++.communication-admin-read-table th, .communication-admin-read-table td { font-size: .78rem; padding: 12px 10px; }
++.communication-admin-read-table td span, .communication-admin-read-table td small { font-size: .68rem; }
++.communication-admin-read-table td .communication-read-pill { font-size: .8rem; }
++.communication-admin-read-table th:first-child, .communication-admin-read-table td:first-child { position: sticky; left: 0; z-index: 1; background: #fff; min-width: 120px; }
++@media (max-width: 650px) {
++  .communication-admin-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
++  .communication-admin-summary > :last-child { grid-column: 1 / -1; }
++  .communication-read-result::after { content: " · Faites défiler le tableau →"; color: #046242; }
++}

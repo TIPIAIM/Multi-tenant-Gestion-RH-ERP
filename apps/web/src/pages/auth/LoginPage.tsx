@@ -16,7 +16,6 @@ import {
     Mail,
     ShieldCheck,
   } from "lucide-react";
-  //import logoFades from "../../assets/logo-fadestext.avif";
   import { getApiErrorMessage } from "../../features/auth/auth.api";
   import { useAuth } from "../../features/auth/auth.context";
   import type { LoginInput } from "../../features/auth/auth.types";
@@ -77,26 +76,20 @@ import TenantSelectionBootstrap from "../../features/tenant-registration/TenantS
         <section className="auth-layout">
           <aside className="auth-brand-panel">
             <div className="brand-panel-content">
-              {/*<img
-                className="brand-logo"
-               src={logoFades}
-              alt="FADES — Fonds d’Aide au Développement du Sport"
-              />*/}
+              
   
               <div className="brand-copy">
                 <p className="auth-eyebrow">
-                  PLATEFORME DE GESTION DES RESSOURCES HUMAINES
+                  VOTRE ESPACE RH
                 </p>
   
                 <h1>
                   L’ambition au service de 
-                  <span> l'Excelence.</span>
+                  <span> l’excellence.</span>
                 </h1>
   
                 <p>
-                  Accédez à votre espace sécurisé de pilotage des
-                  ressources humaines, activités, rapport, evaluation, tache, document administratif, présences, congé, cahiers
-                  de route ...
+                  Gérez vos équipes, vos activités et vos documents dans un espace sécurisé.
                 </p>
               </div>
   
@@ -252,13 +245,12 @@ import TenantSelectionBootstrap from "../../features/tenant-registration/TenantS
               <div className="auth-security-note">
                 <ShieldCheck size={18} />
                 <p>
-                  Cet accès est réservé aux utilisateurs autorisés du
-                  FADES.
+                  Cet accès est réservé aux utilisateurs autorisés de votre organisation.
                 </p>
               </div>
   
               <p className="auth-footer">
-                Fonds d’Aide au Développement du Sport · FADES
+                Plateforme RH · Espace sécurisé
               </p>
             </div>
           </section>

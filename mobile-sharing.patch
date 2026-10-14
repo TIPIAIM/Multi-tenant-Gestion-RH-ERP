@@ -1,0 +1,328 @@
+--- a/apps/web/src/features/piece-transfers/piece-transfer.api.ts
++++ b/apps/web/src/features/piece-transfers/piece-transfer.api.ts
+@@ -548,7 +548,8 @@
+   const response = await api.put<ApiSuccess<{ message: PieceTransferMessage }>>(`${BASE}/${transferId}/messages/${messageId}/reaction`, { emoji });
+   return response.data.data.message;
+ }
+-export async function forwardPieceTransferToAgents(transferId: string, messageId: string, recipientUserIds: string[]): Promise<{ transferId: string }> {
+-  const response = await api.post<ApiSuccess<{ transferId: string }>>(`${BASE}/${transferId}/messages/${messageId}/forward-agents`, { recipientUserIds });
+-  return response.data.data;
+-}
++export type ForwardAgentsResult = { mode: "INDIVIDUAL" | "COMMON"; transfers: Array<{ transferId: string; recipientUserIds: string[] }>; failedRecipientUserIds: string[] };
++export async function forwardPieceTransferToAgents(transferId: string, messageId: string, recipientUserIds: string[], mode: "INDIVIDUAL" | "COMMON" = "INDIVIDUAL"): Promise<ForwardAgentsResult> {
++  const response = await api.post<ApiSuccess<ForwardAgentsResult>>(`${BASE}/${transferId}/messages/${messageId}/forward-agents`, { recipientUserIds, mode });
++  return response.data.data;
++}
+--- a/apps/web/src/pages/piece-transfers/PieceTransfersPage.tsx
++++ b/apps/web/src/pages/piece-transfers/PieceTransfersPage.tsx
+@@ -4,6 +4,7 @@
+ import {
+   useEffect,
+   useMemo,
++  useRef,
+   useState,
+   type ReactNode,
+ } from "react";
+@@ -156,6 +157,24 @@
+   const debouncedFilesSearch = useDebouncedSearch(filesSearch);
+   const [adminPage, setAdminPage] = useState(1);
+   const [composerOpen, setComposerOpen] = useState(false);
++  const chatShellRef = useRef<HTMLElement | null>(null);
++  useEffect(() => {
++    const node = chatShellRef.current;
++    if (!node) return;
++    const resize = () => {
++      const viewport = window.visualViewport;
++      const bottom = viewport ? viewport.height + viewport.offsetTop : window.innerHeight;
++      const available = Math.max(160, bottom - node.getBoundingClientRect().top - 12);
++      node.style.setProperty("--communication-height", `${available}px`);
++    };
++    resize();
++    window.addEventListener("resize", resize);
++    window.visualViewport?.addEventListener("resize", resize);
++    window.visualViewport?.addEventListener("scroll", resize);
++    const observer = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null;
++    if (node.parentElement) observer?.observe(node.parentElement);
++    return () => { window.removeEventListener("resize", resize); window.visualViewport?.removeEventListener("resize", resize); window.visualViewport?.removeEventListener("scroll", resize); observer?.disconnect(); };
++  }, [workspace]);
+   const [selectedTransferId, setSelectedTransferId] = useState<string | null>(null);
+   const [fileAction, setFileAction] = useState<"VIEW" | "DOWNLOAD" | null>(null);
+   const [adminFileAction, setAdminFileAction] = useState<string | null>(null);
+@@ -531,6 +550,7 @@
+         </section>
+       ) : workspace === "CHATS" ? (
+         <section
++          ref={chatShellRef}
+           className={`piece-transfer-chat-shell ${selectedTransferId ? "has-selection" : ""}`}
+         >
+           <aside className="piece-transfer-conversations-pane">
+--- a/apps/web/src/pages/piece-transfers/piece-transfers-page.css
++++ b/apps/web/src/pages/piece-transfers/piece-transfers-page.css
+@@ -1858,3 +1858,69 @@
+ 
+ .communication-forward-panel .communication-forward-confirm { position: sticky; bottom: 0; background: #046242; color: #fff; min-height: 40px; box-shadow: 0 -5px 12px #f4faf6; }
+ .communication-forward-confirm:disabled { opacity: .55; cursor: default; }
++
++/* Mobile-first: viewport-aware conversation and transfer dialog. */
++.piece-transfer-chat-shell { height: var(--communication-height, calc(100dvh - 150px)); min-height: 0; }
++.piece-transfer-conversations-pane { min-height: 0; }
++.piece-transfer-chat-panel, .piece-transfer-chat-shell.has-selection .piece-transfer-chat-panel { display: flex; flex-direction: column; min-height: 0; }
++.piece-transfer-chat-messages { min-width: 0; overflow-x: hidden; overscroll-behavior: contain; }
++.piece-transfer-bubble { min-width: 0; overflow-wrap: anywhere; }
++.piece-transfer-bubble p { overflow-wrap: anywhere; word-break: break-word; }
++.piece-transfer-chat-title { min-width: 0; }
++.piece-transfer-chat-title strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
++.piece-transfer-chat-info { max-height: 30dvh; overflow: auto; flex-shrink: 0; }
++.piece-transfer-chat-composer { padding-bottom: max(9px, env(safe-area-inset-bottom)); }
++.piece-transfer-chat-composer textarea { font-size: 16px; min-height: 44px; }
++.piece-transfer-chat-send, .piece-transfer-chat-attach, .communication-emoji-toggle { width: 40px; height: 44px; }
++.communication-forward-layer { position: fixed; inset: 0; z-index: 1500; display: grid; place-items: center; padding: max(10px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(10px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); background: #0b253666; backdrop-filter: blur(3px); box-sizing: border-box; }
++.communication-forward-layer * { box-sizing: border-box; }
++.communication-forward-panel { display: flex; flex-direction: column; width: min(560px, 100%); max-height: calc(100dvh - 24px); min-height: 0; padding: 0; margin: 0; overflow: hidden; border-radius: 18px; background: #fff; box-shadow: 0 22px 80px #0b253633; }
++.communication-forward-panel > header { flex: 0 0 auto; padding: 14px 16px; border-bottom: 1px solid #d5e3db; gap: 8px; }
++.communication-forward-panel > header strong { font-size: 1rem; min-width: 0; }
++.communication-forward-panel button { min-height: 44px; }
++.communication-forward-scroll { overflow-y: auto; overscroll-behavior: contain; min-height: 0; padding: 14px 16px; display: flex; flex-direction: column; gap: 12px; }
++.communication-forward-scroll > * { flex-shrink: 0; }
++.communication-forward-panel .communication-forward-excerpt { display: block; border-left: 3px solid #046242; padding: 8px 10px; background: #f4faf6; max-height: 80px; }
++.communication-forward-scroll input:not([type="checkbox"]):not([type="radio"]), .communication-forward-scroll select { width: 100%; font-size: 16px; min-height: 44px; }
++.communication-forward-footer { flex: 0 0 auto; padding: 12px 16px max(12px, env(safe-area-inset-bottom)); border-top: 1px solid #d5e3db; background: #fff; }
++.communication-forward-footer .communication-forward-confirm { width: 100%; position: static; min-height: 46px; white-space: normal; line-height: 1.4; }
++.communication-agent-list { max-height: 200px; }
++.communication-selected-agents { max-height: 120px; overflow-y: auto; }
++.communication-sharing-choice { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
++.communication-sharing-choice legend { margin-bottom: 8px; font-weight: 700; font-size: .85rem; }
++.communication-sharing-choice label { display: flex; align-items: flex-start; gap: 10px; padding: 12px; border: 1px solid #d5e3db; border-radius: 11px; cursor: pointer; }
++.communication-sharing-choice label:has(input:checked) { border-color: #046242; background: #edf7f0; }
++.communication-sharing-choice input { accent-color: #046242; margin-top: 3px; flex: 0 0 auto; }
++.communication-sharing-choice span { display: grid; gap: 5px; min-width: 0; }
++.communication-sharing-choice small { line-height: 1.5; }
++.communication-sharing-summary { color: #046242; font-size: .82rem; }
++.communication-message-menu { max-width: calc(100vw - 40px); }
++.communication-reactions button { min-height: 36px; }
++@media (max-width: 760px) {
++  .piece-transfers-page { padding: 0; }
++  .piece-transfer-chat-shell { height: var(--communication-height, calc(100dvh - 145px)); min-height: 0; }
++  .piece-transfer-chat-panel { display: none; }
++  .piece-transfer-chat-shell.has-selection .piece-transfer-chat-panel { display: flex; }
++  .piece-transfer-chat-header { gap: 6px; padding: 8px; }
++  .piece-transfer-chat-messages { padding: 12px 10px; }
++  .piece-transfer-bubble { max-width: 94%; }
++  .piece-transfer-appbar { flex-wrap: wrap; gap: 8px; }
++  .piece-transfer-appbar-actions { flex-wrap: wrap; }
++  .piece-transfer-chat-header-actions { gap: 3px; }
++  .piece-transfer-chat-header-actions > button, .piece-transfer-chat-menu-wrap > button { width: 34px; }
++  .piece-transfer-chat-composer { gap: 4px; padding-inline: 7px; }
++  .piece-transfer-quick-stats { padding: 10px; gap: 7px; }
++  .piece-transfer-mini-stat { min-height: 82px; padding: 9px; }
++  .piece-transfer-admin-summary-v5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
++  .piece-transfer-admin-head-v5 { flex-wrap: wrap; gap: 8px; }
++}
++@media (max-width: 380px) {
++  .communication-forward-layer { padding: 6px; }
++  .communication-forward-panel { max-height: calc(100dvh - 12px); border-radius: 12px; }
++  .communication-forward-scroll, .communication-forward-panel > header, .communication-forward-footer { padding-inline: 11px; }
++  .piece-transfer-chat-avatar { display: none; }
++  .piece-transfer-chat-header { grid-template-columns: auto minmax(0, 1fr) auto; }
++}
++@media (prefers-reduced-motion: reduce) {
++  .piece-transfers-page *, .communication-forward-layer * { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
++}
+--- a/apps/web/src/pages/piece-transfers/PieceTransferDetailsDrawer.tsx
++++ b/apps/web/src/pages/piece-transfers/PieceTransferDetailsDrawer.tsx
+@@ -154,6 +154,9 @@
+   const [replyTarget, setReplyTarget] = useState<PieceTransferMessage | null>(null);
+   const [forwardTarget, setForwardTarget] = useState<PieceTransferMessage | null>(null);
+   const [forwardSearch, setForwardSearch] = useState("");
++  const [sharingMode, setSharingMode] = useState<"INDIVIDUAL" | "COMMON">("INDIVIDUAL");
++  const forwardDialogRef = useRef<HTMLElement | null>(null);
++  const [forwardPartialError, setForwardPartialError] = useState<string | null>(null);
+   const [forwardMode, setForwardMode] = useState<"DISCUSSION" | "AGENTS">("DISCUSSION");
+   const [agentSearch, setAgentSearch] = useState("");
+   const [debouncedAgentSearch, setDebouncedAgentSearch] = useState("");
+@@ -180,8 +183,20 @@
+     setSelectedAgents(current => { const next = new Map(current); if (next.has(agent.userId)) next.delete(agent.userId); else if (next.size < 500) next.set(agent.userId, agent); return next; });
+   }
+   const forwardAgentsMutation = useMutation({
+-    mutationFn: ({ source, messageId, ids }: { source: string; messageId: string; ids: string[] }) => forwardPieceTransferToAgents(source, messageId, ids),
+-    onSuccess: async (_data, variables) => { setForwardTarget(null); setSelectedAgents(new Map()); setForwardNotice(`Message transféré à ${variables.ids.length} destinataire(s).`); await queryClient.invalidateQueries({ queryKey: ["piece-transfers"] }); },
++    mutationFn: ({ source, messageId, ids, mode }: { source: string; messageId: string; ids: string[]; mode: "INDIVIDUAL" | "COMMON" }) => forwardPieceTransferToAgents(source, messageId, ids, mode),
++    onSuccess: async (data, variables) => {
++      if (currentTransferRef.current === variables.source) {
++        if (data.failedRecipientUserIds.length) {
++          const failed = new Set(data.failedRecipientUserIds);
++          setSelectedAgents(current => new Map([...current].filter(([id]) => failed.has(id))));
++          setForwardPartialError(`${data.transfers.length} discussion(s) créée(s). Échec pour ${failed.size} destinataire(s) : seuls ces destinataires restent sélectionnés pour réessayer.`);
++        } else {
++          setForwardTarget(null); setSelectedAgents(new Map()); setForwardPartialError(null);
++          setForwardNotice(data.mode === "COMMON" ? "Message transféré dans une discussion commune." : `Message transféré dans ${data.transfers.length} discussion(s) individuelle(s).`);
++        }
++      }
++      await queryClient.invalidateQueries({ queryKey: ["piece-transfers"] });
++    },
+   });
+   const reactionMutation = useMutation({
+     mutationFn: ({ source, messageId, emoji }: { source: string; messageId: string; emoji: string | null }) => setPieceTransferReaction(source, messageId, emoji),
+@@ -243,6 +258,29 @@
+     refetchInterval: transferId ? 15_000 : false,
+     refetchOnWindowFocus: true,
+   });
++
++  useEffect(() => {
++    if (!forwardTarget) return;
++    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
++    const dialog = forwardDialogRef.current;
++    const overflow = document.body.style.overflow;
++    document.body.style.overflow = "hidden";
++    const fitViewport = () => { if (dialog) dialog.style.maxHeight = `${Math.max(120, (window.visualViewport?.height ?? window.innerHeight) - 24)}px`; };
++    fitViewport();
++    window.visualViewport?.addEventListener("resize", fitViewport);
++    dialog?.focus();
++    const handleKey = (event: KeyboardEvent) => {
++      if (event.key === "Escape") { event.preventDefault(); event.stopImmediatePropagation(); if (!forwardMutation.isPending && !forwardAgentsMutation.isPending) setForwardTarget(null); }
++      if (event.key !== "Tab" || !dialog) return;
++      event.stopImmediatePropagation();
++      const elements = Array.from(dialog.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), select:not(:disabled), [tabindex="0"]')).filter(node => node.getClientRects().length > 0);
++      const first = elements[0], last = elements.at(-1);
++      if (event.shiftKey && (document.activeElement === first || document.activeElement === dialog)) { event.preventDefault(); last?.focus(); }
++      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
++    };
++    document.addEventListener("keydown", handleKey, true);
++    return () => { document.body.style.overflow = overflow; window.visualViewport?.removeEventListener("resize", fitViewport); document.removeEventListener("keydown", handleKey, true); previous?.focus(); };
++  }, [forwardTarget, forwardMutation.isPending, forwardAgentsMutation.isPending]);
+ 
+   const sendMessageMutation = useMutation({
+     mutationFn: ({ id, input }: { id: string; input: SendPieceTransferMessageInput }) =>
+@@ -866,7 +904,7 @@
+                       <button type="button" aria-label="Actions du message" aria-expanded={openMessageMenu === message.id} onClick={() => setOpenMessageMenu(current => current === message.id ? null : message.id)}><MoreVertical size={16} /></button>
+                       {openMessageMenu === message.id && <div className="communication-message-menu">
+                         <button type="button" onClick={() => { setReplyTarget(message); setOpenMessageMenu(null); composerRef.current?.focus(); }}><Reply size={15} /> Répondre</button>
+-                        <button type="button" onClick={() => { setForwardTarget(message); setForwardMode("DISCUSSION"); setForwardSearch(""); setAgentSearch(""); setDebouncedAgentSearch(""); setSelectedAgents(new Map()); setForwardDestination(""); forwardMutation.reset(); forwardAgentsMutation.reset(); setOpenMessageMenu(null); }}><Forward size={15} /> Transférer</button>
++                        <button type="button" onClick={() => { setForwardTarget(message); setSharingMode("INDIVIDUAL"); setForwardPartialError(null); setForwardMode("DISCUSSION"); setForwardSearch(""); setAgentSearch(""); setDebouncedAgentSearch(""); setSelectedAgents(new Map()); setForwardDestination(""); forwardMutation.reset(); forwardAgentsMutation.reset(); setOpenMessageMenu(null); }}><Forward size={15} /> Transférer</button>
+                       </div>}
+                     </div>
+                   )}
+@@ -905,9 +943,10 @@
+       </div>
+ 
+       {forwardNotice && <div className="communication-forward-notice" role="status"><Check size={16} />{forwardNotice}<button type="button" aria-label="Fermer la confirmation" onClick={() => setForwardNotice(null)}><X size={14} /></button></div>}
+-      {forwardTarget && <section className="communication-forward-panel" aria-label="Transférer un message">
++      {forwardTarget && <div className="communication-forward-layer"><section ref={forwardDialogRef} tabIndex={-1} role="dialog" aria-modal="true" className="communication-forward-panel" aria-label="Transférer un message">
+         <header><strong><Forward size={16} /> Transférer ce message</strong><button type="button" disabled={forwardMutation.isPending || forwardAgentsMutation.isPending} aria-label="Fermer le transfert" onClick={() => setForwardTarget(null)}><X size={18} /></button></header>
+-        <p>{forwardTarget.body || "Pièces jointes"}</p>
++        <div className="communication-forward-scroll">
++        <p className="communication-forward-excerpt">{forwardTarget.body || "Pièces jointes"}</p>
+         <small>{forwardTarget.attachments.length} pièce(s) jointe(s) · une copie indépendante sera envoyée.</small>
+         <div className="communication-forward-modes" role="group" aria-label="Destination du transfert">
+           <button type="button" aria-pressed={forwardMode === "DISCUSSION"} disabled={forwardMutation.isPending || forwardAgentsMutation.isPending} onClick={() => setForwardMode("DISCUSSION")}><MessageCircle size={16} /> Discussion</button>
+@@ -918,10 +957,14 @@
+           {forwardQuery.isLoading ? <p>Chargement…</p> : forwardQuery.isError ? <p role="alert">Discussions indisponibles. <button type="button" onClick={() => void forwardQuery.refetch()}>Réessayer</button></p> : <select aria-label="Discussion destinataire" value={forwardDestination} disabled={forwardMutation.isPending} onChange={event => setForwardDestination(event.target.value)}><option value="">Choisir une discussion</option>{forwardQuery.data?.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select>}
+           <small>Discussions actives dont vous êtes participant. Affinez la recherche si nécessaire.</small>
+           {forwardMutation.isError && <p role="alert">{getApiErrorMessage(forwardMutation.error)}</p>}
+-          <button type="button" className="communication-forward-confirm" disabled={!forwardDestination || forwardMutation.isPending} onClick={() => { if (transferId) forwardMutation.mutate({ destination: forwardDestination, source: transferId, messageId: forwardTarget.id }); }}>{forwardMutation.isPending ? "Transfert…" : "Confirmer le transfert"}</button>
+         </> : <>
+           <input aria-label="Rechercher un agent destinataire" placeholder="Rechercher par nom ou email…" maxLength={120} value={agentSearch} disabled={forwardAgentsMutation.isPending} onChange={event => setAgentSearch(event.target.value)} />
+           <div className="communication-selected-agents" aria-label="Agents sélectionnés">{[...selectedAgents.values()].map(agent => <button type="button" key={agent.userId} disabled={forwardAgentsMutation.isPending} aria-label={`Retirer ${agent.fullName}`} onClick={() => toggleAgent(agent)}>{agent.fullName}<X size={13} /></button>)}</div>
++          <fieldset className="communication-sharing-choice"><legend>Comment partager avec ces personnes ?</legend>
++            <label><input type="radio" name="sharing-mode" checked={sharingMode === "INDIVIDUAL"} disabled={forwardAgentsMutation.isPending} onChange={() => setSharingMode("INDIVIDUAL")} /><span><strong>Discussions individuelles</strong><small>Une discussion privée avec chaque personne. Les autres destinataires ne voient pas ses réponses.</small></span></label>
++            <label><input type="radio" name="sharing-mode" checked={sharingMode === "COMMON"} disabled={forwardAgentsMutation.isPending} onChange={() => setSharingMode("COMMON")} /><span><strong>Discussion commune</strong><small>Toutes les personnes sélectionnées échangent ensemble dans la même discussion.</small></span></label>
++          </fieldset>
++          <p className="communication-sharing-summary" role="status">{selectedAgents.size} destinataire(s) · {sharingMode === "INDIVIDUAL" ? `${selectedAgents.size} discussion(s) individuelle(s)` : "1 discussion commune"}</p>
+           {[...(debouncedAgentSearch ? [{ query: searchAgentsQuery, title: "Résultats de recherche" }] : []), { query: allAgentsQuery, title: "Tous les agents disponibles" }].map(({ query, title }) => <section className="communication-agent-directory" key={title} aria-label={title}>
+             <strong>{title}</strong>
+             {query.isLoading ? <p>Chargement…</p> : query.isError ? <p role="alert">Liste indisponible. <button type="button" onClick={() => void query.refetch()}>Réessayer</button></p> : <>
+@@ -930,11 +973,18 @@
+               {query.hasNextPage && <button type="button" disabled={query.isFetchingNextPage || forwardAgentsMutation.isPending} onClick={() => void query.fetchNextPage()}>{query.isFetchingNextPage ? "Chargement…" : "Afficher les agents suivants"}</button>}
+             </>}
+           </section>)}
+-          <small>{selectedAgents.size} destinataire(s) sélectionné(s). Une nouvelle discussion commune sera créée avec ces personnes.</small>
++          {forwardPartialError && <p role="alert">{forwardPartialError}</p>}
+           {forwardAgentsMutation.isError && <p role="alert">{getApiErrorMessage(forwardAgentsMutation.error)}</p>}
+-          <button type="button" className="communication-forward-confirm" disabled={!selectedAgents.size || forwardAgentsMutation.isPending} onClick={() => { if (transferId) forwardAgentsMutation.mutate({ source: transferId, messageId: forwardTarget.id, ids: [...selectedAgents.keys()] }); }}>{forwardAgentsMutation.isPending ? "Transfert…" : `Transférer à ${selectedAgents.size} agent(s)`}</button>
+         </>}
+-      </section>}
++        </div>
++        <footer className="communication-forward-footer">
++          <button type="button" className="communication-forward-confirm" disabled={forwardMode === "DISCUSSION" ? !forwardDestination || forwardMutation.isPending : !selectedAgents.size || forwardAgentsMutation.isPending} onClick={() => {
++            if (!transferId) return;
++            if (forwardMode === "DISCUSSION") forwardMutation.mutate({ destination: forwardDestination, source: transferId, messageId: forwardTarget.id });
++            else { setForwardPartialError(null); forwardAgentsMutation.mutate({ source: transferId, messageId: forwardTarget.id, ids: [...selectedAgents.keys()], mode: sharingMode }); }
++          }}>{forwardMutation.isPending || forwardAgentsMutation.isPending ? "Transfert en cours…" : forwardMode === "DISCUSSION" ? "Confirmer le transfert" : sharingMode === "INDIVIDUAL" ? `Créer ${selectedAgents.size} discussion(s) individuelle(s)` : `Créer une discussion commune · ${selectedAgents.size} personne(s)`}</button>
++        </footer>
++      </section></div>}
+       {(error || mutationError || localError) && (
+         <div className="piece-transfer-chat-error">
+           {error || mutationError || localError}
+--- a/apps/api/src/modules/piece-transfers/piece-transfer.service.ts
++++ b/apps/api/src/modules/piece-transfers/piece-transfer.service.ts
+@@ -4685,24 +4685,35 @@
+   return serializeMessage(message, access.transfer, actor);
+ }
+ 
+-export async function forwardPieceTransferToAgents(tenant: TenantDocument, actor: Actor, transferId: string, messageId: string, recipientUserIds: string[]): Promise<{ transferId: string }> {
+-  await getActorUser(tenant, actor);
++export async function forwardPieceTransferToAgents(tenant: TenantDocument, actor: Actor, transferId: string, messageId: string, recipientUserIds: string[], mode: "INDIVIDUAL" | "COMMON" = "INDIVIDUAL"): Promise<{ mode: "INDIVIDUAL" | "COMMON"; transfers: Array<{ transferId: string; recipientUserIds: string[] }>; failedRecipientUserIds: string[] }> {
++  const sender = await getActorUser(tenant, actor);
+   const source = await getTransferAndAccess(tenant, actor, transferId);
+   if ((!source.isSender && !source.recipient) || source.transfer.status !== "ACTIVE") {
+     throw new AppError("Ce message ne peut pas être transféré.", 403, "FORWARD_NOT_ALLOWED");
+   }
+   const original = await PieceTransferMessageModel.findOne({ _id: messageId, tenantId: tenant._id, transferId: source.transfer._id, status: "ACTIVE" });
+   if (!original) throw new AppError("Message source indisponible.", 404, "FORWARD_MESSAGE_NOT_FOUND");
+-  const metadata = { title: `Transfert · ${source.transfer.title}`.slice(0, 180), audienceMode: "SELECTED" as const, recipientUserIds: [...new Set(recipientUserIds)] };
+-  // Same eligibility/tenant checks as the existing communication composer.
+-  await resolveRecipients(tenant, actor.userId, metadata);
+-  const created = await createPieceTransfer({ tenant, actor, metadata });
+-  try {
+-    await sendPieceTransferMessage({ tenant, actor, transferId: created.id, metadata: { forwardTransferId: transferId, forwardMessageId: messageId } });
+-    return { transferId: created.id };
+-  } catch (error) {
+-    // Revoke the incomplete communication so recipients cannot open a failed transfer.
+-    await revokePieceTransfer(tenant, actor, created.id);
+-    throw error;
+-  }
++  const ids = [...new Set(recipientUserIds)];
++  const metadata = { title: `Transfert · ${source.transfer.title}`.slice(0, 180), audienceMode: "SELECTED" as const, recipientUserIds: ids };
++  // Validate all recipients before creating any discussion.
++  const recipients = await resolveRecipients(tenant, actor.userId, metadata);
++  const groups = mode === "COMMON" ? [ids] : ids.map(id => [id]);
++  const transfers: Array<{ transferId: string; recipientUserIds: string[] }> = [];
++  const failedRecipientUserIds: string[] = [];
++  for (const group of groups) {
++    let createdId: string | undefined;
++    try {
++      const recipientName = mode === "INDIVIDUAL" ? recipients.find(item => item.userId.toString() === group[0])?.fullName : undefined;
++      const title = recipientName ? `${sender.fullName} ↔ ${recipientName} · ${source.transfer.title}`.slice(0, 180) : metadata.title;
++      const created = await createPieceTransfer({ tenant, actor, metadata: { ...metadata, title, recipientUserIds: group } });
++      createdId = created.id;
++      await sendPieceTransferMessage({ tenant, actor, transferId: created.id, metadata: { forwardTransferId: transferId, forwardMessageId: messageId } });
++      transfers.push({ transferId: created.id, recipientUserIds: group });
++    } catch (error) {
++      if (createdId) await revokePieceTransfer(tenant, actor, createdId);
++      if (mode === "COMMON") throw error;
++      failedRecipientUserIds.push(...group);
++    }
++  }
++  return { mode, transfers, failedRecipientUserIds };
+ }
+--- a/apps/api/src/modules/piece-transfers/piece-transfer.schema.ts
++++ b/apps/api/src/modules/piece-transfers/piece-transfer.schema.ts
+@@ -294,5 +294,6 @@
+   emoji: z.enum(["👍", "❤️", "😂", "🙏", "💪", "👋", "👏", "✅"]).nullable(),
+ });
+ export const forwardToAgentsSchema = z.object({
++  mode: z.enum(["INDIVIDUAL", "COMMON"]).default("INDIVIDUAL"),
+   recipientUserIds: z.array(objectIdSchema).min(1, "Choisissez un agent.").max(500),
+ });
+--- a/apps/api/src/modules/piece-transfers/piece-transfer.controller.ts
++++ b/apps/api/src/modules/piece-transfers/piece-transfer.controller.ts
+@@ -1202,7 +1202,7 @@
+   try {
+     const { tenant, actor } = context(request);
+     const { id, messageId } = pieceTransferMessageParamsSchema.parse(request.params);
+-    const { recipientUserIds } = forwardToAgentsSchema.parse(request.body);
+-    response.status(201).json({ success: true, data: await forwardPieceTransferToAgents(tenant, actor, id, messageId, recipientUserIds) });
++    const { recipientUserIds, mode } = forwardToAgentsSchema.parse(request.body);
++    response.status(201).json({ success: true, data: await forwardPieceTransferToAgents(tenant, actor, id, messageId, recipientUserIds, mode) });
+   } catch (error) { next(error); }
+ }

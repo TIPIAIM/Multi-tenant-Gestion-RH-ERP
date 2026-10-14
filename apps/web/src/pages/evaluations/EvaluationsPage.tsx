@@ -485,33 +485,33 @@ export default function EvaluationsPage() {
             className="evaluation-secondary-button"
             type="button"
             onClick={() => void refreshEvaluations()}
-          >
-            <RefreshCw size={18} />
+           data-ui-action="compact" aria-label="Actualiser" title="Actualiser">
+            <RefreshCw size={18} /><span className="ui-action-label">
             Actualiser
-          </button>
+          </span></button>
           <button
             className="evaluation-secondary-button"
             type="button"
             onClick={() => exportMutation.mutate()}
             disabled={exportMutation.isPending}
-          >
+           data-ui-action="compact" aria-label="Export Excel" title="Export Excel">
             {exportMutation.isPending ? (
               <LoaderCircle size={18} className="is-spinning" />
             ) : (
               <Download size={18} />
-            )}
+            )}<span className="ui-action-label">
             Export Excel
-          </button>
+          </span></button>
           {canManageEvaluation && (
             <button
               className="evaluation-primary-button"
               type="button"
               onClick={openCreateModal}
               disabled={agents.length === 0}
-            >
-              <Plus size={18} />
+             data-ui-action="compact" aria-label="Nouvelle évaluation" title="Nouvelle évaluation">
+              <Plus size={18} /><span className="ui-action-label">
               Nouvelle évaluation
-            </button>
+            </span></button>
           )}
         </div>
       </header>
@@ -800,7 +800,7 @@ export default function EvaluationsPage() {
                   type="button"
                   onClick={() => setSelectedEvaluationId(evaluation.id)}
                   title="Ouvrir l’évaluation"
-                >
+                 aria-label="Ouvrir l’évaluation">
                   <Eye size={17} />
                 </button>
 
@@ -809,7 +809,7 @@ export default function EvaluationsPage() {
                     type="button"
                     onClick={() => openEditModal(evaluation)}
                     title="Modifier l’évaluation"
-                  >
+                   aria-label="Modifier l’évaluation">
                     <Pencil size={17} />
                   </button>
                 )}
@@ -821,7 +821,7 @@ export default function EvaluationsPage() {
                     onClick={() => setEvaluationToDelete(evaluation)}
                     disabled={deleteMutation.isPending}
                     title="Supprimer"
-                  >
+                   aria-label="Supprimer">
                     <Trash2 size={17} />
                   </button>
                 )}
@@ -949,14 +949,14 @@ export default function EvaluationsPage() {
                 onClick={() =>
                   deleteMutation.mutate(evaluationToDelete.id)
                 }
-              >
+               data-ui-action="compact" aria-label="Supprimer" title="Supprimer">
                 {deleteMutation.isPending ? (
                   <LoaderCircle size={17} className="is-spinning" />
                 ) : (
                   <Trash2 size={17} />
-                )}
+                )}<span className="ui-action-label">
                 Supprimer
-              </button>
+              </span></button>
             </footer>
           </section>
         </div>

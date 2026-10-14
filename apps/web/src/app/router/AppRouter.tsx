@@ -16,7 +16,10 @@ import EvaluationsPage from "../../pages/evaluations/EvaluationsPage";
 import ReportsPage from "../../pages/reports/ReportsPage";
 import SettingsPage from "../../pages/settings/SettingsPage";
 import CreateWorkspacePage from "../../pages/public/CreateWorkspacePage";
+import PieceTransfersPage from "../../pages/piece-transfers/PieceTransfersPage";
 //import RoadmapsPage from "../../pages/roadmaps/RoadmapsPage";
+
+
 
 function SessionLoader() {
   return (
@@ -61,6 +64,9 @@ export default function AppRouter() {
           <Route path="/evaluations" element={<EvaluationsPage />} />
           <Route path="/reports" element={<ReportsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+       
+       <Route path="piece-transfers" element={<PieceTransfersPage />} />
+       
         </Route>
       </Route>
 

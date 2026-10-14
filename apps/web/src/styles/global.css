@@ -1,52 +1,38 @@
+/* Socle de l’interface RH — aucune dépendance de police distante. */
 :root {
-  font-family:
-    "Cera Pro",
-    "Segoe UI",
-    Inter,
-    Arial,
-    sans-serif;
-
-  color: #0b2536;
-  background: #f3f8f5;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  color-scheme: light;
+  font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Arial, sans-serif;
+  font-size: 16px; line-height: 1.5; color: #172f3b; background: #f5f7fa;
+  font-synthesis: none; text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --ui-primary: #046242; --ui-primary-soft: #edf7f2;
+  --ui-navy: #0b2536; --ui-muted: #526774; --ui-border: #dce5e9;
+  --ui-surface: #ffffff; --ui-background: #f5f7fa;
+  --ui-danger: #bd3027; --ui-radius: 12px;
+  --ui-shadow: 0 4px 20px rgb(11 37 54 / 5%);
 }
-
-* {
-  box-sizing: border-box;
+*, *::before, *::after { box-sizing: border-box; }
+html { min-width: 0; -webkit-text-size-adjust: 100%; scroll-padding-top: 88px; }
+body { margin: 0; min-width: 0; min-height: 100vh; min-height: 100dvh; }
+#root { width: 100%; min-width: 0; min-height: 100vh; min-height: 100dvh; text-align: left; }
+button, input, textarea, select { font: inherit; }
+button, a, input, textarea, select { -webkit-tap-highlight-color: transparent; }
+button { touch-action: manipulation; }
+button:not(:disabled), summary { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+svg { flex-shrink: 0; }
+img, video { max-width: 100%; height: auto; }
+:where(button, a, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 3px solid #397ca4; outline-offset: 3px;
 }
-
-html {
-  min-width: 320px;
-  background: #f3f8f5;
-}
-
-body {
-  min-width: 320px;
-  min-height: 100vh;
-  margin: 0;
-}
-
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
-
-button:focus-visible,
-input:focus-visible,
-textarea:focus-visible,
-select:focus-visible {
-  outline: 3px solid rgba(233, 181, 33, 0.62);
-  outline-offset: 2px;
-}
-
-img {
-  display: block;
-  max-width: 100%;
-}
-
-#root {
-  min-height: 100vh;
+textarea { resize: vertical; }
+.ui-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+.ui-skip-link { position: fixed; z-index: 3000; top: 8px; left: 8px; padding: 12px 18px;
+  border-radius: 10px; background: #fff; color: #0b2536; transform: translateY(-160%); }
+.ui-skip-link:focus { transform: translateY(0); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important; transition-duration: .01ms !important;
+    scroll-behavior: auto !important; }
 }

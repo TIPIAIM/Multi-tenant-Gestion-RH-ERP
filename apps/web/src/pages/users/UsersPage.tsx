@@ -1,3 +1,4 @@
+import { getApiErrorMessage } from "../../features/auth/auth.api";
 import { useEffect, useState } from "react";
 import {
   AlertTriangle,
@@ -63,26 +64,7 @@ const roleLabels: Record<UserManagementRole, string> = {
   AGENT: "Agent",
 };
 
-function getErrorMessage(error: unknown): string {
-  if (
-    typeof error === "object" &&
-    error !== null &&
-    "response" in error
-  ) {
-    const response = (error as {
-      response?: { data?: { message?: string; error?: string } };
-    }).response;
-
-    return (
-      response?.data?.message ||
-      response?.data?.error ||
-      "Une erreur est survenue."
-    );
-  }
-
-  if (error instanceof Error) return error.message;
-  return "Une erreur est survenue.";
-}
+const getErrorMessage = getApiErrorMessage;
 
 function formatDate(value?: string | null): string {
   if (!value) return "—";
@@ -254,10 +236,10 @@ export default function UsersPage() {
         </div>
 
         <div className="users-hero-actions">
-          <button type="button" onClick={() => void refresh()}>
-            <RefreshCw size={18} />
+          <button type="button" onClick={() => void refresh()} data-ui-action="compact" aria-label="Actualiser" title="Actualiser">
+            <RefreshCw size={18} /><span className="ui-action-label">
             Actualiser
-          </button>
+          </span></button>
 
           <button
             type="button"
@@ -456,7 +438,7 @@ export default function UsersPage() {
                           type="button"
                           title="Voir"
                           onClick={() => setSelectedUser(managedUser)}
-                        >
+                         aria-label="Voir">
                           <Eye size={16} />
                         </button>
 
@@ -467,7 +449,7 @@ export default function UsersPage() {
                             setEditingUser(managedUser);
                             setIsFormOpen(true);
                           }}
-                        >
+                         aria-label="Modifier">
                           <Edit3 size={16} />
                         </button>
 
@@ -477,7 +459,7 @@ export default function UsersPage() {
                             title="Vérifier l’email"
                             disabled={verifyMutation.isPending}
                             onClick={() => verifyMutation.mutate(managedUser.id)}
-                          >
+                           aria-label="Vérifier l’email">
                             <CheckCircle2 size={16} />
                           </button>
                         )}
@@ -486,7 +468,7 @@ export default function UsersPage() {
                           type="button"
                           title="Réinitialiser mot de passe"
                           onClick={() => setPasswordUser(managedUser)}
-                        >
+                         aria-label="Réinitialiser mot de passe">
                           <KeyRound size={16} />
                         </button>
 
@@ -495,7 +477,7 @@ export default function UsersPage() {
                           title="Forcer déconnexion"
                           disabled={logoutMutation.isPending}
                           onClick={() => logoutMutation.mutate(managedUser.id)}
-                        >
+                         aria-label="Forcer déconnexion">
                           <LogOut size={16} />
                         </button>
 
@@ -509,7 +491,7 @@ export default function UsersPage() {
                               isActive: !managedUser.isActive,
                             })
                           }
-                        >
+                         aria-label={managedUser.isActive ? "Désactiver" : "Activer"}>
                           <Power size={16} />
                         </button>
                       </div>

@@ -756,7 +756,7 @@ export default function RoadmapDetailsDrawer({
                   void deleteCurrentRoadmap()
                 }
                 title="Supprimer définitivement cette feuille de route"
-              >
+               aria-label="Supprimer définitivement cette feuille de route">
                 {deleteMutation.isPending ? (
                   <LoaderCircle
                     size={16}

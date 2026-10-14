@@ -243,9 +243,9 @@ export default function SettingsPage() {
           </div>
         </div>
         <div className="settings-hero-actions">
-          <button className="settings-hero-button" type="button" onClick={() => void refreshAll()}><RefreshCw size={17} /> Actualiser</button>
-          <button className="settings-hero-button" type="button" onClick={() => exportMutation.mutate()} disabled={exportMutation.isPending}><Download size={17} /> Exporter</button>
-          <button className="settings-hero-button" type="button" onClick={() => setHistoryOpen(true)}><History size={17} /> Historique</button>
+          <button className="settings-hero-button" type="button" onClick={() => void refreshAll()} data-ui-action="compact" aria-label="Actualiser" title="Actualiser"><RefreshCw size={17} /><span className="ui-action-label"> Actualiser</span></button>
+          <button className="settings-hero-button" type="button" onClick={() => exportMutation.mutate()} disabled={exportMutation.isPending} data-ui-action="compact" aria-label="Exporter" title="Exporter"><Download size={17} /><span className="ui-action-label"> Exporter</span></button>
+          <button className="settings-hero-button" type="button" onClick={() => setHistoryOpen(true)} data-ui-action="compact" aria-label="Historique" title="Historique"><History size={17} /><span className="ui-action-label"> Historique</span></button>
         </div>
       </header>
 

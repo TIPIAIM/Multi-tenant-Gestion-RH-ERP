@@ -1,0 +1,412 @@
+--- a/apps/web/src/pages/piece-transfers/PieceTransferDetailsDrawer.tsx
++++ b/apps/web/src/pages/piece-transfers/PieceTransferDetailsDrawer.tsx
+@@ -40,6 +40,9 @@
+ import {
+   deletePieceTransferMessageAsAdmin,
+   downloadPieceTransferMessageFile,
++  getPieceTransferRecipients,
++  setPieceTransferReaction,
++  forwardPieceTransferToAgents,
+   getPieceTransferInbox,
+   getPieceTransferSent,
+   getPieceTransferById,
+@@ -52,6 +55,7 @@
+ import { getApiErrorMessage } from "../../features/auth/auth.api";
+ import { useAuth } from "../../features/auth/auth.context";
+ import type {
++  PieceTransferRecipientOption,
+   PieceTransferMessage,
+   PieceTransferMessagesResult,
+   SendPieceTransferMessageInput,
+@@ -150,6 +154,44 @@
+   const [replyTarget, setReplyTarget] = useState<PieceTransferMessage | null>(null);
+   const [forwardTarget, setForwardTarget] = useState<PieceTransferMessage | null>(null);
+   const [forwardSearch, setForwardSearch] = useState("");
++  const [forwardMode, setForwardMode] = useState<"DISCUSSION" | "AGENTS">("DISCUSSION");
++  const [agentSearch, setAgentSearch] = useState("");
++  const [debouncedAgentSearch, setDebouncedAgentSearch] = useState("");
++  const [selectedAgents, setSelectedAgents] = useState<Map<string, PieceTransferRecipientOption>>(() => new Map());
++  const [reactingMessageId, setReactingMessageId] = useState<string | null>(null);
++  const [forwardNotice, setForwardNotice] = useState<string | null>(null);
++  useEffect(() => { const timer = window.setTimeout(() => setDebouncedAgentSearch(agentSearch.trim().slice(0, 120)), 300); return () => window.clearTimeout(timer); }, [agentSearch]);
++  const allAgentsQuery = useInfiniteQuery({
++    queryKey: ["piece-transfers", "forward-agents", user?.id, "all"],
++    enabled: Boolean(forwardTarget && forwardMode === "AGENTS" && user?.id),
++    initialPageParam: 1,
++    queryFn: ({ pageParam }) => getPieceTransferRecipients({ page: pageParam, limit: 50 }),
++    getNextPageParam: page => page.pagination.page < page.pagination.pages ? page.pagination.page + 1 : undefined,
++    staleTime: 60_000,
++  });
++  const searchAgentsQuery = useInfiniteQuery({
++    queryKey: ["piece-transfers", "forward-agents", user?.id, "search", debouncedAgentSearch],
++    enabled: Boolean(forwardTarget && forwardMode === "AGENTS" && user?.id && debouncedAgentSearch),
++    initialPageParam: 1,
++    queryFn: ({ pageParam }) => getPieceTransferRecipients({ search: debouncedAgentSearch, page: pageParam, limit: 50 }),
++    getNextPageParam: page => page.pagination.page < page.pagination.pages ? page.pagination.page + 1 : undefined,
++  });
++  function toggleAgent(agent: PieceTransferRecipientOption): void {
++    setSelectedAgents(current => { const next = new Map(current); if (next.has(agent.userId)) next.delete(agent.userId); else if (next.size < 500) next.set(agent.userId, agent); return next; });
++  }
++  const forwardAgentsMutation = useMutation({
++    mutationFn: ({ source, messageId, ids }: { source: string; messageId: string; ids: string[] }) => forwardPieceTransferToAgents(source, messageId, ids),
++    onSuccess: async (_data, variables) => { setForwardTarget(null); setSelectedAgents(new Map()); setForwardNotice(`Message transféré à ${variables.ids.length} destinataire(s).`); await queryClient.invalidateQueries({ queryKey: ["piece-transfers"] }); },
++  });
++  const reactionMutation = useMutation({
++    mutationFn: ({ source, messageId, emoji }: { source: string; messageId: string; emoji: string | null }) => setPieceTransferReaction(source, messageId, emoji),
++    onSuccess: async (message, variables) => {
++      queryClient.setQueryData<InfiniteData<PieceTransferMessagesResult>>(["piece-transfers", "messages", variables.source, user?.id], current => current ? { ...current, pages: current.pages.map(page => ({ ...page, items: page.items.map(item => item.id === message.id ? message : item) })) } : current);
++      setReactingMessageId(null);
++      await queryClient.invalidateQueries({ queryKey: ["piece-transfers", "messages", variables.source, user?.id] });
++    },
++    onError: actionError => setLocalError(getApiErrorMessage(actionError)),
++  });
+   const [forwardDestination, setForwardDestination] = useState("");
+   const [openMessageMenu, setOpenMessageMenu] = useState<string | null>(null);
+   const [emojiOpen, setEmojiOpen] = useState(false);
+@@ -159,7 +201,7 @@
+   replyRef.current = replyTarget;
+   const forwardQuery = useQuery({
+     queryKey: ["piece-transfers", "forward-destinations", user?.id, forwardSearch],
+-    enabled: Boolean(forwardTarget && user?.id),
++    enabled: Boolean(forwardTarget && forwardMode === "DISCUSSION" && user?.id),
+     queryFn: async () => {
+       const params = { page: 1, limit: 30, search: forwardSearch || undefined };
+       const [inbox, sent] = await Promise.all([getPieceTransferInbox(params), getPieceTransferSent(params)]);
+@@ -169,7 +211,7 @@
+   const forwardMutation = useMutation({
+     mutationFn: ({ destination, source, messageId }: { destination: string; source: string; messageId: string }) =>
+       sendPieceTransferMessage(destination, { forwardTransferId: source, forwardMessageId: messageId }),
+-    onSuccess: async () => { setForwardTarget(null); setForwardDestination(""); await queryClient.invalidateQueries({ queryKey: ["piece-transfers"] }); },
++    onSuccess: async () => { setForwardTarget(null); setForwardDestination(""); setForwardNotice("Message transféré dans la discussion sélectionnée."); await queryClient.invalidateQueries({ queryKey: ["piece-transfers"] }); },
+   });
+   const [messageFiles, setMessageFiles] = useState<File[]>([]);
+   const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+@@ -284,7 +326,7 @@
+     const previousId = previousTransferRef.current;
+     if (previousId) { draftsRef.current.set(previousId, currentDraftRef.current); replyDraftsRef.current.set(previousId, replyRef.current); }
+     setReplyTarget(transferId ? replyDraftsRef.current.get(transferId) ?? null : null);
+-    setForwardTarget(null); setOpenMessageMenu(null); setEmojiOpen(false);
++    setForwardTarget(null); setOpenMessageMenu(null); setEmojiOpen(false); setReactingMessageId(null); setForwardNotice(null); setSelectedAgents(new Map());
+     previousTransferRef.current = transferId;
+     const draft = transferId ? draftsRef.current.get(transferId) : undefined;
+     setMessageBody(draft?.body ?? "");
+@@ -809,6 +851,11 @@
+                   </>
+                 )}
+ 
++                {message.status !== "DELETED" && <div className="communication-reactions" aria-label="Réactions au message">
++                  {(message.reactions ?? []).map(reaction => <button key={reaction.emoji} type="button" aria-pressed={reaction.reactedByMe} aria-label={`${reaction.emoji} : ${reaction.count} réaction(s)${reaction.reactedByMe ? ", votre réaction" : ""}`} disabled={!transfer.permissions.canSendMessage || reactionMutation.isPending} onClick={() => { setLocalError(null); reactionMutation.mutate({ source: transfer.id, messageId: message.id, emoji: reaction.reactedByMe ? null : reaction.emoji }); }}>{reaction.emoji}<span>{reaction.count}</span></button>)}
++                  {transfer.permissions.canSendMessage && <button type="button" className="communication-reaction-add" aria-label="Réagir au message" aria-expanded={reactingMessageId === message.id} disabled={reactionMutation.isPending} onClick={() => setReactingMessageId(current => current === message.id ? null : message.id)}><Smile size={15} /><span>+</span></button>}
++                  {reactingMessageId === message.id && <div className="communication-reaction-picker" aria-label="Choisir une réaction">{[{ emoji: "👍", label: "J’aime" }, { emoji: "❤️", label: "Cœur" }, { emoji: "😂", label: "Joie" }, { emoji: "🙏", label: "Merci" }, { emoji: "💪", label: "Force" }, { emoji: "👋", label: "Salutation" }, { emoji: "👏", label: "Bravo" }, { emoji: "✅", label: "Approuvé" }].map(item => <button type="button" key={item.emoji} title={item.label} aria-label={item.label} disabled={reactionMutation.isPending} onClick={() => { setLocalError(null); reactionMutation.mutate({ source: transfer.id, messageId: message.id, emoji: message.reactions?.some(reaction => reaction.emoji === item.emoji && reaction.reactedByMe) ? null : item.emoji }); }}>{item.emoji}</button>)}<button type="button" aria-label="Fermer les réactions" onClick={() => setReactingMessageId(null)}><X size={14} /></button></div>}
++                </div>}
+                 <footer className="piece-transfer-bubble-meta">
+                   {message.editedAt && <span>modifié</span>}
+                   <time>{formatTime(message.createdAt)}</time>
+@@ -819,7 +866,7 @@
+                       <button type="button" aria-label="Actions du message" aria-expanded={openMessageMenu === message.id} onClick={() => setOpenMessageMenu(current => current === message.id ? null : message.id)}><MoreVertical size={16} /></button>
+                       {openMessageMenu === message.id && <div className="communication-message-menu">
+                         <button type="button" onClick={() => { setReplyTarget(message); setOpenMessageMenu(null); composerRef.current?.focus(); }}><Reply size={15} /> Répondre</button>
+-                        <button type="button" onClick={() => { setForwardTarget(message); setForwardSearch(""); setForwardDestination(""); forwardMutation.reset(); setOpenMessageMenu(null); }}><Forward size={15} /> Transférer</button>
++                        <button type="button" onClick={() => { setForwardTarget(message); setForwardMode("DISCUSSION"); setForwardSearch(""); setAgentSearch(""); setDebouncedAgentSearch(""); setSelectedAgents(new Map()); setForwardDestination(""); forwardMutation.reset(); forwardAgentsMutation.reset(); setOpenMessageMenu(null); }}><Forward size={15} /> Transférer</button>
+                       </div>}
+                     </div>
+                   )}
+@@ -857,15 +904,36 @@
+         <div ref={endRef} />
+       </div>
+ 
++      {forwardNotice && <div className="communication-forward-notice" role="status"><Check size={16} />{forwardNotice}<button type="button" aria-label="Fermer la confirmation" onClick={() => setForwardNotice(null)}><X size={14} /></button></div>}
+       {forwardTarget && <section className="communication-forward-panel" aria-label="Transférer un message">
+-        <header><strong><Forward size={16} /> Transférer ce message</strong><button type="button" disabled={forwardMutation.isPending} aria-label="Fermer le transfert" onClick={() => setForwardTarget(null)}><X size={18} /></button></header>
++        <header><strong><Forward size={16} /> Transférer ce message</strong><button type="button" disabled={forwardMutation.isPending || forwardAgentsMutation.isPending} aria-label="Fermer le transfert" onClick={() => setForwardTarget(null)}><X size={18} /></button></header>
+         <p>{forwardTarget.body || "Pièces jointes"}</p>
+         <small>{forwardTarget.attachments.length} pièce(s) jointe(s) · une copie indépendante sera envoyée.</small>
+-        <input aria-label="Rechercher une discussion destinataire" placeholder="Rechercher une discussion…" value={forwardSearch} disabled={forwardMutation.isPending} onChange={event => { setForwardSearch(event.target.value); setForwardDestination(""); }} />
+-        {forwardQuery.isLoading ? <p>Chargement…</p> : forwardQuery.isError ? <p role="alert">Discussions indisponibles. <button type="button" onClick={() => void forwardQuery.refetch()}>Réessayer</button></p> : <select aria-label="Discussion destinataire" value={forwardDestination} disabled={forwardMutation.isPending} onChange={event => setForwardDestination(event.target.value)}><option value="">Choisir une discussion</option>{forwardQuery.data?.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select>}
+-        <small>Discussions actives dont vous êtes participant. Affinez la recherche si nécessaire.</small>
+-        {forwardMutation.isError && <p role="alert">{getApiErrorMessage(forwardMutation.error)}</p>}
+-        <button type="button" disabled={!forwardDestination || forwardMutation.isPending} onClick={() => { if (transferId) forwardMutation.mutate({ destination: forwardDestination, source: transferId, messageId: forwardTarget.id }); }}>{forwardMutation.isPending ? "Transfert…" : "Confirmer le transfert"}</button>
++        <div className="communication-forward-modes" role="group" aria-label="Destination du transfert">
++          <button type="button" aria-pressed={forwardMode === "DISCUSSION"} disabled={forwardMutation.isPending || forwardAgentsMutation.isPending} onClick={() => setForwardMode("DISCUSSION")}><MessageCircle size={16} /> Discussion</button>
++          <button type="button" aria-pressed={forwardMode === "AGENTS"} disabled={forwardMutation.isPending || forwardAgentsMutation.isPending} onClick={() => setForwardMode("AGENTS")}><UsersRound size={16} /> Agents</button>
++        </div>
++        {forwardMode === "DISCUSSION" ? <>
++          <input aria-label="Rechercher une discussion destinataire" placeholder="Rechercher une discussion…" maxLength={120} value={forwardSearch} disabled={forwardMutation.isPending} onChange={event => { setForwardSearch(event.target.value); setForwardDestination(""); }} />
++          {forwardQuery.isLoading ? <p>Chargement…</p> : forwardQuery.isError ? <p role="alert">Discussions indisponibles. <button type="button" onClick={() => void forwardQuery.refetch()}>Réessayer</button></p> : <select aria-label="Discussion destinataire" value={forwardDestination} disabled={forwardMutation.isPending} onChange={event => setForwardDestination(event.target.value)}><option value="">Choisir une discussion</option>{forwardQuery.data?.map(item => <option key={item.id} value={item.id}>{item.title}</option>)}</select>}
++          <small>Discussions actives dont vous êtes participant. Affinez la recherche si nécessaire.</small>
++          {forwardMutation.isError && <p role="alert">{getApiErrorMessage(forwardMutation.error)}</p>}
++          <button type="button" className="communication-forward-confirm" disabled={!forwardDestination || forwardMutation.isPending} onClick={() => { if (transferId) forwardMutation.mutate({ destination: forwardDestination, source: transferId, messageId: forwardTarget.id }); }}>{forwardMutation.isPending ? "Transfert…" : "Confirmer le transfert"}</button>
++        </> : <>
++          <input aria-label="Rechercher un agent destinataire" placeholder="Rechercher par nom ou email…" maxLength={120} value={agentSearch} disabled={forwardAgentsMutation.isPending} onChange={event => setAgentSearch(event.target.value)} />
++          <div className="communication-selected-agents" aria-label="Agents sélectionnés">{[...selectedAgents.values()].map(agent => <button type="button" key={agent.userId} disabled={forwardAgentsMutation.isPending} aria-label={`Retirer ${agent.fullName}`} onClick={() => toggleAgent(agent)}>{agent.fullName}<X size={13} /></button>)}</div>
++          {[...(debouncedAgentSearch ? [{ query: searchAgentsQuery, title: "Résultats de recherche" }] : []), { query: allAgentsQuery, title: "Tous les agents disponibles" }].map(({ query, title }) => <section className="communication-agent-directory" key={title} aria-label={title}>
++            <strong>{title}</strong>
++            {query.isLoading ? <p>Chargement…</p> : query.isError ? <p role="alert">Liste indisponible. <button type="button" onClick={() => void query.refetch()}>Réessayer</button></p> : <>
++              <div className="communication-agent-list">{query.data?.pages.flatMap(page => page.items).map(agent => <label key={agent.userId}><input type="checkbox" checked={selectedAgents.has(agent.userId)} disabled={forwardAgentsMutation.isPending || (!selectedAgents.has(agent.userId) && selectedAgents.size >= 500)} onChange={() => toggleAgent(agent)} /><span className="communication-agent-avatar">{initials(agent.fullName)}</span><span><strong>{agent.fullName}</strong><small>{agent.agent?.serviceName || agent.email}</small></span></label>)}</div>
++              {!query.data?.pages.some(page => page.items.length) && <p>Aucun agent trouvé.</p>}
++              {query.hasNextPage && <button type="button" disabled={query.isFetchingNextPage || forwardAgentsMutation.isPending} onClick={() => void query.fetchNextPage()}>{query.isFetchingNextPage ? "Chargement…" : "Afficher les agents suivants"}</button>}
++            </>}
++          </section>)}
++          <small>{selectedAgents.size} destinataire(s) sélectionné(s). Une nouvelle discussion commune sera créée avec ces personnes.</small>
++          {forwardAgentsMutation.isError && <p role="alert">{getApiErrorMessage(forwardAgentsMutation.error)}</p>}
++          <button type="button" className="communication-forward-confirm" disabled={!selectedAgents.size || forwardAgentsMutation.isPending} onClick={() => { if (transferId) forwardAgentsMutation.mutate({ source: transferId, messageId: forwardTarget.id, ids: [...selectedAgents.keys()] }); }}>{forwardAgentsMutation.isPending ? "Transfert…" : `Transférer à ${selectedAgents.size} agent(s)`}</button>
++        </>}
+       </section>}
+       {(error || mutationError || localError) && (
+         <div className="piece-transfer-chat-error">
+--- a/apps/web/src/pages/piece-transfers/piece-transfers-page.css
++++ b/apps/web/src/pages/piece-transfers/piece-transfers-page.css
+@@ -1831,3 +1831,30 @@
+ .piece-transfer-chat-composer { grid-template-columns: auto auto minmax(0, 1fr) auto; }
+ .communication-reply-preview, .communication-emoji-picker { grid-column: 1 / -1; }
+ .communication-message-actions > button { min-width: 30px; min-height: 30px; }
++
++/* Transfert vers des agents et réactions personnelles */
++.communication-forward-modes { display: flex; gap: 8px; }
++.communication-forward-modes button { display: flex; align-items: center; justify-content: center; gap: 6px; flex: 1; background: white; color: #0b2536; }
++.communication-forward-modes button[aria-pressed="true"] { background: #046242; color: white; border-color: #046242; }
++.communication-agent-directory { display: grid; gap: 8px; }
++.communication-agent-list { max-height: 160px; overflow-y: auto; border: 1px solid #d5e3db; border-radius: 9px; background: #fff; }
++.communication-agent-list label { display: flex; align-items: center; gap: 9px; padding: 9px; cursor: pointer; border-bottom: 1px solid #edf2ef; }
++.communication-agent-list label:has(input:checked) { background: #eaf5ee; }
++.communication-agent-list input { flex: 0 0 auto; accent-color: #046242; }
++.communication-agent-list label > span:last-child { display: grid; min-width: 0; gap: 3px; }
++.communication-agent-list small { overflow-wrap: anywhere; }
++.communication-agent-avatar { display: grid; place-items: center; flex: 0 0 32px; height: 32px; border-radius: 50%; background: #eaf3ed; color: #046242; font-size: .7rem; font-weight: 700; }
++.communication-selected-agents { display: flex; flex-wrap: wrap; gap: 5px; }
++.communication-selected-agents button { display: flex; align-items: center; gap: 7px; font-size: .75rem; background: #eaf3ed; }
++.communication-reactions { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; position: relative; margin-top: 7px; }
++.communication-reactions button { display: inline-flex; align-items: center; gap: 4px; border: 1px solid #cddcd4; border-radius: 15px; padding: 4px 8px; min-height: 30px; background: #fff; cursor: pointer; color: #0b2536; }
++.communication-reactions button[aria-pressed="true"] { border-color: #046242; background: #e1f3e7; }
++.communication-reactions button span { font-size: .7rem; }
++.communication-reaction-picker { display: flex; flex-wrap: wrap; gap: 4px; flex: 0 0 100%; padding: 6px; background: #fff; border: 1px solid #d5e3db; border-radius: 10px; }
++.communication-reaction-picker button { font-size: 1.1rem; min-width: 36px; min-height: 36px; }
++.communication-forward-notice { display: flex; align-items: center; gap: 7px; padding: 9px 12px; background: #eaf5ee; color: #046242; font-size: .8rem; }
++.communication-forward-notice button { margin-left: auto; border: 0; background: transparent; color: inherit; cursor: pointer; }
++.communication-reactions button:focus-visible, .communication-forward-modes button:focus-visible { outline: 2px solid #046242; outline-offset: 2px; }
++
++.communication-forward-panel .communication-forward-confirm { position: sticky; bottom: 0; background: #046242; color: #fff; min-height: 40px; box-shadow: 0 -5px 12px #f4faf6; }
++.communication-forward-confirm:disabled { opacity: .55; cursor: default; }
+--- a/apps/web/src/features/piece-transfers/piece-transfer.api.ts
++++ b/apps/web/src/features/piece-transfers/piece-transfer.api.ts
+@@ -543,3 +543,12 @@
+   const response = await api.get<Blob>(path, { responseType: "blob", signal });
+   return response.data;
+ }
++
++export async function setPieceTransferReaction(transferId: string, messageId: string, emoji: string | null): Promise<PieceTransferMessage> {
++  const response = await api.put<ApiSuccess<{ message: PieceTransferMessage }>>(`${BASE}/${transferId}/messages/${messageId}/reaction`, { emoji });
++  return response.data.data.message;
++}
++export async function forwardPieceTransferToAgents(transferId: string, messageId: string, recipientUserIds: string[]): Promise<{ transferId: string }> {
++  const response = await api.post<ApiSuccess<{ transferId: string }>>(`${BASE}/${transferId}/messages/${messageId}/forward-agents`, { recipientUserIds });
++  return response.data.data;
++}
+--- a/apps/web/src/features/piece-transfers/piece-transfer.types.ts
++++ b/apps/web/src/features/piece-transfers/piece-transfer.types.ts
+@@ -76,6 +76,7 @@
+ };
+ 
+ export type PieceTransferMessage = {
++  reactions?: Array<{ emoji: string; count: number; reactedByMe: boolean }>;
+   replyTo?: { messageId: string; senderName: string; body?: string; attachmentName?: string };
+   forwarded?: boolean;
+   id: string;
+--- a/apps/api/src/modules/piece-transfers/piece-transfer.schema.ts
++++ b/apps/api/src/modules/piece-transfers/piece-transfer.schema.ts
+@@ -289,3 +289,10 @@
+   >;
+ 
+ export const markPieceTransferReadSchema = z.object({ messageId: objectIdSchema.optional() });
++
++export const pieceTransferReactionSchema = z.object({
++  emoji: z.enum(["👍", "❤️", "😂", "🙏", "💪", "👋", "👏", "✅"]).nullable(),
++});
++export const forwardToAgentsSchema = z.object({
++  recipientUserIds: z.array(objectIdSchema).min(1, "Choisissez un agent.").max(500),
++});
+--- a/apps/api/src/modules/piece-transfers/piece-transfer.types.ts
++++ b/apps/api/src/modules/piece-transfers/piece-transfer.types.ts
+@@ -132,6 +132,7 @@
+ }
+ 
+ export interface PieceTransferMessage {
++  reactions?: Array<{ userId: string; emoji: string }>;
+   replyTo?: { messageId: string; senderName: string; body?: string; attachmentName?: string };
+   forwarded?: boolean;
+   tenantId: Types.ObjectId;
+@@ -243,6 +244,7 @@
+ };
+ 
+ export type PublicPieceTransferMessage = {
++  reactions?: Array<{ emoji: string; count: number; reactedByMe: boolean }>;
+   replyTo?: { messageId: string; senderName: string; body?: string; attachmentName?: string };
+   forwarded?: boolean;
+   id: string;
+--- a/apps/api/src/modules/piece-transfers/piece-transfer-read.model.ts
++++ b/apps/api/src/modules/piece-transfers/piece-transfer-read.model.ts
+@@ -1,14 +1,29 @@
+-import mongoose, { Schema } from "mongoose";
++import mongoose, { Schema, type Model, type Types } from "mongoose";
+ 
+-const readSchema = new Schema({
+-  tenantId: { type: Schema.Types.ObjectId, required: true },
+-  transferId: { type: Schema.Types.ObjectId, required: true },
+-  userId: { type: Schema.Types.ObjectId, required: true },
+-  lastReadMessageAt: { type: Date, required: true },
+-  lastReadMessageId: { type: Schema.Types.ObjectId, required: true },
+-}, { versionKey: false });
++interface PieceTransferRead {
++  tenantId: Types.ObjectId;
++  transferId: Types.ObjectId;
++  userId: Types.ObjectId;
++  lastReadMessageAt: Date;
++  lastReadMessageId: Types.ObjectId;
++}
+ 
+-readSchema.index({ tenantId: 1, userId: 1, transferId: 1 }, { unique: true });
++const readSchema = new Schema<PieceTransferRead>(
++  {
++    tenantId: { type: Schema.Types.ObjectId, required: true },
++    transferId: { type: Schema.Types.ObjectId, required: true },
++    userId: { type: Schema.Types.ObjectId, required: true },
++    lastReadMessageAt: { type: Date, required: true },
++    lastReadMessageId: { type: Schema.Types.ObjectId, required: true },
++  },
++  { versionKey: false },
++);
+ 
+-export const PieceTransferReadModel = mongoose.models.PieceTransferRead
+-  ?? mongoose.model("PieceTransferRead", readSchema);
++readSchema.index(
++  { tenantId: 1, userId: 1, transferId: 1 },
++  { unique: true },
++);
++
++export const PieceTransferReadModel: Model<PieceTransferRead> =
++  (mongoose.models.PieceTransferRead as Model<PieceTransferRead> | undefined) ??
++  mongoose.model<PieceTransferRead>("PieceTransferRead", readSchema);
+--- a/apps/api/src/modules/piece-transfers/piece-transfer.service.ts
++++ b/apps/api/src/modules/piece-transfers/piece-transfer.service.ts
+@@ -2221,6 +2221,7 @@
+         );
+ 
+   return {
++    reactions: deleted ? [] : [...new Set((message.reactions ?? []).map(item => item.emoji))].map(emoji => ({ emoji, count: (message.reactions ?? []).filter(item => item.emoji === emoji).length, reactedByMe: (message.reactions ?? []).some(item => item.emoji === emoji && item.userId === actor.userId) })),
+     replyTo: deleted ? undefined : message.replyTo,
+     forwarded: deleted ? undefined : message.forwarded,
+     id:
+@@ -4664,3 +4665,44 @@
+     await PieceTransferReadModel.updateOne(filter, update).exec();
+   }
+ }
++
++/** Explicit set/remove makes retries idempotent; the update is atomic per message. */
++export async function setPieceTransferReaction(tenant: TenantDocument, actor: Actor, transferId: string, messageId: string, emoji: string | null): Promise<PublicPieceTransferMessage> {
++  await getActorUser(tenant, actor);
++  const access = await getTransferAndAccess(tenant, actor, transferId);
++  if ((!access.isSender && !access.recipient) || access.transfer.status !== "ACTIVE") {
++    throw new AppError("Vous ne pouvez pas réagir dans cette discussion.", 403, "REACTION_NOT_ALLOWED");
++  }
++  const allowed = ["👍", "❤️", "😂", "🙏", "💪", "👋", "👏", "✅"];
++  if (emoji !== null && !allowed.includes(emoji)) throw new AppError("Réaction invalide.", 400, "INVALID_REACTION");
++  const remaining = { $filter: { input: { $ifNull: ["$reactions", []] }, as: "reaction", cond: { $ne: ["$$reaction.userId", actor.userId] } } };
++  const message = await PieceTransferMessageModel.findOneAndUpdate(
++    { _id: messageId, tenantId: tenant._id, transferId: access.transfer._id, status: "ACTIVE" },
++    [{ $set: { reactions: emoji === null ? remaining : { $concatArrays: [remaining, [{ userId: actor.userId, emoji }]] } } }],
++    { new: true },
++  );
++  if (!message) throw new AppError("Message indisponible.", 404, "REACTION_MESSAGE_NOT_FOUND");
++  return serializeMessage(message, access.transfer, actor);
++}
++
++export async function forwardPieceTransferToAgents(tenant: TenantDocument, actor: Actor, transferId: string, messageId: string, recipientUserIds: string[]): Promise<{ transferId: string }> {
++  await getActorUser(tenant, actor);
++  const source = await getTransferAndAccess(tenant, actor, transferId);
++  if ((!source.isSender && !source.recipient) || source.transfer.status !== "ACTIVE") {
++    throw new AppError("Ce message ne peut pas être transféré.", 403, "FORWARD_NOT_ALLOWED");
++  }
++  const original = await PieceTransferMessageModel.findOne({ _id: messageId, tenantId: tenant._id, transferId: source.transfer._id, status: "ACTIVE" });
++  if (!original) throw new AppError("Message source indisponible.", 404, "FORWARD_MESSAGE_NOT_FOUND");
++  const metadata = { title: `Transfert · ${source.transfer.title}`.slice(0, 180), audienceMode: "SELECTED" as const, recipientUserIds: [...new Set(recipientUserIds)] };
++  // Same eligibility/tenant checks as the existing communication composer.
++  await resolveRecipients(tenant, actor.userId, metadata);
++  const created = await createPieceTransfer({ tenant, actor, metadata });
++  try {
++    await sendPieceTransferMessage({ tenant, actor, transferId: created.id, metadata: { forwardTransferId: transferId, forwardMessageId: messageId } });
++    return { transferId: created.id };
++  } catch (error) {
++    // Revoke the incomplete communication so recipients cannot open a failed transfer.
++    await revokePieceTransfer(tenant, actor, created.id);
++    throw error;
++  }
++}
+--- a/apps/api/src/modules/piece-transfers/piece-transfer.model.ts
++++ b/apps/api/src/modules/piece-transfers/piece-transfer.model.ts
+@@ -361,6 +361,7 @@
+     {
+       replyTo: { type: new Schema({ messageId: { type: String, required: true }, senderName: { type: String, required: true }, body: String, attachmentName: String }, { _id: false }), required: false },
+       forwarded: { type: Boolean, default: false },
++      reactions: { type: [new Schema({ userId: { type: String, required: true }, emoji: { type: String, required: true, enum: ["👍", "❤️", "😂", "🙏", "💪", "👋", "👏", "✅"] } }, { _id: false })], default: [] },
+       tenantId: {
+         type: Schema.Types.ObjectId,
+         ref: "Tenant",
+--- a/apps/api/src/modules/piece-transfers/piece-transfer.controller.ts
++++ b/apps/api/src/modules/piece-transfers/piece-transfer.controller.ts
+@@ -8,6 +8,8 @@
+ } from "express";
+ import { AppError } from "../../core/errors/app-error.js";
+ import {
++  pieceTransferReactionSchema,
++  forwardToAgentsSchema,
+   markPieceTransferReadSchema,
+   adminMessageFileParamsSchema,
+   adminMessageParamsSchema,
+@@ -22,6 +24,8 @@
+   updatePieceTransferMessageSchema,
+ } from "./piece-transfer.schema.js";
+ import {
++  setPieceTransferReaction,
++  forwardPieceTransferToAgents,
+   getPieceTransferNotifications,
+   markPieceTransferMessagesRead,
+   createPieceTransfer,
+@@ -1185,3 +1189,20 @@
+     response.json({ success: true, data: {} });
+   } catch (error) { next(error); }
+ }
++
++export async function setPieceTransferReactionController(request: Request, response: Response, next: NextFunction): Promise<void> {
++  try {
++    const { tenant, actor } = context(request);
++    const { id, messageId } = pieceTransferMessageParamsSchema.parse(request.params);
++    const { emoji } = pieceTransferReactionSchema.parse(request.body);
++    response.json({ success: true, data: { message: await setPieceTransferReaction(tenant, actor, id, messageId, emoji) } });
++  } catch (error) { next(error); }
++}
++export async function forwardPieceTransferToAgentsController(request: Request, response: Response, next: NextFunction): Promise<void> {
++  try {
++    const { tenant, actor } = context(request);
++    const { id, messageId } = pieceTransferMessageParamsSchema.parse(request.params);
++    const { recipientUserIds } = forwardToAgentsSchema.parse(request.body);
++    response.status(201).json({ success: true, data: await forwardPieceTransferToAgents(tenant, actor, id, messageId, recipientUserIds) });
++  } catch (error) { next(error); }
++}
+--- a/apps/api/src/modules/piece-transfers/piece-transfer.routes.ts
++++ b/apps/api/src/modules/piece-transfers/piece-transfer.routes.ts
+@@ -8,6 +8,8 @@
+   tenantContextMiddleware,
+ } from "../../middlewares/tenant-context.middleware.js";
+ import {
++  setPieceTransferReactionController,
++  forwardPieceTransferToAgentsController,
+   getPieceTransferNotificationsController,
+   markPieceTransferReadController,
+   createPieceTransferController,
+@@ -167,3 +169,6 @@
+   "/:id/messages/:messageId/files/:fileIndex/download",
+   downloadPieceTransferMessageFileController,
+ );
++
++pieceTransferRouter.put("/:id/messages/:messageId/reaction", setPieceTransferReactionController);
++pieceTransferRouter.post("/:id/messages/:messageId/forward-agents", forwardPieceTransferToAgentsController);

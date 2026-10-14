@@ -345,7 +345,7 @@ export default function RoadmapsPage() {
               statsQuery.isFetching ||
               scopeQuery.isFetching
             }
-          >
+           data-ui-action="compact" aria-label="Actualiser" title="Actualiser">
             <RefreshCw
               size={18}
               className={
@@ -356,7 +356,7 @@ export default function RoadmapsPage() {
                   : ""
               }
             />
-            <span>Actualiser</span>
+            <span className="ui-action-label">Actualiser</span>
           </button>
 
           <button
@@ -370,9 +370,14 @@ export default function RoadmapsPage() {
                 : scope?.configurationMessage ??
                   "Le compte doit être rattaché à une fiche Agent active avec une Direction."
             }
-          >
+           aria-label={
+              canCreateRoadmap
+                ? "Créer votre feuille de route annuelle"
+                : scope?.configurationMessage ??
+                  "Le compte doit être rattaché à une fiche Agent active avec une Direction."
+            } data-ui-action="compact">
             <Plus size={18} />
-            <span>Nouvelle feuille</span>
+            <span className="ui-action-label">Nouvelle feuille</span>
           </button>
         </div>
       </header>
@@ -599,9 +604,9 @@ export default function RoadmapsPage() {
                   className="roadmaps-primary-button"
                   type="button"
                   onClick={openCreateModal}
-                >
+                 data-ui-action="compact" aria-label="Créer une feuille" title="Créer une feuille">
                   <Plus size={18} />
-                  <span>Créer une feuille</span>
+                  <span className="ui-action-label">Créer une feuille</span>
                 </button>
               )}
             </div>
@@ -669,9 +674,9 @@ export default function RoadmapsPage() {
                   <button
                     type="button"
                     onClick={() => setSelectedRoadmap(roadmap)}
-                  >
+                   data-ui-action="compact" aria-label="Voir" title="Voir">
                     <Eye size={17} />
-                    <span>Voir</span>
+                    <span className="ui-action-label">Voir</span>
                   </button>
 
                   {canEdit && (

@@ -98,7 +98,7 @@ function deltaClass(value: number): string {
   return "is-neutral";
 }
 function scopeLabel(report: ManagementReport): string {
-  if (report.scopeType === "INSTITUTION") return "Institution FADES";
+  if (report.scopeType === "INSTITUTION") return "Organisation";
   if (report.scopeType === "DIRECTION")
     return report.scopeSnapshot.directionName ?? "Direction";
   return `${report.scopeSnapshot.directionName ?? "Direction"} — ${
@@ -114,7 +114,7 @@ function safeFileName(value: string): string {
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "");
 
-  return normalized || "rapport-fades";
+  return normalized || "rapport-rh";
 }
 
 /**
@@ -1857,7 +1857,6 @@ async function downloadPdfReport(
           scale: renderScale,
           useCORS: true,
           logging: false,
-          letterRendering: true,
           width: exportWidthPx,
           windowWidth:
             exportWidthPx,
@@ -2177,7 +2176,7 @@ export default function ReportDetailsDrawer({
                 disabled={Boolean(exporting)}
                 onClick={() => void runExport("PDF")}
                 title="Télécharger ce rapport en PDF sans en-tête ni pied de page"
-              >
+               aria-label="Télécharger ce rapport en PDF sans en-tête ni pied de page">
                 {exporting === "PDF" ? (
                   <LoaderCircle size={17} className="is-spinning" />
                 ) : (
@@ -2192,7 +2191,7 @@ export default function ReportDetailsDrawer({
                 disabled={Boolean(exporting)}
                 onClick={() => void runExport("WORD")}
                 title="Télécharger un véritable document Microsoft Word (.docx)"
-              >
+               aria-label="Télécharger un véritable document Microsoft Word (.docx)">
                 {exporting === "WORD" ? (
                   <LoaderCircle size={17} className="is-spinning" />
                 ) : (

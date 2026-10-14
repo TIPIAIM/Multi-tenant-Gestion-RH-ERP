@@ -1071,7 +1071,7 @@ import {
                           void handlePreview(agentDocument)
                         }
                         disabled={previewMutation.isPending}
-                      >
+                       aria-label="Aperçu sécurisé">
                         {isPreviewing ? (
                           <LoaderCircle
                             size={17}
@@ -1090,7 +1090,7 @@ import {
                         void handleDownload(agentDocument)
                       }
                       disabled={downloadMutation.isPending}
-                    >
+                     aria-label="Télécharger">
                       {isDownloading ? (
                         <LoaderCircle
                           size={17}
@@ -1111,7 +1111,7 @@ import {
                             setDocumentToArchive(agentDocument)
                           }
                           disabled={archiveMutation.isPending}
-                        >
+                         aria-label="Archiver le document">
                           {isArchiving ? (
                             <LoaderCircle
                               size={17}
@@ -1133,7 +1133,7 @@ import {
                             void handleRestore(agentDocument)
                           }
                           disabled={restoreMutation.isPending}
-                        >
+                         aria-label="Restaurer le document">
                           {isRestoring ? (
                             <LoaderCircle
                               size={17}

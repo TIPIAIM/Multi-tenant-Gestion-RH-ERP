@@ -936,10 +936,10 @@ function LeaveDetailsDrawer({
 
             <div className="leave-drawer-actions">
               {canEdit && (
-                <button type="button" onClick={() => onEdit(request)}>
-                  <Edit3 size={16} />
+                <button type="button" onClick={() => onEdit(request)} data-ui-action="compact" aria-label="Modifier le brouillon" title="Modifier le brouillon">
+                  <Edit3 size={16} /><span className="ui-action-label">
                   Modifier le brouillon
-                </button>
+                </span></button>
               )}
 
               {canReviewManager && (
@@ -1315,10 +1315,10 @@ export default function LeavesPage() {
             className="leave-secondary-action"
             type="button"
             onClick={() => void refreshLeaves()}
-          >
-            <RefreshCw size={18} />
+           data-ui-action="compact" aria-label="Actualiser" title="Actualiser">
+            <RefreshCw size={18} /><span className="ui-action-label">
             Actualiser
-          </button>
+          </span></button>
 
           {canManageBalances && (
             <button
@@ -1343,10 +1343,10 @@ export default function LeavesPage() {
               setEditingRequest(null);
               setRequestModal(true);
             }}
-          >
-            <Plus size={18} />
+           data-ui-action="compact" aria-label="Nouvelle demande" title="Nouvelle demande">
+            <Plus size={18} /><span className="ui-action-label">
             Nouvelle demande
-          </button>
+          </span></button>
         </div>
       </header>
 
