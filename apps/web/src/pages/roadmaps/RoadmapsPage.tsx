@@ -328,11 +328,7 @@ export default function RoadmapsPage() {
             Feuilles de route <span>& KPI.</span>
           </h2>
 
-          <p>
-            Construisez le plan annuel individuel, suivez les lignes
-            d’objectifs, sécurisez les validations hiérarchiques et
-            centralisez les preuves KPI.
-          </p>
+ 
         </div>
 
         <div className="roadmaps-hero-actions">

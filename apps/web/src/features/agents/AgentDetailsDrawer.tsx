@@ -1,3 +1,5 @@
+import { useTenantSettings } from "../settings/settings.context";
+import { AgentAvatar, AgentPhotoEditor } from "./AgentPhoto";
 import AgentDocumentsPanel from "./AgentDocumentsPanel";
 
 import {
@@ -80,16 +82,7 @@ function formatDate(value?: string): string {
   }).format(new Date(value));
 }
 
-function getInitials(fullName: string): string {
-  return (
-    fullName
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((item) => item.charAt(0).toUpperCase())
-      .join("") || "A"
-  );
-}
+
 
 function getTodayDate(): string {
   const date = new Date();
@@ -114,6 +107,7 @@ export default function AgentDetailsDrawer({
   onEdit,
   onAddHistory,
 }: AgentDetailsDrawerProps) {
+  const { settings: tenantSettings } = useTenantSettings();
   const [isHistoryFormOpen, setIsHistoryFormOpen] = useState(false);
 
   const [historyForm, setHistoryForm] = useState<AddAgentHistoryInput>({
@@ -224,7 +218,7 @@ export default function AgentDetailsDrawer({
           <>
             <section className="agent-drawer-identity">
               <span className="agent-drawer-avatar">
-                {getInitials(agent.fullName)}
+                <AgentAvatar agent={agent} />
               </span>
 
               <div>
@@ -233,6 +227,7 @@ export default function AgentDetailsDrawer({
                 </span>
 
                 <h4>{agent.fullName}</h4>
+                <AgentPhotoEditor agent={agent} canManage={canManageAgents} />
 
                 <p>
                   {agent.jobTitle} · {agent.matricule}
@@ -324,7 +319,7 @@ export default function AgentDetailsDrawer({
               </dl>
             </section>
 
-            <section className="agent-drawer-section">
+            {tenantSettings?.featureFlags.documents && <section className="agent-drawer-section">
               <div className="agent-drawer-section-heading">
                 <FileText size={18} />
                 <h5>Documents RH sécurisés</h5>
@@ -334,7 +329,7 @@ export default function AgentDetailsDrawer({
                 agentId={agent.id}
                 canManageAgents={canManageAgents}
               />
-            </section>
+            </section>}
 
 
             <section className="agent-drawer-section">

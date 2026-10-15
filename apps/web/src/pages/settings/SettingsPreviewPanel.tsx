@@ -5,10 +5,10 @@ export default function SettingsPreviewPanel({ settings, section }: { settings: 
   const { institution, branding } = settings;
   return (
     <aside className="settings-preview-panel">
-      <header><span>APERÇU EN TEMPS RÉEL</span><strong>{branding.appName.replace(/\bfades(?:-rh)?\b/gi, "Plateforme RH")}</strong></header>
+      <header><span>APERÇU EN TEMPS RÉEL</span><strong>{branding.appName}</strong></header>
       <div className="settings-preview-brand" style={{ background: `linear-gradient(135deg, ${branding.primaryColor}, ${branding.secondaryColor})` }}>
-        {branding.logoUrl ? <img src={branding.logoUrl} alt="Logo" /> : <div className="settings-preview-logo">{institution.acronym.replace(/\bfades(?:-rh)?\b/gi, "RH")}</div>}
-        <div><span>{institution.supervisoryAuthority}</span><strong>{institution.shortName.replace(/\bfades(?:-rh)?\b/gi, "Organisation")}</strong><small>{institution.motto}</small></div>
+        {branding.logoUrl ? <img src={branding.logoUrl} alt="Logo" /> : <div className="settings-preview-logo">{institution.acronym}</div>}
+        <div><span>{institution.supervisoryAuthority}</span><strong>{institution.shortName}</strong><small>{institution.motto}</small></div>
       </div>
       {(section === "institution" || section === "branding" || section === "documents" || section === "reports" || section === "evaluations") && (
         <article className="settings-document-preview">

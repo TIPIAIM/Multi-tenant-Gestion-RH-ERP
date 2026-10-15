@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { resolveAppearance, DEFAULT_APPEARANCE, type AppearanceColorKey } from "../../features/settings/settings.appearance";
+import { assertBrandingContrast } from "../../features/settings/settings.colors";
+import { useEffect, useRef, useMemo, useState, type CSSProperties } from "react";
 import {
   Activity,
   BadgeCheck,
@@ -42,6 +44,7 @@ import {
 } from "../../features/settings/settings.api";
 import type {
   SettingsImpact,
+  SettingsRecordResponse,
   SettingsSectionKey,
   TenantSettingsPayload,
 } from "../../features/settings/settings.types";
@@ -111,6 +114,8 @@ export default function SettingsPage() {
   const [search, setSearch] = useState("");
   const [workingSettings, setWorkingSettings] = useState<TenantSettingsPayload | null>(null);
   const [baselineSettings, setBaselineSettings] = useState<TenantSettingsPayload | null>(null);
+  const baselineRef = useRef<TenantSettingsPayload | null>(null);
+  const [appearanceBusy, setAppearanceBusy] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
   const [restoreVersion, setRestoreVersion] = useState<number | null>(null);
@@ -124,14 +129,15 @@ export default function SettingsPage() {
   ]);
   const canManageCurrent = canManageAll || (role === "RH_MANAGER" && rhManagedSections.has(activeSection));
 
+  const adminKey = ["tenant-settings", "admin", user?.tenantId, user?.id, user?.role] as const;
   const settingsQuery = useQuery({
-    queryKey: ["tenant-settings", "admin"],
+    queryKey: adminKey,
     queryFn: getTenantSettings,
     staleTime: 30_000,
   });
 
   const historyQuery = useQuery({
-    queryKey: ["tenant-settings", "history"],
+    queryKey: ["tenant-settings", "history", user?.tenantId, user?.id, user?.role],
     queryFn: () => getTenantSettingsHistory(1, 50),
     enabled: historyOpen,
     staleTime: 30_000,
@@ -139,9 +145,22 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!settingsQuery.data) return;
-    setWorkingSettings(cloneSettings(settingsQuery.data.effective));
-    setBaselineSettings(cloneSettings(settingsQuery.data.effective));
+    const previous = baselineRef.current;
+    const latest = cloneSettings(settingsQuery.data.effective);
+    setWorkingSettings(current => {
+      if (!current || !previous) return latest;
+      const merged = cloneSettings(latest);
+      for (const key of allSections) if (!isSameSettingsValue(current[key], previous[key])) (merged as any)[key] = current[key];
+      return merged;
+    });
+    baselineRef.current = latest;
+    setBaselineSettings(latest);
   }, [settingsQuery.data]);
+  const anyLocalDirty = useMemo(() => Boolean(workingSettings && baselineSettings && allSections.some(key => !isSameSettingsValue(workingSettings[key], baselineSettings[key]))), [workingSettings, baselineSettings]);
+  function acceptBrandingRecord(data: SettingsRecordResponse) {
+    setWorkingSettings(current => current ? { ...current, branding: cloneSettings(data.effective.branding) } : cloneSettings(data.effective));
+    queryClient.setQueryData(adminKey, data);
+  }
 
   const currentSectionDirty = useMemo(() => {
     if (!workingSettings || !baselineSettings) return false;
@@ -166,12 +185,11 @@ export default function SettingsPage() {
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!workingSettings) throw new Error("Configuration indisponible.");
-      return saveTenantSettingsSection(activeSection, workingSettings[activeSection]);
+      return saveTenantSettingsSection(activeSection, workingSettings[activeSection], settingsQuery.data?.editRevision);
     },
-    onSuccess: async (data) => {
-      setBaselineSettings(cloneSettings(data.effective));
-      setWorkingSettings(cloneSettings(data.effective));
-      await queryClient.invalidateQueries({ queryKey: ["tenant-settings", "admin"] });
+    onSuccess: (data) => {
+      setWorkingSettings(current => current ? { ...current, [activeSection]: cloneSettings(data.effective[activeSection]) } : cloneSettings(data.effective));
+      queryClient.setQueryData(adminKey, data);
     },
   });
 
@@ -184,7 +202,7 @@ export default function SettingsPage() {
   });
 
   const publishMutation = useMutation({
-    mutationFn: publishTenantSettings,
+    mutationFn: (reason: string) => publishTenantSettings(reason, settingsQuery.data?.editRevision),
     onSuccess: async () => {
       setPublishOpen(false);
       setImpact(null);
@@ -193,12 +211,17 @@ export default function SettingsPage() {
   });
 
   const discardMutation = useMutation({
-    mutationFn: discardTenantSettingsDraft,
-    onSuccess: async () => refreshAll(),
+    mutationFn: () => discardTenantSettingsDraft(settingsQuery.data?.editRevision),
+    onSuccess: async (data) => {
+      baselineRef.current = cloneSettings(data.effective);
+      setWorkingSettings(cloneSettings(data.effective)); setBaselineSettings(cloneSettings(data.effective));
+      queryClient.setQueryData(adminKey, data);
+      await refreshAll();
+    },
   });
 
   const restoreMutation = useMutation({
-    mutationFn: ({ version, reason }: { version: number; reason: string }) => restoreTenantSettingsVersion(version, reason),
+    mutationFn: ({ version, reason }: { version: number; reason: string }) => restoreTenantSettingsVersion(version, reason, settingsQuery.data?.editRevision),
     onSuccess: async () => {
       setRestoreVersion(null);
       setHistoryOpen(false);
@@ -224,6 +247,11 @@ export default function SettingsPage() {
                   ? getApiErrorMessage(exportMutation.error)
                   : null;
 
+  const appearanceInvalid = workingSettings ? assertBrandingContrast(resolveAppearance(workingSettings.branding)).length > 0 || (Object.keys(DEFAULT_APPEARANCE) as AppearanceColorKey[]).some(key => workingSettings.branding[key] !== undefined && !/^#[a-f\d]{6}$/i.test(workingSettings.branding[key] ?? "")) : false;
+  const operationBusy = appearanceBusy || saveMutation.isPending || publishMutation.isPending || discardMutation.isPending || restoreMutation.isPending;
+  if (settingsQuery.isError && !settingsQuery.data) {
+    return <section className="settings-error" role="alert"><strong>Configuration indisponible</strong><p>{getApiErrorMessage(settingsQuery.error)}</p><button type="button" className="settings-secondary-button" onClick={() => void settingsQuery.refetch()}>Réessayer</button></section>;
+  }
   if (settingsQuery.isLoading || !workingSettings || !baselineSettings) {
     return <div className="settings-page-loader"><LoaderCircle className="is-spinning" /><strong>Chargement du Centre d’administration…</strong></div>;
   }
@@ -266,25 +294,26 @@ export default function SettingsPage() {
           <nav>{filteredSections.map((section) => {
             const Icon = sectionIcons[section];
             const isDirty = !isSameSettingsValue(workingSettings[section], baselineSettings[section]);
-            return <button key={section} type="button" className={activeSection === section ? "is-active" : ""} onClick={() => setActiveSection(section)}><Icon size={18} /><span><strong>{settingsSectionLabels[section]}</strong><small>{sectionDescriptions[section]}</small></span>{isDirty && <i />}</button>;
+            return <button key={section} type="button" className={activeSection === section ? "is-active" : ""} disabled={operationBusy} onClick={() => setActiveSection(section)}><Icon size={18} /><span><strong>{settingsSectionLabels[section]}</strong><small>{sectionDescriptions[section]}</small></span>{isDirty && <i />}</button>;
           })}</nav>
         </aside>
 
         <main className={`settings-editor-shell${!canManageCurrent ? " is-read-only" : ""}`}>
           {!canManageCurrent && <div className="settings-read-only"><ShieldCheck size={18} /><span>Consultation uniquement pour votre rôle sur cette section.</span></div>}
-          <SettingsSectionEditor section={activeSection} settings={workingSettings} readOnly={!canManageCurrent} onChange={setWorkingSettings} />
+          <SettingsSectionEditor section={activeSection} settings={workingSettings} readOnly={!canManageCurrent || operationBusy} onChange={setWorkingSettings}
+            expectedRevision={record?.editRevision ?? 0} onBrandingSaved={acceptBrandingRecord} onAppearanceBusy={setAppearanceBusy} />
         </main>
 
         <SettingsPreviewPanel settings={workingSettings} section={activeSection} />
       </div>
 
-      {(currentSectionDirty || record?.hasDraft) && <div className="settings-save-bar">
+      {(anyLocalDirty || record?.hasDraft) && <div className="settings-save-bar">
         <div><span>{currentSectionDirty ? "Modifications locales non enregistrées" : "Brouillon enregistré"}</span><strong>{settingsSectionLabels[activeSection]}</strong></div>
         <div className="settings-save-actions">
-          {currentSectionDirty && <button className="settings-cancel-button" type="button" onClick={() => setWorkingSettings(cloneSettings(baselineSettings))} disabled={saveMutation.isPending}><RotateCcw size={17} /> Annuler</button>}
-          {canManageCurrent && currentSectionDirty && <button className="settings-secondary-button" type="button" onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending}>{saveMutation.isPending ? <LoaderCircle size={17} className="is-spinning" /> : <Save size={17} />} Enregistrer le brouillon</button>}
-          {canPublish && record?.hasDraft && !currentSectionDirty && <button className="settings-primary-button" type="button" onClick={() => validateMutation.mutate()} disabled={validateMutation.isPending}>{validateMutation.isPending ? <LoaderCircle size={17} className="is-spinning" /> : <Send size={17} />} Contrôler et publier</button>}
-          {canPublish && record?.hasDraft && !currentSectionDirty && <button className="settings-danger-link" type="button" onClick={() => discardMutation.mutate()} disabled={discardMutation.isPending}>Abandonner le brouillon</button>}
+          {currentSectionDirty && <button className="settings-cancel-button" type="button" onClick={() => setWorkingSettings({ ...workingSettings, [activeSection]: cloneSettings(baselineSettings[activeSection]) })} disabled={operationBusy}><RotateCcw size={17} /> Annuler</button>}
+          {canManageCurrent && currentSectionDirty && <button className="settings-secondary-button" type="button" onClick={() => saveMutation.mutate()} disabled={operationBusy || (activeSection === "branding" && appearanceInvalid)}>{saveMutation.isPending ? <LoaderCircle size={17} className="is-spinning" /> : <Save size={17} />} Enregistrer le brouillon</button>}
+          {canPublish && record?.hasDraft && !anyLocalDirty && <button className="settings-primary-button" type="button" onClick={() => validateMutation.mutate()} disabled={operationBusy || validateMutation.isPending}>{validateMutation.isPending ? <LoaderCircle size={17} className="is-spinning" /> : <Send size={17} />} Contrôler et publier</button>}
+          {canPublish && record?.hasDraft && !anyLocalDirty && <button className="settings-danger-link" type="button" onClick={() => discardMutation.mutate()} disabled={operationBusy}>Abandonner le brouillon</button>}
         </div>
       </div>}
 
@@ -306,7 +335,7 @@ export default function SettingsPage() {
         onPublish={async (reason) => { await publishMutation.mutateAsync(reason); }}
       />
 
-      {restoreVersion !== null && <div className="settings-modal-layer"><button type="button" className="settings-modal-backdrop" onClick={() => setRestoreVersion(null)} /><section className="settings-restore-modal"><header><div><p>RESTAURATION CONTRÔLÉE</p><h3>Restaurer la version {restoreVersion}</h3></div></header><p>La restauration crée une nouvelle version publiée. Elle ne supprime pas l’historique existant.</p><footer><button className="settings-cancel-button" type="button" onClick={() => setRestoreVersion(null)}>Annuler</button><button className="settings-primary-button" type="button" onClick={() => restoreMutation.mutate({ version: restoreVersion, reason: `Restauration administrative de la version ${restoreVersion}` })}>{restoreMutation.isPending ? <LoaderCircle size={17} className="is-spinning" /> : <RotateCcw size={17} />} Restaurer</button></footer></section></div>}
+      {restoreVersion !== null && <div className="settings-modal-layer"><button type="button" className="settings-modal-backdrop" onClick={() => setRestoreVersion(null)} /><section className="settings-restore-modal"><header><div><p>RESTAURATION CONTRÔLÉE</p><h3>Restaurer la version {restoreVersion}</h3></div></header><p>La restauration crée une nouvelle version publiée. Elle ne supprime pas l’historique existant. Les anciens fichiers de logo déjà supprimés ne sont pas recréés : le logo actuel est conservé.</p><footer><button className="settings-cancel-button" type="button" onClick={() => setRestoreVersion(null)}>Annuler</button><button className="settings-primary-button" type="button" onClick={() => restoreMutation.mutate({ version: restoreVersion, reason: `Restauration administrative de la version ${restoreVersion}` })}>{restoreMutation.isPending ? <LoaderCircle size={17} className="is-spinning" /> : <RotateCcw size={17} />} Restaurer</button></footer></section></div>}
     </section>
   );
 }

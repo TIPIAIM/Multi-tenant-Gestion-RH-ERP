@@ -935,12 +935,7 @@ export default function TasksPage() {
             Tâches et <span>suivi.</span>
           </h2>
 
-          <p>
-            Organisez les missions,
-            attribuez les responsabilités,
-            définissez les KPI attendus et
-            suivez l’exécution opérationnelle.
-          </p>
+           
         </div>
 
         <div className="tasks-hero-actions">

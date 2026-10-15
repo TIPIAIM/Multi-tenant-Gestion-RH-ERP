@@ -1,3 +1,4 @@
+import { requireTenantFeature } from "../../middlewares/feature.middleware.js";
 import { Router } from "express";
 import {
   requireAuth,
@@ -25,8 +26,9 @@ import {
 
 export const leaveRouter = Router();
 
-leaveRouter.use(tenantContextMiddleware);
 leaveRouter.use(requireAuth);
+leaveRouter.use(tenantContextMiddleware);
+leaveRouter.use(requireTenantFeature("leave"));
 
 leaveRouter.get(
   "/dashboard",

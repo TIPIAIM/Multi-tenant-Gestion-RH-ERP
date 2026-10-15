@@ -1,3 +1,4 @@
+import { requireTenantFeature } from "../../middlewares/feature.middleware.js";
 import { Router } from "express";
 import {
   requireAuth,
@@ -21,8 +22,9 @@ import {
 
 export const attendanceRouter = Router();
 
-attendanceRouter.use(tenantContextMiddleware);
 attendanceRouter.use(requireAuth);
+attendanceRouter.use(tenantContextMiddleware);
+attendanceRouter.use(requireTenantFeature("attendance"));
 
 attendanceRouter.get(
   "/stats",

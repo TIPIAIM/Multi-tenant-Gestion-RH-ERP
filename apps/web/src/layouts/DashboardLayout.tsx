@@ -1,9 +1,12 @@
+import { api } from "../lib/api";
+import { featureForPath } from "../features/settings/module-access";
+import { useTenantSettings } from "../features/settings/settings.context";
+import { appearanceVariables } from "../features/settings/settings.appearance";
 import CommunicationMentionNotice from "../features/piece-transfers/CommunicationMentionNotice";
 import {
     useEffect,
     useState,
     useRef,
-    type CSSProperties,
   } from "react";
   import { useQuery } from "@tanstack/react-query";
   import {
@@ -37,7 +40,14 @@ import {
   export default function DashboardLayout() {
     const { user, logout } = useAuth();
     const location = useLocation();
+    const { settings: publishedSettings } = useTenantSettings();
     const notificationsQuery = usePieceTransferNotifications();
+    const taskNotifications = useQuery({
+      queryKey: ["tasks", "notifications", user?.tenantId, user?.id],
+      queryFn: async () => (await api.get<{ data: { openTasks: number } }>("/tasks/notifications")).data.data,
+      enabled: Boolean(user && publishedSettings?.featureFlags.tasks),
+      staleTime: 10_000, refetchInterval: 15_000, refetchOnWindowFocus: "always",
+    });
     const unreadMessages = notificationsQuery.data?.unreadMessages ?? 0;
     const unreadCommunications = notificationsQuery.data?.unreadCommunications ?? 0;
     const notificationsKnown = Boolean(notificationsQuery.data) && !notificationsQuery.isError;
@@ -59,7 +69,7 @@ import {
     const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
     const tenantQuery = useQuery({
-      queryKey: ["current-tenant"],
+      queryKey: ["current-tenant", user?.tenantId],
       queryFn: getCurrentTenant,
       staleTime: 1000 * 60 * 10,
     });
@@ -130,7 +140,9 @@ import {
     if (!user) {
       return null;
     }
-    const navigationGroups = getNavigationGroups(user.role);
+    const navigationGroups = getNavigationGroups(user.role).map(group => ({ ...group,
+      items: group.items.filter(item => { const feature = featureForPath(item.to); return item.available && (!feature || publishedSettings?.featureFlags[feature] === true); })
+    })).filter(group => group.items.length > 0);
     const activeNavigationItem = navigationGroups
       .flatMap((group) => group.items)
       .find(
@@ -140,15 +152,10 @@ import {
             location.pathname.startsWith(`${item.to}/`)),
       );
     const pageTitle = activeNavigationItem?.label ?? "Tableau de bord";
-    const organizationName = tenantQuery.data?.name?.replace(/fades/gi, "Organisation") ?? "Mon organisation";
-    const tenantTheme = {
-      "--tenant-primary":
-        tenantQuery.data?.branding.primaryColor ?? "#046242",
-      "--tenant-secondary":
-        tenantQuery.data?.branding.secondaryColor ?? "#1A7543",
-      "--tenant-accent":
-        tenantQuery.data?.branding.accentColor ?? "#E9B521",
-    } as CSSProperties;
+    const organizationName = publishedSettings?.institution.shortName ?? tenantQuery.data?.name ?? "Mon organisation";
+    const brandName = publishedSettings?.branding.appName ?? "Plateforme RH";
+    const logoUrl = publishedSettings?.branding.logoUrl || tenantQuery.data?.branding.logoUrl;
+    const tenantTheme = appearanceVariables(publishedSettings?.branding ?? tenantQuery.data?.branding);
     const sidebarClassName = [
       "dashboard-sidebar",
       isSidebarOpen ? "is-open" : "",
@@ -189,13 +196,12 @@ import {
             <div className="dashboard-sidebar-toolbar">
               <div className="dashboard-brand-shell">
                 <div className="dashboard-logo-wrap">
-                  <ShieldCheck size={28} aria-hidden="true" />
-                  <span className="dashboard-brand-name">RH</span>
+                  {logoUrl ? <img src={logoUrl} alt={`Logo de ${organizationName}`} className="dashboard-tenant-logo" /> : <span className="dashboard-brand-name">RH</span>}
                 </div>
                 <div className="dashboard-brand-copy">
                   <span>
                     <Sparkles size={13} />
-                    Plateforme RH
+                    {brandName}
                   </span>
                   <strong>Votre espace de travail</strong>
                 </div>
@@ -261,6 +267,11 @@ import {
                             <span className="dashboard-nav-item-main">
                               <Icon size={18} />
                               <span>{item.label}</span>
+                            {item.to === "/tasks" && taskNotifications.data && taskNotifications.data.openTasks > 0 && (
+                              <span className="dashboard-task-count" aria-label={`${taskNotifications.data.openTasks} tâches personnelles à traiter`}>
+                                <Bell size={12} aria-hidden="true" />{taskNotifications.data.openTasks > 99 ? "99+" : taskNotifications.data.openTasks}
+                              </span>
+                            )}
                             </span>
                             {item.badge && (
                               <span className="dashboard-nav-badge">
@@ -286,6 +297,11 @@ import {
                           <span className="dashboard-nav-item-main">
                             <Icon size={18} />
                             <span>{item.label}</span>
+                            {item.to === "/tasks" && taskNotifications.data && taskNotifications.data.openTasks > 0 && (
+                              <span className="dashboard-task-count" aria-label={`${taskNotifications.data.openTasks} tâches personnelles à traiter`}>
+                                <Bell size={12} aria-hidden="true" />{taskNotifications.data.openTasks > 99 ? "99+" : taskNotifications.data.openTasks}
+                              </span>
+                            )}
                           </span>
                           {isCommunications && (
                             <span className={`dashboard-communication-status ${!notificationsKnown ? "is-unknown" : unreadMessages > 0 ? "has-unread" : "is-clear"}`} aria-hidden="true">
@@ -335,7 +351,7 @@ import {
                 <Menu size={21} />
               </button>
               <div className="dashboard-page-heading">
-                <p>Plateforme-RH · Pilotage </p>
+                <p>{brandName}</p>
                 <h1>{pageTitle}</h1>
               </div>
             </div>

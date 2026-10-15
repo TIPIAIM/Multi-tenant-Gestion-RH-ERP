@@ -1,3 +1,4 @@
+import { useTenantSettings } from "../../features/settings/settings.context";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { LucideIcon } from "lucide-react";
@@ -39,6 +40,7 @@ function formatConakryDate(): string {
 
 export default function DashboardHomePage() {
   const { user } = useAuth();
+  const { settings } = useTenantSettings();
 
   const healthQuery = useQuery({
     queryKey: ["api-health"],
@@ -136,13 +138,10 @@ export default function DashboardHomePage() {
   ];
 
   const modules = [
-    "Gestion des agents",
-    "Tâches internes",
-    "Pointages",
-    "Congés et absences",
-    "Cahiers de route",
-    "Évaluations semestrielles",
-  ];
+    ["agents", "Gestion des agents"], ["tasks", "Tâches internes"], ["attendance", "Pointages"],
+    ["leave", "Congés et absences"], ["roadmaps", "Feuilles de route"], ["evaluations", "Évaluations"],
+    ["reports", "Rapports"], ["payroll", "Paie"],
+  ].filter(([key]) => settings?.featureFlags[key as keyof typeof settings.featureFlags] === true).map(([,label]) => label);
 
   async function refreshDashboard(): Promise<void> {
     await Promise.all([
@@ -163,11 +162,7 @@ export default function DashboardHomePage() {
             Bonjour, <span>{user?.fullName ?? "Utilisateur"}.</span>
           </h2>
 
-          <p>
-            Voici l’état réel de la fondation RH. Les indicateurs
-            métier seront alimentés automatiquement dès la création des
-            modules Agents, Tâches, Pointages et Congés.
-          </p>
+ 
         </div>
 
         <button
@@ -281,7 +276,7 @@ export default function DashboardHomePage() {
           </div>
 
           <p className="dashboard-modules-description">
-            Ces modules seront activés progressivement, avec des
+            Les modules activés pour votre organisation disposent de
             permissions, une interface responsive et des contrôles
             propres à chaque rôle.
           </p>

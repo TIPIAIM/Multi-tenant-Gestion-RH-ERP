@@ -7,6 +7,7 @@ import type {
 const tenantSettingsSchema = new Schema<TenantSettingsRecord>(
   {
     tenantId: { type: Schema.Types.ObjectId, ref: "Tenant", required: true, unique: true, index: true },
+    editRevision: { type: Number, default: 0, min: 0 },
     active: { type: Schema.Types.Mixed, required: true },
     draft: { type: Schema.Types.Mixed, default: null },
     activeVersion: { type: Number, required: true, default: 1, min: 1 },

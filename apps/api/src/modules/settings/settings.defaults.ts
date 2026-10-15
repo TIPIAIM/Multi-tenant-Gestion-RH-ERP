@@ -5,36 +5,47 @@ export function buildDefaultTenantSettings(input?: {
   shortName?: string;
   acronym?: string;
 }): TenantSettingsPayload {
-  const legalName = input?.legalName?.trim() || "Fonds d’Aide au Développement du Sport";
-  const shortName = input?.shortName?.trim() || "FADES";
-  const acronym = input?.acronym?.trim() || "FADES";
+  const legalName = input?.legalName?.trim() || "Mon organisation";
+  const shortName = input?.shortName?.trim() || "Organisation";
+  const acronym = input?.acronym?.trim() || "Organisation";
 
   return {
     institution: {
       legalName,
       shortName,
       acronym,
-      supervisoryAuthority: "Ministère du Sports",
+      supervisoryAuthority: "",
       country: "République de Guinée",
       motto: "Travail - Justice - Solidarité",
-      address: "Cameroun, Commune de Dixinn – Résidence FEELA, 2ème étage",
+      address: "À renseigner",
       city: "Conakry",
-      phone: "+224 654 32 26 52",
-      email: "contact@fadesgn.com",
-      website: "https://www.guinee.gov.gn",
+      phone: "À renseigner",
+      email: "contact@example.invalid",
+      website: "",
       directorGeneralName: "",
       hrManagerName: "",
     },
     branding: {
       appName: `${acronym}-RH`,
+      sidebarBackgroundColor: "#0B2536",
+      sidebarTextColor: "#D7E3E8",
+      sidebarActiveColor: "#046242",
+      pageBackgroundColor: "#F5F7FA",
+      surfaceColor: "#FFFFFF",
+      textColor: "#172F3B",
+      mutedTextColor: "#526774",
+      borderColor: "#DCE5E9",
+      topbarBackgroundColor: "#FFFFFF",
+      topbarTextColor: "#0B2536",
+
       primaryColor: "#046242",
       secondaryColor: "#0B2536",
       accentColor: "#E9B521",
       dangerColor: "#DF3B29",
-      logoUrl: "/brand/fades-letterhead-logo.png",
-      compactLogoUrl: "/brand/fades-letterhead-logo.png",
-      printLogoUrl: "/brand/fades-letterhead-logo.png",
-      faviconUrl: "/favicon.ico",
+      logoUrl: "",
+      compactLogoUrl: "",
+      printLogoUrl: "",
+      faviconUrl: "/favicon.svg",
       loginBackgroundUrl: "",
       flagUrl: "/brand/guinea-flag.png",
       countryWordmarkUrl: "/brand/guinea-wordmark.jpeg",

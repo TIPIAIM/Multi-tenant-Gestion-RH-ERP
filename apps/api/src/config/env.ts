@@ -97,22 +97,22 @@ export const env = {
 
   jwtAccessExpiresIn: getJwtDuration(
     "JWT_ACCESS_EXPIRES_IN",
-    "15m",
+    "24h",
   ),
 
   jwtRefreshExpiresIn: getJwtDuration(
     "JWT_REFRESH_EXPIRES_IN",
-    "7d",
+    "24h",
   ),
 
   jwtAccessCookieMaxAgeMs: getPositiveInteger(
     "JWT_ACCESS_COOKIE_MAX_AGE_MS",
-    15 * 60 * 1000,
+    24 * 60 * 60 * 1000,
   ),
 
   jwtRefreshCookieMaxAgeMs: getPositiveInteger(
     "JWT_REFRESH_COOKIE_MAX_AGE_MS",
-    7 * 24 * 60 * 60 * 1000,
+    24 * 60 * 60 * 1000,
   ),
 
   passwordSaltRounds: getPositiveInteger(

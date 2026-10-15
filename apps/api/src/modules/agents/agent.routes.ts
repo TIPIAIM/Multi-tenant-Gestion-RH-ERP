@@ -1,3 +1,5 @@
+import { requireTenantFeature } from "../../middlewares/feature.middleware.js";
+import { agentPhotoRouter } from "./agent-photo.js";
 import { Router } from "express";
 import {
   requireAuth,
@@ -34,8 +36,9 @@ import {
 
 export const agentRouter = Router();
 
-agentRouter.use(tenantContextMiddleware);
 agentRouter.use(requireAuth);
+agentRouter.use(tenantContextMiddleware);
+agentRouter.use(requireTenantFeature("agents"));
 
 startAgentContractEndAlertScheduler();
 
@@ -56,6 +59,8 @@ agentRouter.post(
   requirePermissions("AGENT_MANAGE"),
   runAgentContractEndAlertsController,
 );
+
+agentRouter.use("/:id/documents", requireTenantFeature("documents"));
 
 agentRouter.get(
   "/:id/documents",
@@ -93,6 +98,8 @@ agentRouter.patch(
   requirePermissions("AGENT_MANAGE"),
   restoreAgentDocumentController,
 );
+
+agentRouter.use("/:id/photo", agentPhotoRouter);
 
 agentRouter.get("/:id", getAgentController);
 agentRouter.patch("/:id", updateAgentController);

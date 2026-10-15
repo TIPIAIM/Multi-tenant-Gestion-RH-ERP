@@ -58,6 +58,8 @@ function sameDateKey(
 function serializeAgent(agent: AgentDocument): PublicAgent {
   return {
     id: agent.id,
+    hasPhoto: Boolean(agent.photoAssetId),
+    photoRevision: agent.photoRevision ?? 0,
     tenantId: agent.tenantId.toString(),
 
     firstName: agent.firstName,

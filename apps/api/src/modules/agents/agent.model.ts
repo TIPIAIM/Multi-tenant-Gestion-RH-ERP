@@ -34,6 +34,8 @@ const agentHistorySchema = new Schema<AgentHistoryEntry>(
 const agentSchema = new Schema<Agent>(
   {
     tenantId: { type: Schema.Types.ObjectId, ref: "Tenant", required: true },
+    photoAssetId: { type: Schema.Types.ObjectId, select: true },
+    photoRevision: { type: Number, default: 0 },
     firstName: { type: String, required: true, trim: true, minlength: 2, maxlength: 100 },
     lastName: { type: String, required: true, trim: true, minlength: 2, maxlength: 100 },
     matricule: { type: String, required: true, trim: true, uppercase: true, maxlength: 40, match: /^[A-Z0-9_-]+$/ },

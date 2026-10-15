@@ -472,12 +472,7 @@ export default function EvaluationsPage() {
           <h2>
             Évaluations <span>intelligentes.</span>
           </h2>
-          <p>
-            Créez des évaluations professionnelles fondées sur les
-            objectifs, les tâches, les congés, l’assiduité, les feuilles de route,
-            les appréciations hiérarchiques et les décisions RH, avec
-            impression et export Excel.
-          </p>
+      
         </div>
 
         <div className="evaluations-hero-actions">

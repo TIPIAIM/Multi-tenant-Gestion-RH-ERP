@@ -339,11 +339,7 @@ export default function ReportsPage() {
           <h2>
             Rapports <span>décisionnels.</span>
           </h2>
-          <p>
-            Générez les rapports mensuels, semestriels et annuels de votre organisation à
-            partir des Agents, comptes, documents RH, Tâches, Pointages, Congés,
-            Feuilles de route et Évaluations.
-          </p>
+           
         </div>
         <div className="reports-hero-actions">
           <button

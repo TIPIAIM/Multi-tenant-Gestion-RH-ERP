@@ -1,3 +1,4 @@
+import { applyAppearance } from "./settings.appearance";
 import type {
   SettingsSectionKey,
   TenantSettingsPayload,
@@ -35,21 +36,5 @@ export function getEnabledModules(settings: TenantSettingsPayload): string[] {
 }
 
 export function applyBrandingVariables(settings?: TenantSettingsPayload | null): void {
-  if (!settings || typeof document === "undefined") return;
-  const root = document.documentElement;
-  root.style.setProperty("--tenant-primary", settings.branding.primaryColor);
-  root.style.setProperty("--tenant-secondary", settings.branding.secondaryColor);
-  root.style.setProperty("--tenant-accent", settings.branding.accentColor);
-  root.style.setProperty("--tenant-danger", settings.branding.dangerColor);
-  document.title = settings.branding.appName || settings.institution.shortName;
-
-  if (settings.branding.faviconUrl) {
-    let icon = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
-    if (!icon) {
-      icon = document.createElement("link");
-      icon.rel = "icon";
-      document.head.appendChild(icon);
-    }
-    icon.href = settings.branding.faviconUrl;
-  }
+  if (settings) applyAppearance(settings.branding);
 }

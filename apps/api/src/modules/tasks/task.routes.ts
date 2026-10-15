@@ -1,3 +1,8 @@
+import { UserModel } from "../users/user.model.js";
+import { requireTenantFeature } from "../../middlewares/feature.middleware.js";
+import { TaskModel } from "./task.models.js";
+import { AgentModel } from "../agents/agent.model.js";
+import { AppError } from "../../core/errors/app-error.js";
 import { Router } from "express";
 import { requireAuth } from "../../middlewares/auth.middleware.js";
 import {
@@ -25,8 +30,9 @@ import {
 
 export const taskRouter = Router();
 
-taskRouter.use(tenantContextMiddleware);
 taskRouter.use(requireAuth);
+taskRouter.use(tenantContextMiddleware);
+taskRouter.use(requireTenantFeature("tasks"));
 
 /**
  * TENANT_ADMIN : lecture/écriture globale.
@@ -35,6 +41,16 @@ taskRouter.use(requireAuth);
  * AGENT : lecture de ses propres tâches + progression + dépôt KPI.
  * RH_MANAGER : lecture globale uniquement ; téléchargement des preuves KPI autorisé.
  */
+taskRouter.get("/notifications", async (request, response, next) => {
+  try {
+    if (!request.tenant || !request.auth) throw new AppError("Authentification requise.",401,"AUTH_REQUIRED");
+    const user = await (UserModel as any).findOne({ _id: request.auth.userId, tenantId: request.tenant._id, isActive: true }).select("agentId").lean().exec();
+    const personalAgent = await (AgentModel as any).findOne({ tenantId: request.tenant._id, ...(user?.agentId ? { _id: user.agentId } : { userId: request.auth.userId }) }).select("_id").lean().exec();
+    const openTasks = personalAgent ? await TaskModel.countDocuments({ tenantId: request.tenant._id,
+      assignedToAgentId: personalAgent._id, status: { $in: ["TODO", "IN_PROGRESS", "BLOCKED"] } }).exec() : 0;
+    response.json({ success: true, data: { openTasks } });
+  } catch (error) { next(error); }
+});
 taskRouter.get("/scope", getTaskScopeController);
 taskRouter.get("/stats", getTaskStatsController);
 taskRouter.get("/board", getTaskBoardController);

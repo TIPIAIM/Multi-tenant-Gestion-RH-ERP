@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Award,
+  Wallet,
 Send,
   Building2,
   CalendarDaysIcon,
@@ -38,7 +39,7 @@ const allRoles: readonly UserRole[] = [
 ];
 
 export const roleLabels: Record<UserRole, string> = {
-  TENANT_ADMIN: "Administrateur FADES",
+  TENANT_ADMIN: "Administrateur",
   DIRECTION: "Direction",
   RH_MANAGER: "Responsable RH",
   SERVICE_MANAGER: "Chef de service",
@@ -142,6 +143,7 @@ const navigationGroups: NavigationGroup[] = [
   {
     label: "Ressources humaines",
     items: [
+      { label: "Paie", to: "/payroll", icon: Wallet, roles: ["TENANT_ADMIN","RH_MANAGER","AGENT"], available: true },
       {
         label: "Pointage",
         to: "/attendance",

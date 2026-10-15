@@ -1,8 +1,10 @@
+import BrandingSettingsEditor from "./BrandingSettingsEditor";
 import { Plus, Trash2 } from "lucide-react";
 import type { ReactNode } from "react";
 import type {
   SettingsSectionKey,
   TenantSettingsPayload,
+  SettingsRecordResponse,
 } from "../../features/settings/settings.types";
 
 const dayLabels = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
@@ -17,9 +19,9 @@ function Field({ label, hint, children, full = false }: { label: string; hint?: 
   );
 }
 
-function Switch({ checked, onChange, label, description }: { checked: boolean; onChange: (value: boolean) => void; label: string; description?: string }) {
+function Switch({ checked, onChange, label, description, disabled = false }: { checked: boolean; onChange: (value: boolean) => void; label: string; description?: string; disabled?: boolean }) {
   return (
-    <button className={`settings-switch-row${checked ? " is-on" : ""}`} type="button" onClick={() => onChange(!checked)}>
+    <button className={`settings-switch-row${checked ? " is-on" : ""}`} type="button" role="switch" aria-checked={checked} disabled={disabled} onClick={() => onChange(!checked)}>
       <span className="settings-switch"><i /></span>
       <span><strong>{label}</strong>{description && <small>{description}</small>}</span>
     </button>
@@ -45,9 +47,12 @@ type Props = {
   settings: TenantSettingsPayload;
   readOnly: boolean;
   onChange: (settings: TenantSettingsPayload) => void;
+  expectedRevision: number;
+  onBrandingSaved: (record: SettingsRecordResponse) => void;
+  onAppearanceBusy: (busy: boolean) => void;
 };
 
-export default function SettingsSectionEditor({ section, settings, readOnly, onChange }: Props) {
+export default function SettingsSectionEditor({ section, settings, readOnly, onChange, expectedRevision, onBrandingSaved, onAppearanceBusy }: Props) {
   function updateSection<K extends SettingsSectionKey>(key: K, value: TenantSettingsPayload[K]) {
     onChange({ ...settings, [key]: value });
   }
@@ -77,23 +82,9 @@ export default function SettingsSectionEditor({ section, settings, readOnly, onC
   }
 
   if (section === "branding") {
-    const value = settings.branding;
-    const patch = (next: Partial<typeof value>) => updateSection("branding", { ...value, ...next });
-    return <SectionShell title="Identité visuelle et marque blanche" description="Personnalisez l’interface, la connexion et les documents du tenant.">
-      <div className="settings-form-grid">
-        <Field label="Nom affiché de l’application"><input disabled={disabled} value={value.appName} onChange={(e) => patch({ appName: e.target.value })} /></Field>
-        <Field label="Style d’en-tête documentaire"><select disabled={disabled} value={value.documentHeaderStyle} onChange={(e) => patch({ documentHeaderStyle: e.target.value as typeof value.documentHeaderStyle })}><option value="CLASSIC">Classique</option><option value="MINIMAL">Minimal</option><option value="PREMIUM">Premium</option></select></Field>
-        {(["primaryColor", "secondaryColor", "accentColor", "dangerColor"] as const).map((key) => <Field key={key} label={{ primaryColor: "Couleur principale", secondaryColor: "Couleur secondaire", accentColor: "Couleur d’accent", dangerColor: "Couleur d’alerte" }[key]}><div className="settings-color-input"><input disabled={disabled} type="color" value={value[key]} onChange={(e) => patch({ [key]: e.target.value })} /><input disabled={disabled} value={value[key]} onChange={(e) => patch({ [key]: e.target.value })} /></div></Field>)}
-        <Field label="Logo principal" full><input disabled={disabled} value={value.logoUrl ?? ""} onChange={(e) => patch({ logoUrl: e.target.value })} placeholder="/brand/logo.png ou URL" /></Field>
-        <Field label="Logo d’impression" full><input disabled={disabled} value={value.printLogoUrl ?? ""} onChange={(e) => patch({ printLogoUrl: e.target.value })} /></Field>
-        <Field label="Drapeau"><input disabled={disabled} value={value.flagUrl ?? ""} onChange={(e) => patch({ flagUrl: e.target.value })} /></Field>
-        <Field label="Identité visuelle pays"><input disabled={disabled} value={value.countryWordmarkUrl ?? ""} onChange={(e) => patch({ countryWordmarkUrl: e.target.value })} /></Field>
-      </div>
-      <div className="settings-switch-grid">
-        <Switch checked={value.whiteLabelEnabled} onChange={(whiteLabelEnabled) => patch({ whiteLabelEnabled })} label="Mode marque blanche" description="Masque l’identité éditeur lorsque le plan commercial le permet." />
-        <Switch checked={value.showVendorSignature} onChange={(showVendorSignature) => patch({ showVendorSignature })} label="Signature éditeur" description="Affiche la mention de la plateforme dans les zones prévues." />
-      </div>
-    </SectionShell>;
+    return <BrandingSettingsEditor branding={settings.branding} organizationName={settings.institution.shortName}
+      readOnly={readOnly} expectedRevision={expectedRevision}
+      onChange={branding => updateSection("branding", branding)} onSaved={onBrandingSaved} onBusyChange={onAppearanceBusy} />;
   }
 
   if (section === "organization") {
@@ -327,8 +318,8 @@ export default function SettingsSectionEditor({ section, settings, readOnly, onC
     const value = settings.featureFlags;
     const patch = (next: Partial<typeof value>) => updateSection("featureFlags", { ...value, ...next });
     const labels: Record<keyof typeof value, string> = { agents: "Agents", attendance: "Pointage", leave: "Congés", tasks: "Tâches", roadmaps: "Feuilles de route", evaluations: "Évaluations", reports: "Rapports", documents: "Documents RH", payroll: "Paie", recruitment: "Recrutement", training: "Formation" };
-    return <SectionShell title="Fonctionnalités du tenant" description="Activez les modules inclus dans l’offre commerciale. Une désactivation ne supprime aucune donnée.">
-      <div className="settings-feature-grid">{(Object.keys(value) as Array<keyof typeof value>).map((key) => <Switch key={key} checked={value[key]} onChange={(enabled) => patch({ [key]: enabled })} label={labels[key]} description={value[key] ? "Module disponible" : "Module masqué"} />)}</div>
+    return <SectionShell title="Fonctionnalités du tenant" description="Enregistrez puis publiez pour appliquer les accès et la navigation. Une désactivation conserve toutes les données. Les autres sessions se synchronisent sous 60 secondes ; les accès API sont bloqués dès la publication.">
+      <div className="settings-feature-grid">{(Object.keys(value) as Array<keyof typeof value>).map((key) => <Switch key={key} checked={value[key]} disabled={disabled || ((key === "recruitment" || key === "training") && !value[key])} onChange={(enabled) => patch({ [key]: enabled })} label={labels[key]} description={key === "recruitment" || key === "training" ? "Module non livré dans cette version" : value[key] ? "Disponible après publication" : "Masqué après publication"} />)}</div>
     </SectionShell>;
   }
 

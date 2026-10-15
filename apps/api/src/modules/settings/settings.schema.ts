@@ -1,7 +1,13 @@
 import { z } from "zod";
+import { assertBrandingContrast } from "./settings.colors.js";
 import { settingsSectionKeys } from "./settings.types.js";
 
-const optionalUrl = z.string().trim().max(1000).optional().or(z.literal(""));
+const optionalUrl = z.string().trim().max(1000).refine((value) => {
+  if (!value) return true;
+  if (value.startsWith("/") && !value.startsWith("//") && !value.includes("\\")) return true;
+  try { const url = new URL(value); return url.protocol === "https:" && !url.username && !url.password; }
+  catch { return false; }
+}, "Utilisez une URL HTTPS ou un chemin local /... .").optional().or(z.literal(""));
 const color = z.string().trim().regex(/^#[0-9A-Fa-f]{6}$/, "La couleur doit être au format #RRGGBB.");
 const time = z.string().trim().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "L’heure doit être au format HH:mm.");
 const nonEmptyText = (max: number) => z.string().trim().min(1).max(max);
@@ -15,13 +21,25 @@ const institutionSchema = z.object({
   registrationNumber: optionalText(120), directorGeneralName: optionalText(180), hrManagerName: optionalText(180),
 });
 
-const brandingSchema = z.object({
+export const brandingSchema = z.object({
+  sidebarBackgroundColor: color.default("#0B2536"),
+  sidebarTextColor: color.default("#D7E3E8"),
+  sidebarActiveColor: color.default("#046242"),
+  pageBackgroundColor: color.default("#F5F7FA"),
+  surfaceColor: color.default("#FFFFFF"),
+  textColor: color.default("#172F3B"),
+  mutedTextColor: color.default("#526774"),
+  borderColor: color.default("#DCE5E9"),
+  topbarBackgroundColor: color.default("#FFFFFF"),
+  topbarTextColor: color.default("#0B2536"),
   appName: nonEmptyText(120), primaryColor: color, secondaryColor: color, accentColor: color, dangerColor: color,
   logoUrl: optionalUrl, compactLogoUrl: optionalUrl, printLogoUrl: optionalUrl, faviconUrl: optionalUrl,
   loginBackgroundUrl: optionalUrl, flagUrl: optionalUrl, countryWordmarkUrl: optionalUrl,
   whiteLabelEnabled: z.boolean(), showVendorSignature: z.boolean(),
   documentHeaderStyle: z.enum(["CLASSIC", "MINIMAL", "PREMIUM"]),
   documentFooterStyle: z.enum(["CLASSIC", "MINIMAL", "PREMIUM"]),
+}).superRefine((value, context) => {
+  for (const issue of assertBrandingContrast(value)) context.addIssue({ code: "custom", path: [issue.key], message: issue.message });
 });
 
 const organizationSchema = z.object({
@@ -153,3 +171,5 @@ export const settingsVersionParamsSchema = z.object({ version: z.coerce.number()
 export const saveSettingsSectionSchema = z.object({ value: z.unknown() });
 export const publishSettingsSchema = z.object({ reason: z.string().trim().min(5).max(1000) });
 export const listSettingsHistoryQuerySchema = z.object({ page: z.coerce.number().int().min(1).default(1), limit: z.coerce.number().int().min(1).max(100).default(20) });
+
+export const expectedSettingsRevisionSchema = z.coerce.number().int().min(0).optional();

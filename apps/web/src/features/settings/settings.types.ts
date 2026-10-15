@@ -22,6 +22,17 @@ export type InstitutionSettings = {
 };
 
 export type BrandingSettings = {
+  sidebarBackgroundColor?: string;
+  sidebarTextColor?: string;
+  sidebarActiveColor?: string;
+  pageBackgroundColor?: string;
+  surfaceColor?: string;
+  textColor?: string;
+  mutedTextColor?: string;
+  borderColor?: string;
+  topbarBackgroundColor?: string;
+  topbarTextColor?: string;
+
   appName: string; primaryColor: string; secondaryColor: string; accentColor: string; dangerColor: string;
   logoUrl?: string; compactLogoUrl?: string; printLogoUrl?: string; faviconUrl?: string;
   loginBackgroundUrl?: string; flagUrl?: string; countryWordmarkUrl?: string;
@@ -128,6 +139,7 @@ export type SettingsMaturity = {
 };
 
 export type SettingsRecordResponse = {
+  editRevision: number;
   active: TenantSettingsPayload; draft: TenantSettingsPayload | null; effective: TenantSettingsPayload;
   hasDraft: boolean; activeVersion: number; draftBaseVersion: number | null;
   draftUpdatedByName: string | null; draftUpdatedAt: string | null;

@@ -1,3 +1,4 @@
+import { useTenantSettings } from "../../features/settings/settings.context";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -24,6 +25,7 @@ import TenantSelectionBootstrap from "../../features/tenant-registration/TenantS
   //TenantSelectionBootstrap
   export default function LoginPage() {
     const { login } = useAuth();
+    const { settings } = useTenantSettings();
     const navigate = useNavigate();
     const [formData, setFormData] = useState<LoginInput>({
       email: "",
@@ -76,6 +78,7 @@ import TenantSelectionBootstrap from "../../features/tenant-registration/TenantS
         <section className="auth-layout">
           <aside className="auth-brand-panel">
             <div className="brand-panel-content">
+              {settings?.branding.logoUrl && <img className="auth-tenant-logo" src={settings.branding.logoUrl} alt={`Logo de ${settings.institution.shortName}`} />}
               
   
               <div className="brand-copy">
@@ -250,7 +253,7 @@ import TenantSelectionBootstrap from "../../features/tenant-registration/TenantS
               </div>
   
               <p className="auth-footer">
-                Plateforme RH · Espace sécurisé
+                {settings?.branding.appName ?? "Plateforme RH"} · Espace sécurisé
               </p>
             </div>
           </section>

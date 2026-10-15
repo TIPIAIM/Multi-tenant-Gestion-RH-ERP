@@ -1,3 +1,4 @@
+import { AgentAvatar } from "./AgentPhoto";
 import {
   useEffect,
   useMemo,
@@ -66,16 +67,7 @@ const statusLabels: Record<AgentEmploymentStatus, string> = {
   LEFT: "Sorti",
 };
 
-function getInitials(fullName: string): string {
-  return (
-    fullName
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((item) => item.charAt(0).toUpperCase())
-      .join("") || "A"
-  );
-}
+
 
 function formatDate(value?: string): string {
   if (!value) {
@@ -530,11 +522,7 @@ export default function AgentsPage() {
             Dossiers <span>Agents.</span>
           </h2>
 
-          <p>
-            Centralisez les informations administratives, contrats,
-            rattachements hiérarchiques et historiques professionnels
-            du personnel .
-          </p>
+ 
         </div>
 
         <div className="agents-hero-actions">
@@ -853,7 +841,7 @@ export default function AgentsPage() {
                 <article key={agent.id} className="agent-row">
                   <div className="agent-identity-cell">
                     <span className="agent-row-avatar">
-                      {getInitials(agent.fullName)}
+                      <AgentAvatar agent={agent} />
                     </span>
 
                     <div>

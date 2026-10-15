@@ -1303,11 +1303,7 @@ export default function LeavesPage() {
           <h2>
             Absences <span>maîtrisées.</span>
           </h2>
-          <p>
-            Centralisez les demandes, suivez les soldes, sécurisez
-            le circuit de validation et visualisez les absences
-            à venir de votre périmètre.
-          </p>
+ 
         </div>
 
         <div className="leaves-hero-actions">

@@ -58,6 +58,8 @@ export interface AgentHistoryEntry {
 }
 
 export interface Agent {
+  photoAssetId?: Types.ObjectId;
+  photoRevision?: number;
   tenantId: Types.ObjectId;
 
   firstName: string;
@@ -115,6 +117,8 @@ export type PublicAgentHistoryEntry = {
 };
 
 export type PublicAgent = {
+  hasPhoto?: boolean;
+  photoRevision?: number;
   id: string;
   tenantId: string;
 

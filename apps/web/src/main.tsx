@@ -7,8 +7,10 @@ import {
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { AuthProvider } from "./features/auth/auth.context";
+import { TenantSettingsProvider } from "./features/settings/settings.context";
 import "./styles/global.css";
 import "./styles/ui-system.css";
+import "./styles/tenant-appearance.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,7 +29,7 @@ createRoot(document.getElementById("root")!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <App />
+          <TenantSettingsProvider><App /></TenantSettingsProvider>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>

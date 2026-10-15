@@ -1,3 +1,4 @@
+import { payrollRouter } from "./modules/payroll/payroll.routes.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
@@ -77,6 +78,8 @@ app.use("/api/v1/reports", managementReportRouter);
 app.use("/api/v1/settings", settingsRouter);
 
 app.use("/api/v1/piece-transfers", pieceTransferRouter);
+
+app.use("/api/v1/payroll", payrollRouter);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

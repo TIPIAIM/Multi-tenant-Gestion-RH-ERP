@@ -39,6 +39,17 @@ export type InstitutionSettings = {
 };
 
 export type BrandingSettings = {
+  sidebarBackgroundColor?: string;
+  sidebarTextColor?: string;
+  sidebarActiveColor?: string;
+  pageBackgroundColor?: string;
+  surfaceColor?: string;
+  textColor?: string;
+  mutedTextColor?: string;
+  borderColor?: string;
+  topbarBackgroundColor?: string;
+  topbarTextColor?: string;
+
   appName: string;
   primaryColor: string;
   secondaryColor: string;
@@ -252,6 +263,7 @@ export type TenantSettingsPayload = {
 };
 
 export type TenantSettingsRecord = {
+  editRevision?: number;
   tenantId: Types.ObjectId;
   active: TenantSettingsPayload;
   draft?: TenantSettingsPayload | null;

@@ -1,0 +1,201 @@
+.payroll-page {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+  color: var(--tenant-text, #172f3b);
+}
+.payroll-hero,
+.payroll-toolbar,
+.payroll-card,
+.payroll-dialog,
+.payroll-empty {
+  background: var(--tenant-surface, #fff);
+  border: 1px solid var(--tenant-border, #dce5e9);
+  border-radius: 16px;
+  padding: 20px;
+  color: var(--tenant-text, #172f3b);
+}
+.payroll-hero,
+.payroll-toolbar,
+.payroll-card-heading,
+.payroll-actions,
+.payroll-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.payroll-hero h2,
+.payroll-card h3 {
+  margin: 0 0 6px;
+}
+.payroll-hero p,
+.payroll-help {
+  line-height: 1.65;
+  font-size: 0.9rem;
+  color: var(--tenant-text, #172f3b);
+  opacity: 1;
+}
+.payroll-grid,
+.payroll-fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+.payroll-card {
+  min-width: 0;
+}
+.payroll-card-heading > div {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.payroll-page button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1px solid var(--tenant-border, #dce5e9);
+  background: var(--tenant-surface, #fff);
+  color: var(--tenant-text, #172f3b);
+  border-radius: 10px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.875rem;
+}
+.payroll-page button:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+.payroll-page .payroll-primary {
+  background: var(--tenant-primary, #046242);
+  color: var(--tenant-on-primary, #fff);
+  border-color: transparent;
+}
+.payroll-page :is(button, input, select, textarea):focus-visible {
+  outline: 3px solid var(--tenant-link, #046242);
+  outline-offset: 3px;
+}
+.payroll-page label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.875rem;
+  min-width: 0;
+}
+.payroll-page :is(input, select, textarea) {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 10px 12px;
+  background: var(--tenant-surface, #fff);
+  color: var(--tenant-text, #172f3b);
+  border: 1px solid var(--tenant-border, #dce5e9);
+  border-radius: 9px;
+  font: inherit;
+  font-size: 1rem;
+}
+.payroll-page textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+.payroll-status {
+  padding: 5px 10px;
+  border: 1px solid var(--tenant-border, #dce5e9);
+  border-radius: 99px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+.payroll-card dl,
+.payroll-document dl {
+  display: grid;
+  gap: 12px;
+}
+.payroll-page dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--tenant-border, #dce5e9);
+  padding-bottom: 8px;
+}
+.payroll-page dd {
+  margin: 0;
+  font-weight: 650;
+  text-align: right;
+}
+.payroll-page dt {
+  min-width: 0;
+}
+.payroll-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  background: #081a2ca6;
+  overflow: auto;
+  padding: 24px 12px calc(24px + env(safe-area-inset-bottom));
+  overscroll-behavior: contain;
+}
+.payroll-dialog {
+  width: min(680px, 100%);
+  display: grid;
+  gap: 16px;
+  box-sizing: border-box;
+  box-shadow: 0 20px 70px #0003;
+}
+.payroll-dialog h2,
+.payroll-dialog h3,
+.payroll-dialog p {
+  margin: 0;
+}
+.payroll-dialog p {
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.payroll-help {
+  padding: 12px;
+  border-left: 3px solid var(--tenant-primary, #046242);
+}
+@media (min-width: 720px) {
+  .payroll-grid,
+  .payroll-fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .payroll-overlay {
+    padding-top: 48px;
+  }
+}
+@media print {
+  body:has(.payroll-document) * {
+    visibility: hidden !important;
+  }
+  body:has(.payroll-document) .payroll-document,
+  body:has(.payroll-document) .payroll-document * {
+    visibility: visible !important;
+  }
+  body:has(.payroll-document) .payroll-document {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    border: 0;
+    box-shadow: none;
+    background: white !important;
+    color: black !important;
+  }
+  body:has(.payroll-document) .payroll-overlay {
+    position: absolute;
+    inset: 0;
+    display: block;
+    overflow: visible;
+    padding: 0;
+    background: white;
+  }
+  body:has(.payroll-document) .payroll-no-print,
+  body:has(.payroll-document) .payroll-no-print * {
+    display: none !important;
+  }
+}

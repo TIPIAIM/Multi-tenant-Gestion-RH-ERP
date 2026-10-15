@@ -372,12 +372,7 @@ import {
             <h2>
               Pointage <span>intelligent.</span>
             </h2>
-  
-            <p>
-              Suivez les présences, retards, heures travaillées
-              et corrections administratives dans un espace RH
-              unifié.
-            </p>
+ 
           </div>
   
           <div className="attendance-hero-actions">

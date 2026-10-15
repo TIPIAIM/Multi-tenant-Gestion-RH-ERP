@@ -1,3 +1,4 @@
+import { requireTenantFeature } from "../../middlewares/feature.middleware.js";
 import { Router } from "express";
 import { requireAuth } from "../../middlewares/auth.middleware.js";
 import { tenantContextMiddleware } from "../../middlewares/tenant-context.middleware.js";
@@ -17,8 +18,9 @@ import {
 } from "./report.controller.js";
 
 export const managementReportRouter = Router();
-managementReportRouter.use(tenantContextMiddleware);
 managementReportRouter.use(requireAuth);
+managementReportRouter.use(tenantContextMiddleware);
+managementReportRouter.use(requireTenantFeature("reports"));
 
 // Toujours déclarer les routes fixes avant /:id.
 managementReportRouter.get("/stats", getManagementReportStatsController);

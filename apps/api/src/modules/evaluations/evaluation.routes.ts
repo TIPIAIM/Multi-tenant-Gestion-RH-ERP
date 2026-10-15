@@ -1,3 +1,4 @@
+import { requireTenantFeature } from "../../middlewares/feature.middleware.js";
 import { Router } from "express";
 import { requireAuth } from "../../middlewares/auth.middleware.js";
 import { tenantContextMiddleware } from "../../middlewares/tenant-context.middleware.js";
@@ -17,8 +18,9 @@ import {
 
 export const evaluationRouter = Router();
 
-evaluationRouter.use(tenantContextMiddleware);
 evaluationRouter.use(requireAuth);
+evaluationRouter.use(tenantContextMiddleware);
+evaluationRouter.use(requireTenantFeature("evaluations"));
 
 /**
  * Les permissions fines sont volontairement traitées dans evaluation.access.ts

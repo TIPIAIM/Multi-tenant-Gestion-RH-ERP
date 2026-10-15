@@ -1,3 +1,5 @@
+import PayrollPage from "../../features/payroll/PayrollPage";
+import ModuleRoute from "./ModuleRoute";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "../../features/auth/auth.context";
 import LoginPage from "../../pages/auth/LoginPage";
@@ -51,6 +53,7 @@ export default function AppRouter() {
 
       <Route element={<ProtectedRoute />}>
         <Route element={<DashboardLayout />}>
+          <Route element={<ModuleRoute />}>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
           <Route path="/dashboard" element={<DashboardHomePage />} />
@@ -63,10 +66,12 @@ export default function AppRouter() {
           <Route path="/roadmaps" element={<RoadmapsPage />} />
           <Route path="/evaluations" element={<EvaluationsPage />} />
           <Route path="/reports" element={<ReportsPage />} />
+          <Route path="/payroll" element={<PayrollPage />} />
           <Route path="/settings" element={<SettingsPage />} />
        
        <Route path="piece-transfers" element={<PieceTransfersPage />} />
        
+          </Route>
         </Route>
       </Route>
 

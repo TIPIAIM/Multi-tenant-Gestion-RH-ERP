@@ -1,3 +1,4 @@
+import { requireTenantFeature } from "../../middlewares/feature.middleware.js";
 import { Router } from "express";
 import { requireAuth } from "../../middlewares/auth.middleware.js";
 import { tenantContextMiddleware } from "../../middlewares/tenant-context.middleware.js";
@@ -22,8 +23,9 @@ import { roadmapKpiUpload } from "./roadmap.upload.js";
 
 export const roadmapRouter = Router();
 
-roadmapRouter.use(tenantContextMiddleware);
 roadmapRouter.use(requireAuth);
+roadmapRouter.use(tenantContextMiddleware);
+roadmapRouter.use(requireTenantFeature("roadmaps"));
 
 /**
  * Routes fixes AVANT les routes dynamiques /:id.
