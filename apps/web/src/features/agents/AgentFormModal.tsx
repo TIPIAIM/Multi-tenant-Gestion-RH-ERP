@@ -1,5 +1,7 @@
+import AgentCreationPhoto from "./AgentCreationPhoto";
 import {
     useMemo,
+    useRef,
     useState,
     type ChangeEvent,
     type FormEvent,
@@ -30,7 +32,8 @@ import {
     isSubmitting: boolean;
     errorMessage: string | null;
     onClose: () => void;
-    onSubmit: (input: CreateAgentInput) => Promise<void>;
+    onSubmit: (input: CreateAgentInput, photo?: File | null) => Promise<void>;
+    creationSaved?: boolean;
   };
   
   type AgentFormState = {
@@ -117,7 +120,10 @@ import {
     errorMessage,
     onClose,
     onSubmit,
+    creationSaved = false,
   }: AgentFormModalProps) {
+    const [photo, setPhoto] = useState<File | null>(null);
+    const savingRef = useRef(false);
     const [formState, setFormState] = useState<AgentFormState>(
       () => buildFormState(agent),
     );
@@ -163,6 +169,8 @@ import {
       event: FormEvent<HTMLFormElement>,
     ): Promise<void> {
       event.preventDefault();
+      if (savingRef.current || isSubmitting) return;
+      savingRef.current = true;
   
       const payload: CreateAgentInput = {
         firstName: formState.firstName.trim(),
@@ -190,9 +198,11 @@ import {
       };
   
       try {
-        await onSubmit(payload);
+        await onSubmit(payload, mode === "CREATE" ? photo : undefined);
       } catch {
         // L'erreur API reste affichée dans la modale.
+      } finally {
+        savingRef.current = false;
       }
     }
   
@@ -208,6 +218,7 @@ import {
           type="button"
           aria-label="Fermer la fenêtre"
           onClick={onClose}
+          disabled={isSubmitting}
         />
   
         <section
@@ -245,6 +256,12 @@ import {
           )}
   
           <form className="agent-form" onSubmit={handleSubmit}>
+            {mode === "CREATE" && <>
+              <AgentCreationPhoto file={photo} onChange={setPhoto} disabled={isSubmitting} />
+              {creationSaved && <p className="agent-creation-saved-note" role="status">Le dossier agent est déjà enregistré. Réessayez l’envoi de la photo, ou retirez-la pour terminer sans photo. Aucun nouveau dossier ne sera créé.</p>}
+            </>}
+            <fieldset className="agent-creation-fields" disabled={isSubmitting || creationSaved}>
+
             <section className="agent-form-section">
               <div className="agent-form-section-heading">
                 <UserRound size={18} />
@@ -537,6 +554,7 @@ import {
               </span>
             </div>
   
+            </fieldset>
             <footer className="agent-modal-footer">
               <button
                 className="agent-cancel-button"
@@ -571,7 +589,7 @@ import {
                 ) : (
                   <span>
                     {mode === "CREATE"
-                      ? "Créer le dossier"
+                      ? creationSaved ? photo ? "Réessayer la photo" : "Terminer sans photo" : photo ? "Créer avec la photo" : "Créer le dossier"
                       : "Enregistrer les modifications"}
                   </span>
                 )}

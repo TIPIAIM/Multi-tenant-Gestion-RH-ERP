@@ -155,6 +155,7 @@ export type TaskListResult = {
 };
 
 export type TaskBoardParams = {
+  status?: TaskStatus;
   search?: string;
   priority?: TaskPriority;
   directionId?: string;

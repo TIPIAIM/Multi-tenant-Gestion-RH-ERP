@@ -47,6 +47,8 @@ export type AgentHistoryEntry = {
 };
 
 export type Agent = {
+  hasPhoto?: boolean;
+  photoRevision?: number;
   id: string;
   tenantId: string;
 

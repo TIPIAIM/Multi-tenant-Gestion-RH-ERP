@@ -1,3 +1,4 @@
+import { getCommunicationAvatar } from "./communication-avatar.js";
 import {
   Router,
 } from "express";
@@ -172,3 +173,5 @@ pieceTransferRouter.get(
 
 pieceTransferRouter.put("/:id/messages/:messageId/reaction", setPieceTransferReactionController);
 pieceTransferRouter.post("/:id/messages/:messageId/forward-agents", forwardPieceTransferToAgentsController);
+
+pieceTransferRouter.get("/:id/avatar", getCommunicationAvatar);

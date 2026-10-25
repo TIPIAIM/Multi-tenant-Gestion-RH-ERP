@@ -76,6 +76,7 @@ export type PieceTransferRecipient = {
 };
 
 export type PieceTransferMessage = {
+  receipt?: { readCount: number; recipientCount: number };
   mentions?: Array<{ userId: string; fullName: string; start: number; end: number }>;
   reactions?: Array<{ emoji: string; count: number; reactedByMe: boolean }>;
   replyTo?: { messageId: string; senderName: string; body?: string; attachmentName?: string };

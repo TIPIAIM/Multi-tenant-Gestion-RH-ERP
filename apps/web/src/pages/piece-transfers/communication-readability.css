@@ -1,0 +1,405 @@
+/* V5 : thème neutre multi-entreprises. Importer après les styles existants.
+   Remplace intégralement la feuille V1/V2/V3, sans les cumuler. */
+.piece-transfers-page, .piece-transfer-modal-layer, .piece-transfer-drawer-layer {
+  --pt-green: #3159ad; --pt-green-soft: #edf2fc;
+  --pt-navy: #222936; --pt-bg: #f7f8fa; --pt-card: #ffffff;
+  --pt-border: #e5e7ec; --pt-text: #222936; --pt-muted: #606878;
+  --pt-gold: #606878; --pt-danger: #b83242;
+  color-scheme: light; color: #222936;
+}
+.piece-transfers-page { background: #f7f8fa; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; }
+.piece-transfer-appbar { background: transparent; border: 0; border-radius: 0; box-shadow: none; padding: 10px 4px 16px; }
+.piece-transfer-appbar span { color: #606878; font-size: .6875rem; font-weight: 500; letter-spacing: .04em; }
+.piece-transfer-appbar h1 { color: #222936; font-size: 1.125rem; font-weight: 650; }
+.piece-transfer-chat-shell { background: #ffffff; border: 0; border-radius: 16px; box-shadow: none; }
+.piece-transfer-conversations-pane { background: #ffffff; border-right: 0; }
+.piece-transfer-quick-stats { border: 0; padding: 12px; gap: 6px; }
+.piece-transfer-mini-stat { min-height: 64px; padding: 9px 10px; border: 0; border-radius: 10px; background: #f5f6f9; box-shadow: none; color: #526078; }
+.piece-transfer-mini-stat:hover, .piece-transfer-mini-stat.is-active { background: #edf2fc; border: 0; box-shadow: none; }
+.piece-transfer-mini-stat strong { color: #222936; font-size: 1.125rem; font-weight: 600; }
+.piece-transfer-mini-stat > span:last-child { color: #606878; font-size: .71875rem; font-weight: 500; }
+.piece-transfer-stat-icon { background: transparent; color: #526078; }
+.piece-transfer-conversation-search { border: 0; border-radius: 12px; background: #f3f4f7; margin: 10px 12px; min-height: 44px; color: #606878; }
+.piece-transfer-conversation-search input { color: #222936; font-size: .875rem; }
+.piece-transfer-conversation-filters { border: 0; padding-inline: 12px; }
+.piece-transfer-conversation-filters button { border: 0; background: transparent; color: #606878; font-size: .75rem; font-weight: 500; min-height: 34px; }
+.piece-transfer-conversation-filters button.is-active { background: #edf2fc; color: #3159ad; }
+.piece-transfer-conversation-item { background: #ffffff; border: 0; padding: 14px 12px; }
+.piece-transfer-conversation-item:hover { background: #f7f8fa; }
+.piece-transfer-conversation-item.is-active { background: #edf2fc; box-shadow: none; }
+.piece-transfer-conversation-avatar, .piece-transfer-chat-avatar { background: #eceff5; color: #526078; font-weight: 600; }
+.piece-transfer-conversation-line strong, .piece-transfer-chat-title strong { color: #222936; font-size: .875rem; font-weight: 600; }
+.piece-transfer-conversation-line time, .piece-transfer-conversation-copy small, .piece-transfer-chat-title span { color: #606878; font-size: .71875rem; }
+.piece-transfer-conversation-line.is-preview > span { color: #606878; font-size: .8125rem; }
+.piece-transfer-chat-panel, .piece-transfer-chat-messages { background: #f7f8fa; }
+.piece-transfer-chat-messages { gap: 10px; padding-block: 20px; }
+.piece-transfer-chat-header { background: #ffffff; border: 0; padding: 12px 16px; }
+.piece-transfer-chat-title span { margin-top: 4px; }
+.piece-transfer-appbar-actions button, .piece-transfer-chat-header-actions > button,
+.piece-transfer-chat-menu-wrap > button, .piece-transfer-chat-back { background: transparent; color: #526078; border: 0; border-radius: 50%; }
+.piece-transfer-appbar-actions button.is-primary, .piece-transfer-appbar-actions button.is-active { background: #edf2fc; color: #3159ad; border: 0; }
+.piece-transfer-chat-header-actions > button:hover, .piece-transfer-chat-menu-wrap > button:hover { background: #f1f3f7; }
+.piece-transfer-bubble { border: 0; padding: 10px 13px 7px; border-radius: 16px; box-shadow: none; color: #222936; }
+.piece-transfer-bubble.is-theirs, .piece-transfer-bubble-system { background: #ffffff; border-top-left-radius: 5px; color: #222936; }
+.piece-transfer-bubble.is-mine { background: #e8eefb; border-top-right-radius: 5px; color: #222936; }
+.piece-transfer-bubble p { color: inherit; font-size: .9375rem; line-height: 1.5; font-weight: 400; }
+.piece-transfer-bubble-author { color: #3159ad; font-size: .75rem; font-weight: 600; }
+.piece-transfer-bubble-meta { color: #606878; font-size: .6875rem; }
+.piece-transfer-bubble-meta button { color: #526078; }
+.piece-transfer-bubble-meta button:hover { background: #dce5f6; color: #3159ad; }
+.piece-transfer-bubble a { color: #3159ad; text-decoration: underline; text-underline-offset: 3px; }
+.piece-transfer-chat-day-chip { border: 0; background: transparent; color: #606878; font-size: .71875rem; }
+.piece-transfer-bubble .communication-attachment-card, .piece-transfer-bubble-attachment,
+.piece-transfer-bubble-file, .piece-transfer-chat-root-file { border: 0; border-radius: 11px; background: #f1f3f8; color: #222936; box-shadow: none; }
+.piece-transfer-bubble.is-mine .communication-attachment-card { background: #f7f9ff; }
+.communication-attachment-card .communication-attachment-main { color: #222936; padding: 11px; }
+.communication-attachment-copy strong, .piece-transfer-bubble-attachment strong,
+.piece-transfer-bubble-file strong, .piece-transfer-chat-root-file strong {
+  color: #222936; font-size: .875rem; font-weight: 600; line-height: 1.45;
+  white-space: normal; overflow-wrap: anywhere;
+}
+.communication-attachment-copy small, .piece-transfer-bubble-attachment small,
+.piece-transfer-bubble-file small, .piece-transfer-chat-root-file small { color: #606878; font-size: .75rem; }
+.communication-attachment-copy > span { color: #3159ad; font-size: .75rem; }
+.communication-attachment-card .communication-attachment-download { border: 0; background: #e7edf8; color: #3159ad; }
+.communication-attachment-icon { background: #e3e8f2; color: #526078; }
+.communication-attachment-icon.file-xlsx, .communication-attachment-icon.file-xls,
+.communication-attachment-icon.file-csv { background: #e3e8f2; color: #526078; }
+.piece-transfer-bubble-file { padding: 10px; }
+.piece-transfer-bubble-file > button { color: #3159ad; }
+.communication-attachment-image { height: auto; max-height: 260px; object-fit: contain; background: #edf0f5; }
+.piece-transfer-bubble .communication-quote, .communication-reply-preview { border: 0; border-radius: 9px; background: #dde5f3; color: #222936; }
+.communication-quote strong, .communication-reply-preview strong { color: #3159ad; font-size: .8125rem; }
+.communication-reactions button { border: 0; background: #ffffff; color: #222936; box-shadow: none; }
+.communication-reactions button[aria-pressed="true"] { background: #dce6fa; outline: 1px solid #3159ad; outline-offset: -1px; }
+.communication-forwarded { color: #606878; opacity: 1; font-size: .75rem; }
+.piece-transfer-chat-composer { border: 0; background: #ffffff; padding: 12px 14px max(12px, env(safe-area-inset-bottom)); gap: 7px; }
+.piece-transfer-chat-composer textarea { border: 0; border-radius: 22px; background: #f3f4f7; color: #222936; font-size: 1rem; line-height: 1.5; padding: 11px 15px; }
+.piece-transfer-chat-composer textarea::placeholder, .piece-transfer-conversation-search input::placeholder { color: #606878; opacity: 1; }
+.piece-transfer-chat-send { border: 0; background: #3159ad; color: #ffffff; width: 44px; height: 44px; }
+.piece-transfer-chat-send:not(:disabled):hover { background: #25478d; }
+.piece-transfer-chat-attach, .communication-emoji-toggle, .communication-reply-preview button { color: #526078; }
+.piece-transfer-chat-file-chip { border: 0; background: #edf2fc; color: #3159ad; font-size: .8125rem; box-shadow: none; border-radius: 10px; }
+.piece-transfer-chat-files-summary { color: #606878; font-size: .75rem; }
+.piece-transfer-chat-info { border: 0; background: #ffffff; }
+.piece-transfer-chat-info p, .piece-transfer-chat-recipients { color: #606878; font-size: .8125rem; }
+.piece-transfer-chat-menu, .piece-transfer-bubble .communication-message-menu { background: #ffffff; border: 0; border-radius: 12px; box-shadow: 0 8px 28px #2229361a; }
+.piece-transfer-chat-menu button { color: #222936; font-size: .8125rem; }
+.piece-transfer-chat-menu button:hover, .piece-transfer-bubble .communication-message-menu button:hover { background: #f1f3f7; }
+.piece-transfer-bubble-editor textarea { background: #ffffff; color: #222936; border: 1px solid #c8cfdb; font-size: .9375rem; min-width: 0; }
+.piece-transfer-bubble.is-deleted { opacity: 1; background: #eceff3; }
+.piece-transfer-bubble-deleted { color: #606878; font-size: .8125rem; }
+.piece-transfer-composer, .piece-transfer-drawer { border: 0; border-radius: 18px; background: #ffffff; color: #222936; }
+.piece-transfer-composer { padding: 20px; }
+.piece-transfer-composer-header span { color: #606878; }
+.piece-transfer-composer-footer-v5, .piece-transfer-audience-v5 { border: 0; }
+.piece-transfer-field > span { color: #222936; font-size: .8125rem; font-weight: 600; }
+.piece-transfer-field > span em, .piece-transfer-compose-hint { color: #606878; font-size: .75rem; }
+.piece-transfer-field input, .piece-transfer-message-input-shell { background: #f3f4f7; color: #222936; border: 0; border-radius: 12px; }
+.piece-transfer-field input, .piece-transfer-message-input-shell textarea { color: #222936; font-size: 1rem; }
+.piece-transfer-message-input-shell textarea { background: transparent; }
+.piece-transfer-optional-file { background: #f3f4f7; border: 0; border-radius: 12px; }
+.piece-transfer-recipient-row { border: 0; border-radius: 12px; background: #f7f8fa; }
+.piece-transfer-recipient-row.is-selected { background: #edf2fc; }
+.piece-transfer-recipient-identity strong { color: #222936; font-size: .8125rem; }
+.piece-transfer-recipient-identity small, .piece-transfer-recipient-identity em { color: #606878; font-size: .71875rem; }
+.piece-transfer-recipient-avatar { background: #eceff5; color: #526078; }
+.piece-transfer-icon-button, .piece-transfer-secondary-button { border: 0; background: #f1f3f7; color: #526078; border-radius: 12px; }
+.piece-transfer-primary-button { background: #3159ad; color: #ffffff; border: 0; border-radius: 12px; font-size: .8125rem; font-weight: 600; }
+.communication-audio-card { background: transparent; border: 0; box-shadow: none; color: #222936; }
+.communication-audio-card button { border: 0; background: transparent; color: #526078; }
+.communication-audio-card .communication-audio-play { background: #3159ad; color: #ffffff; }
+.communication-audio-card .communication-audio-wave { background: transparent; border: 0; }
+.communication-audio-wave svg rect { fill: #7b879d; }
+.communication-audio-wave svg rect.is-played { fill: #3159ad; }
+.communication-audio-card small, .communication-audio-compact-meta, .communication-audio-timeline span { color: #606878; }
+.communication-audio-card input[type="range"] { accent-color: #3159ad; }
+.communication-voice-recorder:not(.phase-idle) { background: #f1f3f7; border: 0; }
+.communication-voice-recorder button { border: 0; background: #e8edf7; color: #3159ad; }
+.communication-voice-status { color: #222936; }
+.communication-voice-status small { color: #606878; }
+/* Les contours clavier restent visibles, même sans bordures décoratives. */
+.piece-transfers-page :is(button, input, textarea, select):focus-visible,
+.piece-transfer-modal-layer :is(button, input, textarea, select):focus-visible,
+.piece-transfer-drawer-layer :is(button, input, textarea, select):focus-visible { outline: 2px solid #3159ad; outline-offset: 3px; }
+@media (max-width: 760px) {
+  .piece-transfer-appbar { padding: 10px 12px; }
+  .piece-transfer-chat-shell, .piece-transfer-composer, .piece-transfer-drawer { border-radius: 0; }
+  .piece-transfer-chat-header { padding: 10px; }
+  .piece-transfer-chat-messages { padding: 16px 10px; }
+  .piece-transfer-chat-composer { padding-inline: 7px; gap: 4px; }
+  .piece-transfer-composer { padding: 16px; }
+}
+
+/* Hiérarchie et repères utiles — V5. */
+.piece-transfer-appbar { padding-bottom: 14px; }
+.piece-transfer-appbar h1 { font-size: 1.25rem; letter-spacing: -.025em; }
+.piece-transfer-appbar-actions button.is-primary { background: #3159ad; color: #ffffff; }
+.piece-transfer-chat-shell { box-shadow: 0 4px 24px #22293606; }
+.piece-transfer-conversations-pane { border-inline-end: 1px solid #e8ebf0; }
+.piece-transfer-quick-stats { gap: 8px; }
+.piece-transfer-mini-stat { background: #f7f8fb; border: 1px solid transparent; }
+.piece-transfer-mini-stat:hover { background: #f0f3fa; border-color: transparent; }
+.piece-transfer-mini-stat.is-active { border: 1px solid #aec0e3; background: #edf2fc; }
+.piece-transfer-conversation-search { background: #f7f8fa; border: 1px solid #d4dbe6; }
+.piece-transfer-conversation-search:focus-within { border-color: #3159ad; box-shadow: 0 0 0 3px #3159ad12; }
+.piece-transfer-conversation-filters { gap: 4px; }
+.piece-transfer-conversation-filters button { font-weight: 600; }
+.piece-transfer-conversation-list { padding: 4px 8px 12px; }
+.piece-transfer-conversation-item { padding: 12px 10px; border-radius: 12px; margin-bottom: 3px; }
+.piece-transfer-conversation-item.is-active { background: #edf2fc; box-shadow: inset 3px 0 #3159ad; }
+.piece-transfer-conversation-line strong { font-size: .90625rem; }
+.piece-transfer-conversation-line time { font-variant-numeric: tabular-nums; }
+.piece-transfer-conversation-item:has(.piece-transfer-unread-badge) .piece-transfer-conversation-line strong,
+.piece-transfer-conversation-item:has(.piece-transfer-conversation-line.is-preview em) .piece-transfer-conversation-line strong { font-weight: 700; }
+.piece-transfer-chat-header { border-bottom: 1px solid #e8ebf0; padding-block: 14px; }
+.piece-transfer-chat-title strong { font-size: .9375rem; }
+.piece-transfer-chat-messages { padding-block: 24px; gap: 10px; }
+.piece-transfer-bubble { padding: 11px 14px 7px; }
+.piece-transfer-bubble-meta { margin-top: 5px; font-size: .71875rem; font-variant-numeric: tabular-nums; }
+.piece-transfer-bubble.is-theirs, .piece-transfer-bubble-system { background: #ffffff; }
+.piece-transfer-bubble.is-mine { background: #e8eefb; }
+.piece-transfer-chat-day-chip { background: #eceff5; padding: 5px 11px; margin-block: 8px; color: #525d6d; font-weight: 500; }
+.piece-transfer-bubble .communication-attachment-card,
+.piece-transfer-bubble-attachment, .piece-transfer-chat-root-file {
+  background: #ffffff; border: 1px solid #d4dbe6; border-radius: 12px;
+}
+.piece-transfer-bubble.is-mine .communication-attachment-card { background: #ffffff; }
+.communication-attachment-copy { gap: 5px; }
+.communication-attachment-copy strong { font-size: .875rem; }
+.communication-attachment-copy > span { font-weight: 500; }
+.communication-attachment-card .communication-attachment-download { width: 40px; height: 40px; flex-basis: 40px; }
+.communication-attachment-card .communication-attachment-main:hover { background: #f6f8fd; }
+.communication-attachment-card .communication-attachment-download:hover { background: #dbe5f8; }
+.piece-transfer-bubble .communication-quote, .communication-reply-preview { border-inline-start: 3px solid #7693c8; background: #e1e8f5; }
+.piece-transfer-chat-composer { border-top: 1px solid #e8ebf0; padding-top: 14px; }
+.piece-transfer-chat-composer textarea { background: #f7f8fa; border: 1px solid #c8d1de; }
+.piece-transfer-chat-composer textarea:focus { border-color: #3159ad; }
+.piece-transfer-chat-send { flex-shrink: 0; transition: background-color 140ms ease; }
+.piece-transfer-chat-send:disabled { opacity: 1; background: #e3e7ee; color: #667183; }
+.piece-transfer-chat-attach, .communication-emoji-toggle { border-radius: 50%; }
+.piece-transfer-chat-attach:hover, .communication-emoji-toggle:hover { background: #edf1f7; }
+.piece-transfer-chat-file-chip { background: #f1f5ff; border: 1px solid #c6d3eb; }
+.piece-transfer-chat-info { border-bottom: 1px solid #e8ebf0; }
+.piece-transfer-field input, .piece-transfer-message-input-shell { background: #ffffff; border: 1px solid #c8d1de; }
+.piece-transfer-field input:focus, .piece-transfer-message-input-shell:focus-within { border-color: #3159ad; }
+.piece-transfer-recipient-row { border: 1px solid transparent; }
+.piece-transfer-recipient-row.is-selected { border-color: #aec0e3; }
+.piece-transfer-composer-footer-v5 { border-top: 1px solid #e8ebf0; padding-top: 16px; }
+.piece-transfer-primary-button { min-height: 44px; padding-inline: 18px; }
+.piece-transfer-primary-button:disabled { opacity: 1; background: #e3e7ee; color: #667183; }
+.piece-transfer-primary-button:not(:disabled):hover { background: #25478d; }
+.piece-transfer-bubble .communication-message-menu { padding: 6px; border: 1px solid #e1e6ee; }
+.piece-transfer-bubble .communication-message-menu button { width: 100%; height: auto; border-radius: 8px; }
+.communication-audio-card .communication-audio-play { min-width: 40px; min-height: 40px; }
+@media (pointer: coarse) {
+  .piece-transfer-chat-header-actions > button, .piece-transfer-chat-menu-wrap > button,
+  .piece-transfer-chat-back, .communication-emoji-toggle,
+  .piece-transfer-appbar-actions button { min-width: 44px; min-height: 44px; }
+  .piece-transfer-conversation-filters button { min-height: 40px; }
+}
+@media (max-width: 760px) {
+  .piece-transfer-conversations-pane { border-inline-end: 0; }
+  .piece-transfer-chat-header { padding-block: 10px; }
+  .piece-transfer-chat-messages { padding: 18px 10px; }
+  .piece-transfer-bubble { padding: 10px 12px 7px; }
+  .piece-transfer-chat-composer { padding-top: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .piece-transfer-chat-send { transition: none; }
+}
+
+/* Messages envoyés : fond bleu très clair, aucune teinte verte. */
+:is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble.is-mine {
+  background: #edf2ff;
+  background-image: none;
+  color: #222936;
+  border-color: transparent;
+}
+/* Actions sous chaque message : contraste permanent, pas seulement au survol. */
+:is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble-meta button {
+  color: #244b91;
+  background: transparent;
+  opacity: 1;
+  border: 0;
+}
+:is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble-meta button svg {
+  color: inherit;
+  stroke: currentColor;
+  stroke-width: 2;
+  opacity: 1;
+}
+:is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble-meta button:hover {
+  color: #153568;
+  background: #dce6fa;
+}
+:is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble-meta button:is(.is-delete, .is-danger) {
+  color: #b42339;
+}
+:is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble-meta button:is(.is-delete, .is-danger):hover {
+  color: #8e182b;
+  background: #fce8ec;
+}
+:is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble-meta button:disabled {
+  color: #727b8a;
+  background: transparent;
+  cursor: not-allowed;
+}
+:is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble-meta button:focus-visible {
+  outline: 2px solid #244b91;
+  outline-offset: 2px;
+}
+
+/* Palette locale : les réglages de l’entreprise ne recolorent pas la messagerie. */
+:root :is(.piece-transfers-page, .piece-transfer-modal-layer, .piece-transfer-drawer-layer) {
+  --tenant-surface: #ffffff; --tenant-text: #222936; --tenant-muted: #606878;
+  --tenant-primary: #3159ad; --tenant-on-primary: #ffffff;
+  --tenant-page-bg: #f7f8fa; --tenant-border: #d4dbe6; --tenant-link: #3159ad;
+  color-scheme: light;
+}
+:root .piece-transfers-page .piece-transfer-appbar { background: transparent; padding-block: 8px 16px; }
+:root .piece-transfers-page .piece-transfer-appbar h1 { font-size: 1.25rem; letter-spacing: -.025em; }
+:root .piece-transfers-page .piece-transfer-chat-header { background: #ffffff; }
+:root .piece-transfers-page .piece-transfer-conversation-item { background: #ffffff; }
+:root .piece-transfers-page .piece-transfer-conversation-item:hover { background: #f4f6fa; }
+:root .piece-transfers-page .piece-transfer-conversation-item.is-active { background: #edf2fc; }
+:root .piece-transfers-page .piece-transfer-chat-messages { background: #f7f8fa; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble {
+  max-width: min(82%, 660px); border-radius: 16px;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble.is-mine {
+  background: #edf2ff; color: #222936; border: 0; border-top-right-radius: 5px;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble.is-theirs {
+  background: #ffffff; color: #222936; border: 0; border-top-left-radius: 5px;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble p {
+  color: #222936; font-size: .9375rem; line-height: 1.55;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble :is(.communication-attachment-copy strong, .piece-transfer-bubble-attachment strong) {
+  color: #222936; font-size: .875rem; font-weight: 600; line-height: 1.45;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-attachment-copy > span {
+  color: #3159ad; font-size: .75rem;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-attachment-copy small {
+  color: #606878; font-size: .75rem;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .piece-transfer-bubble-author {
+  color: #3159ad; font-size: .75rem;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .piece-transfer-bubble-meta {
+  gap: 5px; margin-top: 8px; color: #606878; font-size: .71875rem;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .piece-transfer-bubble-meta :is(time, span) { color: #606878; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .piece-transfer-bubble-meta button {
+  color: #244b91; background: #f1f5fd; border: 0; border-radius: 10px;
+  width: 34px; min-width: 34px; height: 34px; min-height: 34px;
+  padding: 0; opacity: 1; transition: background-color 140ms ease;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .piece-transfer-bubble-meta button svg {
+  color: inherit; stroke: currentColor; width: 16px; height: 16px; stroke-width: 2;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .piece-transfer-bubble-meta button:hover { background: #dce6fa; color: #153568; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .piece-transfer-bubble-meta button:is(.is-delete, .is-danger) { color: #b42339; background: #fff1f3; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .piece-transfer-bubble-meta button:is(.is-delete, .is-danger):hover { color: #8e182b; background: #fce0e6; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .piece-transfer-bubble-meta button:disabled { color: #727b8a; background: #e9edf3; cursor: not-allowed; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .piece-transfer-bubble-meta button:focus-visible { outline: 2px solid #244b91; outline-offset: 2px; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-chat-composer textarea {
+  background: #ffffff; color: #222936; border: 1px solid #c8d1de;
+  border-radius: 18px; min-height: 46px; line-height: 1.5;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-chat-send {
+  background: #3159ad; color: #ffffff; width: 46px; height: 46px; border-radius: 16px;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-chat-send:disabled { background: #e3e7ee; color: #667183; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-reactions button span { color: #3159ad; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-quote :is(strong, span) { color: #244b91; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-audio-card button { color: #244b91; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-audio-card .communication-audio-play { color: #ffffff; background: #3159ad; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-audio-compact-meta span { color: #606878; }
+@media (pointer: coarse) {
+  :root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .piece-transfer-bubble-meta button { min-width: 44px; width: 44px; height: 44px; min-height: 44px; }
+}
+@media (max-width: 760px) {
+  :root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble { max-width: 94%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .piece-transfer-bubble-meta button { transition: none; }
+}
+
+/* V8 : pièces jointes compactes, sans réduire les textes des conversations. */
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-attachment-card {
+  width: min(280px, 100%); border-radius: 10px;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-attachment-card .communication-attachment-main {
+  padding: 8px; gap: 8px;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-attachment-icon {
+  flex: 0 0 32px; width: 32px; min-height: 38px; border-radius: 8px;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-attachment-icon > svg { width: 20px; height: 20px; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-attachment-copy { gap: 3px; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble :is(.communication-attachment-copy strong, .piece-transfer-bubble-attachment strong, .piece-transfer-bubble-file strong) {
+  color: #222936; font-size: .8125rem; font-weight: 550; line-height: 1.4;
+  overflow-wrap: anywhere; white-space: normal;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble :is(.communication-attachment-copy small, .piece-transfer-bubble-attachment small, .piece-transfer-bubble-file small) {
+  color: #606878; font-size: .6875rem; line-height: 1.4;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-attachment-copy > span {
+  color: #3159ad; font-size: .6875rem; line-height: 1.4;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-attachment-card .communication-attachment-download {
+  width: 34px; height: 34px; flex-basis: 34px; margin: 4px; align-self: center; border-radius: 9px;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-attachment-card.is-image {
+  width: min(210px, 100%);
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-attachment-card.is-image .communication-attachment-main {
+  padding: 5px 5px 8px; gap: 6px;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-attachment-image {
+  width: 100%; height: auto; max-height: 140px; object-fit: contain; border-radius: 7px; background: #f3f5f9;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-audio-card.communication-audio-compact {
+  width: min(268px, 100%); min-width: 0; padding: 7px 8px;
+  border: 0; border-radius: 12px; background: #f5f7fc;
+  display: flex; flex-wrap: wrap; gap: 3px; box-shadow: none;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-audio-compact-row {
+  display: flex; align-items: center; width: 100%; min-width: 0; gap: 5px;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-audio-card .communication-audio-play {
+  flex: 0 0 34px; min-width: 34px; width: 34px; min-height: 34px; height: 34px;
+  padding: 0; border-radius: 50%; background: #3159ad; color: #ffffff;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-audio-card .communication-audio-wave {
+  flex: 1 1 0; min-width: 0; width: auto; min-height: 34px; padding: 0; border: 0; background: transparent;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-audio-wave svg { width: 100%; height: 23px; display: block; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-audio-card :is(.communication-audio-speed, .communication-audio-download) {
+  flex: 0 0 30px; width: 30px; min-width: 30px; min-height: 34px; height: 34px;
+  padding: 0; margin: 0; font-size: .6875rem; border-radius: 8px; color: #244b91;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-audio-compact-meta {
+  padding-inline-start: 39px; gap: 6px;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-audio-compact-meta span {
+  font-size: .6875rem; color: #606878; font-variant-numeric: tabular-nums; line-height: 1.4;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-audio-compact-meta input {
+  min-height: 20px; margin: 0; accent-color: #3159ad;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-audio-card small {
+  color: #606878; font-size: .75rem; line-height: 1.4;
+}
+/* Les petites cartes gardent des contrôles accessibles au doigt. */
+@media (pointer: coarse) {
+  :root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-attachment-card .communication-attachment-download { width: 44px; height: 44px; flex-basis: 44px; }
+  :root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-audio-card .communication-audio-play { width: 44px; height: 44px; min-height: 44px; flex-basis: 44px; }
+  :root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-audio-card :is(.communication-audio-speed, .communication-audio-download) { flex-basis: 44px; width: 44px; min-width: 44px; height: 44px; min-height: 44px; }
+  :root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-audio-card .communication-audio-wave { min-height: 44px; }
+  :root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-audio-compact-meta { padding-inline-start: 0; }
+  :root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .communication-audio-compact-meta input { min-height: 28px; }
+}

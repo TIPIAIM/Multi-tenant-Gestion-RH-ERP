@@ -1,3 +1,4 @@
+import CommunicationAvatar from "./CommunicationAvatar";
 import CommunicationAdminReadStats from "./CommunicationAdminReadStats";
 import { useSearchParams } from "react-router-dom";
 import { usePieceTransferNotifications } from "../../features/piece-transfers/use-piece-transfer-notifications";
@@ -102,14 +103,7 @@ function formatDateTime(value?: string): string {
   }).format(new Date(value));
 }
 
-function initials(value: string): string {
-  return value
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase())
-    .join("") || "C";
-}
+
 
 function useDebouncedSearch(value: string): string {
   const [debounced, setDebounced] = useState(value);
@@ -822,7 +816,7 @@ function ConversationItem({
       onClick={onClick}
     >
       <span className="piece-transfer-conversation-avatar">
-        {initials(item.title)}
+        <CommunicationAvatar transferId={item.id} name={item.title} group={(item.recipientCount ?? 0) > 1 || item.audienceMode === "ALL"} />
       </span>
 
       <span className="piece-transfer-conversation-copy">
@@ -869,7 +863,7 @@ function AdminMessagesView({
         <article key={item.id} className={item.status === "DELETED" ? "is-deleted" : ""}>
           <button type="button" onClick={() => onOpen(item.transferId)}>
             <span className="piece-transfer-admin-message-avatar">
-              {initials(item.senderName)}
+              <CommunicationAvatar transferId={item.transferId} userId={item.senderUserId} name={item.senderName} />
             </span>
             <span>
               <strong>{item.senderName}</strong>

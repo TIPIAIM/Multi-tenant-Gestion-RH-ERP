@@ -1,4 +1,4 @@
-import { api } from "../lib/api";
+import ConnectedUserAvatar from "../features/auth/ConnectedUserAvatar";
 import { featureForPath } from "../features/settings/module-access";
 import { useTenantSettings } from "../features/settings/settings.context";
 import { appearanceVariables } from "../features/settings/settings.appearance";
@@ -8,7 +8,7 @@ import {
     useState,
     useRef,
   } from "react";
-  import { useQuery } from "@tanstack/react-query";
+   import { useQuery } from "@tanstack/react-query";
   import {
     Bell,
     BellRing,
@@ -28,26 +28,11 @@ import {
   import "./dashboard-layout.css";
   import "./communication-notifications.css";
   import { usePieceTransferNotifications } from "../features/piece-transfers/use-piece-transfer-notifications";
-  function getInitials(fullName: string): string {
-    const initials = fullName
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((name) => name.charAt(0).toUpperCase())
-      .join("");
-    return initials || "U";
-  }
   export default function DashboardLayout() {
     const { user, logout } = useAuth();
     const location = useLocation();
     const { settings: publishedSettings } = useTenantSettings();
     const notificationsQuery = usePieceTransferNotifications();
-    const taskNotifications = useQuery({
-      queryKey: ["tasks", "notifications", user?.tenantId, user?.id],
-      queryFn: async () => (await api.get<{ data: { openTasks: number } }>("/tasks/notifications")).data.data,
-      enabled: Boolean(user && publishedSettings?.featureFlags.tasks),
-      staleTime: 10_000, refetchInterval: 15_000, refetchOnWindowFocus: "always",
-    });
     const unreadMessages = notificationsQuery.data?.unreadMessages ?? 0;
     const unreadCommunications = notificationsQuery.data?.unreadCommunications ?? 0;
     const notificationsKnown = Boolean(notificationsQuery.data) && !notificationsQuery.isError;
@@ -256,31 +241,6 @@ import {
                       const Icon = item.icon;
                       const isCommunications = item.to === "/piece-transfers";
 
-                      if (!item.available) {
-                        return (
-                          <span
-                            key={item.label}
-                            className="dashboard-nav-disabled"
-                            data-tooltip={item.label}
-                            title={`${item.label} sera disponible dans un prochain module.`}
-                          >
-                            <span className="dashboard-nav-item-main">
-                              <Icon size={18} />
-                              <span>{item.label}</span>
-                            {item.to === "/tasks" && taskNotifications.data && taskNotifications.data.openTasks > 0 && (
-                              <span className="dashboard-task-count" aria-label={`${taskNotifications.data.openTasks} tâches personnelles à traiter`}>
-                                <Bell size={12} aria-hidden="true" />{taskNotifications.data.openTasks > 99 ? "99+" : taskNotifications.data.openTasks}
-                              </span>
-                            )}
-                            </span>
-                            {item.badge && (
-                              <span className="dashboard-nav-badge">
-                                {item.badge}
-                              </span>
-                            )}
-                          </span>
-                        );
-                      }
                       return (
                         <NavLink
                           key={item.label}
@@ -297,11 +257,7 @@ import {
                           <span className="dashboard-nav-item-main">
                             <Icon size={18} />
                             <span>{item.label}</span>
-                            {item.to === "/tasks" && taskNotifications.data && taskNotifications.data.openTasks > 0 && (
-                              <span className="dashboard-task-count" aria-label={`${taskNotifications.data.openTasks} tâches personnelles à traiter`}>
-                                <Bell size={12} aria-hidden="true" />{taskNotifications.data.openTasks > 99 ? "99+" : taskNotifications.data.openTasks}
-                              </span>
-                            )}
+
                           </span>
                           {isCommunications && (
                             <span className={`dashboard-communication-status ${!notificationsKnown ? "is-unknown" : unreadMessages > 0 ? "has-unread" : "is-clear"}`} aria-hidden="true">
@@ -322,7 +278,7 @@ import {
                 title={`${user.fullName} · ${roleLabels[user.role]}`}
               >
                 <span className="dashboard-avatar">
-                  {getInitials(user.fullName)}
+                  <ConnectedUserAvatar />
                 </span>
                 <div className="dashboard-sidebar-user-copy">
                   <strong>{user.fullName}</strong>
@@ -379,7 +335,7 @@ import {
                   }
                 >
                   <span className="dashboard-profile-avatar">
-                    {getInitials(user.fullName)}
+                    <ConnectedUserAvatar />
                   </span>
                   <span className="dashboard-profile-copy">
                     <strong>{user.fullName}</strong>

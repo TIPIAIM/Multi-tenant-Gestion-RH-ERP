@@ -2,6 +2,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useRef,
   type ChangeEvent,
   type FormEventHandler,
 } from "react";
@@ -180,6 +181,40 @@ export default function TaskFormModal({
   onClose,
   onSubmit,
 }: TaskFormModalProps) {
+  const dialogRef = useRef<HTMLElement>(null);
+  const savingRef = useRef(false);
+  const closeRef = useRef(onClose);
+  const pendingRef = useRef(isSubmitting);
+  useEffect(() => { closeRef.current = onClose; pendingRef.current = isSubmitting; }, [onClose, isSubmitting]);
+  useEffect(() => {
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const dialog = dialogRef.current;
+    const focusables = () => Array.from(dialog?.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]',
+    ) ?? []).filter(element => element.getClientRects().length > 0);
+    dialog?.querySelector<HTMLInputElement>('input')?.focus();
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        if (!pendingRef.current && !savingRef.current) closeRef.current();
+      }
+      if (event.key !== "Tab") return;
+      const elements = focusables();
+      const first = elements[0]; const last = elements[elements.length - 1];
+      if (!first || !last) { event.preventDefault(); dialog?.focus(); return; }
+      if (!dialog?.contains(document.activeElement)) { event.preventDefault(); first.focus(); }
+      else if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, []);
   const isServiceManager =
     currentUserRole === "SERVICE_MANAGER";
 
@@ -386,6 +421,8 @@ export default function TaskFormModal({
     FormEventHandler<HTMLFormElement> =
     async (event) => {
       event.preventDefault();
+      if (savingRef.current || isSubmitting || !canSubmit) return;
+      savingRef.current = true;
 
       const tags = Array.from(
         new Set(
@@ -440,6 +477,8 @@ export default function TaskFormModal({
         });
       } catch {
         // L'erreur est affichée dans la modale.
+      } finally {
+        savingRef.current = false;
       }
     };
 
@@ -459,10 +498,15 @@ export default function TaskFormModal({
         className="task-modal-backdrop"
         type="button"
         aria-label="Fermer"
-        onClick={onClose}
+        onClick={() => { if (!isSubmitting && !savingRef.current) onClose(); }}
+        disabled={isSubmitting}
+        tabIndex={-1}
       />
 
       <section
+        ref={dialogRef}
+        tabIndex={-1}
+        aria-busy={isSubmitting}
         className="task-modal"
         role="dialog"
         aria-modal="true"
@@ -487,7 +531,7 @@ export default function TaskFormModal({
             className="task-icon-button"
             type="button"
             aria-label="Fermer"
-            onClick={onClose}
+            onClick={() => { if (!isSubmitting && !savingRef.current) onClose(); }}
             disabled={isSubmitting}
           >
             <X size={20} />
@@ -495,7 +539,7 @@ export default function TaskFormModal({
         </header>
 
         {errorMessage && (
-          <div className="task-form-error">
+          <div className="task-form-error" role="alert">
             {errorMessage}
           </div>
         )}
@@ -1086,7 +1130,7 @@ export default function TaskFormModal({
             <button
               className="task-cancel-button"
               type="button"
-              onClick={onClose}
+              onClick={() => { if (!isSubmitting && !savingRef.current) onClose(); }}
               disabled={isSubmitting}
             >
               Annuler

@@ -1,8 +1,10 @@
+import { useLocation } from "react-router-dom";
 import {
   useCallback,
   useEffect,
   useMemo,
   useState,
+  useRef,
   type ChangeEvent,
 } from "react";
 import {
@@ -43,6 +45,8 @@ import {
 import type {
   CreateTaskInput,
   Task,
+  TaskBoardResult,
+  TaskListResult,
   TaskDueFilter,
   TaskPriority,
   TaskStatus,
@@ -50,9 +54,11 @@ import type {
 import TaskDetailsDrawer from "./TaskDetailsDrawer";
 import TaskFormModal from "./TaskFormModal";
 import "./tasks-page.css";
+import "./task-experience.css";
 import "./task-kpi.css";
 
 type DisplayMode = "BOARD" | "LIST";
+type MetricSelection = "total" | "progress" | "alert" | "complete";
 
 type TaskFilters = {
   search: string;
@@ -211,10 +217,20 @@ export default function TasksPage() {
   const [page, setPage] = useState(1);
   const [isFormOpen, setIsFormOpen] =
     useState(false);
+  const [isPreparingEdit, setIsPreparingEdit] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [saveMessage, setSaveMessage] = useState("");
+  const editRequest = useRef(0);
+  useEffect(() => () => { editRequest.current += 1; }, []);
   const [editingTask, setEditingTask] =
     useState<Task | null>(null);
   const [selectedTaskId, setSelectedTaskId] =
     useState<string | null>(null);
+  const taskLocation = useLocation();
+  useEffect(() => {
+    const taskId = new URLSearchParams(taskLocation.search).get("task");
+    if (taskId && /^[a-f\d]{24}$/i.test(taskId)) setSelectedTaskId(taskId);
+  }, [taskLocation.key, taskLocation.search]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -315,12 +331,13 @@ export default function TasksPage() {
     retry: false,
   });
 
-  const boardQuery = useQuery({
+  const boardQuery = useQuery<TaskBoardResult>({
     queryKey: [
       "tasks",
       "board",
       debouncedSearch,
       filters.priority,
+      filters.status,
       filters.directionId,
       filters.serviceId,
       filters.assignedToAgentId,
@@ -336,6 +353,7 @@ export default function TasksPage() {
           debouncedSearch || undefined,
         priority:
           filters.priority || undefined,
+        status: filters.status || undefined,
         directionId:
           filters.directionId || undefined,
         serviceId:
@@ -355,7 +373,7 @@ export default function TasksPage() {
     retry: false,
   });
 
-  const listQuery = useQuery({
+  const listQuery = useQuery<TaskListResult>({
     queryKey: [
       "tasks",
       "list",
@@ -401,7 +419,7 @@ export default function TasksPage() {
     retry: false,
   });
 
-  const selectedTaskQuery = useQuery({
+  const selectedTaskQuery = useQuery<Task>({
     queryKey: ["task", selectedTaskId],
 
     queryFn: () =>
@@ -699,7 +717,9 @@ export default function TasksPage() {
   const createMutation = useMutation({
     mutationFn: createTask,
 
-    onSuccess: async () => {
+    onSuccess: async (task) => {
+      queryClient.setQueryData(["task", task.id], task);
+      setSaveMessage("La tâche a été créée.");
       await refreshTasks();
       setIsFormOpen(false);
       setEditingTask(null);
@@ -716,9 +736,11 @@ export default function TasksPage() {
     }) => updateTask(taskId, input),
 
     onSuccess: async (
-      _,
+      task,
       variables,
     ) => {
+      queryClient.setQueryData(["task", task.id], task);
+      setSaveMessage("Les modifications de la tâche ont été enregistrées.");
       await Promise.all([
         refreshTasks(),
         queryClient.invalidateQueries({
@@ -813,6 +835,8 @@ export default function TasksPage() {
     updateMutation.reset();
 
     setEditingTask(null);
+    setEditError(null);
+    setSaveMessage("");
     setIsFormOpen(true);
   }, [
     canManageTasks,
@@ -820,23 +844,52 @@ export default function TasksPage() {
     updateMutation,
   ]);
 
-  const openEditModal = useCallback(
-    (task: Task): void => {
-      if (!task.permissions?.canManage) {
-        return;
+  const openEditModal = useCallback(async (task: Task): Promise<void> => {
+    if (!task.permissions?.canManage || isPreparingEdit) return;
+    const requestId = ++editRequest.current;
+    setIsPreparingEdit(true);
+    setEditError(null);
+    setSaveMessage("");
+    try {
+      // Le formulaire utilise la dernière version et les permissions actuelles.
+      const latest = await getTaskById(task.id);
+      if (requestId !== editRequest.current) return;
+      if (!latest.permissions?.canManage) {
+        throw new Error("Vous ne pouvez plus modifier cette tâche.");
       }
-
+      queryClient.setQueryData(["task", latest.id], latest);
       createMutation.reset();
       updateMutation.reset();
-
-      setEditingTask(task);
+      setSelectedTaskId(null);
+      setEditingTask(latest);
       setIsFormOpen(true);
-    },
-    [
-      createMutation,
-      updateMutation,
-    ],
-  );
+    } catch (error) {
+      if (requestId === editRequest.current) setEditError(getApiErrorMessage(error));
+    } finally {
+      if (requestId === editRequest.current) setIsPreparingEdit(false);
+    }
+  }, [isPreparingEdit, queryClient, createMutation, updateMutation]);
+
+  const selectMetric = (metric: MetricSelection): void => {
+    // Les chiffres représentent le périmètre accessible, sans les filtres manuels.
+    resetFilters();
+    setFilters(previous => ({
+      ...previous,
+      status: metric === "progress" ? "IN_PROGRESS" : metric === "complete" ? "COMPLETED" : "",
+      due: metric === "alert" ? "OVERDUE" : "ALL",
+    }));
+    setDebouncedSearch("");
+    setPage(1);
+  };
+  const metricBaseActive = !filters.search && !filters.priority && !filters.assignedToAgentId
+    && filters.directionId === ((role === "DIRECTION" || role === "SERVICE_MANAGER") ? currentAgentDirectionId ?? "" : "")
+    && filters.serviceId === (role === "SERVICE_MANAGER" ? currentAgentServiceId ?? "" : "");
+  const activeMetric: MetricSelection | null = !metricBaseActive ? null
+    : filters.due === "OVERDUE" && !filters.status ? "alert"
+    : filters.due !== "ALL" ? null
+    : filters.status === "IN_PROGRESS" ? "progress"
+    : filters.status === "COMPLETED" ? "complete"
+    : !filters.status ? "total" : null;
 
   async function handleSubmitTask(
     input: CreateTaskInput,
@@ -895,10 +948,10 @@ export default function TasksPage() {
       taskScopeQuery,
     ]);
 
-  const boardColumns =
+  const boardColumns: TaskBoardResult["columns"] | undefined =
     boardQuery.data?.columns;
 
-  const listTasks =
+  const listTasks: Task[] =
     listQuery.data?.items ?? [];
 
   const pagination =
@@ -925,6 +978,9 @@ export default function TasksPage() {
 
   return (
     <section className="tasks-page">
+      <p className="task-ux-feedback" role="status" aria-live="polite">{isPreparingEdit ? "Chargement de la dernière version de la tâche…" : saveMessage}</p>
+      {editError && <p className="task-ux-error" role="alert">{editError}</p>}
+      {selectedTaskQuery.isError && <p role="alert">{getApiErrorMessage(selectedTaskQuery.error)}</p>}
       <header className="tasks-hero">
         <div className="tasks-hero-copy">
           <p className="tasks-eyebrow">
@@ -1015,65 +1071,81 @@ export default function TasksPage() {
       )}
 
       <section className="tasks-metrics-grid">
-        <article className="tasks-metric-card">
+        <button type="button"
+          className={`tasks-metric-card tasks-metric-action total ${activeMetric === "total" ? "is-selected" : ""}`}
+          aria-label="Afficher toutes les tâches"
+          aria-pressed={activeMetric === "total"}
+          onClick={() => selectMetric("total")} aria-controls="tasks-results">
           <span className="tasks-metric-icon total">
             <SquareCheckBig size={21} />
           </span>
-          <div>
+          <span className="tasks-metric-copy">
             <span>Total des tâches</span>
             <strong>
               {statsQuery.data?.total ??
                 "—"}
             </strong>
-            <p>Activités accessibles</p>
-          </div>
-        </article>
+            <span className="tasks-metric-description">Activités accessibles</span>
+          </span>
+        </button>
 
-        <article className="tasks-metric-card">
+        <button type="button"
+          className={`tasks-metric-card tasks-metric-action progress ${activeMetric === "progress" ? "is-selected" : ""}`}
+          aria-label="Afficher les tâches en cours"
+          aria-pressed={activeMetric === "progress"}
+          onClick={() => selectMetric("progress")} aria-controls="tasks-results">
           <span className="tasks-metric-icon progress">
             <CalendarClock size={21} />
           </span>
-          <div>
+          <span className="tasks-metric-copy">
             <span>En cours</span>
             <strong>
               {statsQuery.data
                 ?.inProgress ?? "—"}
             </strong>
-            <p>
+            <span className="tasks-metric-description">
               Actions opérationnelles
-            </p>
-          </div>
-        </article>
+            </span>
+          </span>
+        </button>
 
-        <article className="tasks-metric-card">
+        <button type="button"
+          className={`tasks-metric-card tasks-metric-action alert ${activeMetric === "alert" ? "is-selected" : ""}`}
+          aria-label="Afficher les tâches en retard"
+          aria-pressed={activeMetric === "alert"}
+          onClick={() => selectMetric("alert")} aria-controls="tasks-results">
           <span className="tasks-metric-icon alert">
             <AlertTriangle size={21} />
           </span>
-          <div>
+          <span className="tasks-metric-copy">
             <span>En retard</span>
             <strong>
               {statsQuery.data
                 ?.overdue ?? "—"}
             </strong>
-            <p>
+            <span className="tasks-metric-description">
               À traiter rapidement
-            </p>
-          </div>
-        </article>
+            </span>
+          </span>
+        </button>
 
-        <article className="tasks-metric-card">
+        <button type="button"
+          className={`tasks-metric-card tasks-metric-action complete ${activeMetric === "complete" ? "is-selected" : ""}`}
+          aria-label="Afficher les tâches terminées"
+          aria-pressed={activeMetric === "complete"}
+          onClick={() => selectMetric("complete")} aria-controls="tasks-results">
           <span className="tasks-metric-icon complete">
             <CheckCircle2 size={21} />
           </span>
-          <div>
+          <span className="tasks-metric-copy">
             <span>Terminées</span>
             <strong>
               {statsQuery.data
                 ?.completed ?? "—"}
             </strong>
-            <p>Objectifs finalisés</p>
-          </div>
-        </article>
+            <span className="tasks-metric-description">Objectifs finalisés</span>
+          </span>
+        </button>
       </section>
 
       <section className="tasks-filter-panel">
@@ -1368,7 +1440,7 @@ export default function TasksPage() {
       </section>
 
       {displayMode === "BOARD" && (
-        <section className="tasks-board-shell">
+        <section id="tasks-results" className="tasks-board-shell" aria-label="Résultats des tâches" aria-busy={boardQuery.isFetching}>
           <header className="tasks-content-heading">
             <div>
               <p>VUE OPÉRATIONNELLE</p>
@@ -1400,7 +1472,7 @@ export default function TasksPage() {
             <div className="tasks-board">
               {taskStatusOrder.map(
                 (status) => {
-                  const tasks =
+                  const tasks: Task[] =
                     boardColumns?.[
                       status
                     ] ?? [];
@@ -1436,7 +1508,7 @@ export default function TasksPage() {
                         )}
 
                         {tasks.map(
-                          (task) => {
+                          (task: Task) => {
                             const kpi =
                               getKpiSummary(
                                 task,
@@ -1595,7 +1667,7 @@ export default function TasksPage() {
       )}
 
       {displayMode === "LIST" && (
-        <section className="tasks-list-panel">
+        <section id="tasks-results" className="tasks-list-panel" aria-label="Résultats des tâches" aria-busy={listQuery.isFetching}>
           <header className="tasks-list-header">
             <div>
               <p>
@@ -1662,7 +1734,7 @@ export default function TasksPage() {
 
               <div className="tasks-list">
                 {listTasks.map(
-                  (task) => {
+                  (task: Task) => {
                     const directionName =
                       organizationLookup
                         .directionsMap.get(
@@ -1891,7 +1963,7 @@ export default function TasksPage() {
 
       {isFormOpen && canManageTasks && (
         <TaskFormModal
-          key={`${editingTask?.id ?? "new-task"}-${currentAgentDirectionId ?? "no-direction"}-${currentAgentServiceId ?? "no-service"}`}
+          key={`${editingTask?.id ?? "new-task"}-${editingTask?.updatedAt ?? "new"}-${currentAgentDirectionId ?? "no-direction"}-${currentAgentServiceId ?? "no-service"}`}
           task={editingTask}
           directions={scopedDirections}
           agents={agents as any}
@@ -1908,6 +1980,7 @@ export default function TasksPage() {
           }
           errorMessage={formError}
           onClose={() => {
+            if (createMutation.isPending || updateMutation.isPending) return;
             setIsFormOpen(false);
             setEditingTask(null);
           }}
@@ -1918,6 +1991,8 @@ export default function TasksPage() {
       {selectedTaskId &&
         selectedTaskQuery.data && (
           <TaskDetailsDrawer
+            isPreparingEdit={isPreparingEdit}
+            editError={editError}
             task={
               selectedTaskQuery.data
             }
@@ -1959,12 +2034,14 @@ export default function TasksPage() {
                 .permissions
                 ?.canUpdateProgress ?? false
             }
-            onClose={() =>
-              setSelectedTaskId(null)
-            }
-            onEdit={(task) => {
+            onClose={() => {
+              editRequest.current += 1;
+              setIsPreparingEdit(false);
+              setEditError(null);
               setSelectedTaskId(null);
-              openEditModal(task);
+            }}
+            onEdit={(task) => {
+              void openEditModal(task);
             }}
           />
         )}

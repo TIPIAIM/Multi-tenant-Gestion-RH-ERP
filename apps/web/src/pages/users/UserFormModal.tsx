@@ -186,7 +186,7 @@ export default function UserFormModal({
           </label>
 
           <label>
-            <span>Agent RH lié</span>
+            <span>Agent lié au Compte</span>
             <select
               value={form.agentId}
               onChange={(event) => updateField("agentId", event.target.value)}

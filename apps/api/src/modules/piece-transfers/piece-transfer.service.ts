@@ -1,3 +1,4 @@
+import { computeMessageReceipt } from "./piece-transfer-receipt.js";
 import { computeCommunicationReadStats } from "./piece-transfer-read-stats.js";
 import { PieceTransferReadModel } from "./piece-transfer-read.model.js";
 import { ensureOptionalPieceTransferFileIndex } from "./piece-transfer-indexes.js";
@@ -774,6 +775,9 @@ function serializeInboxItem(
 
     direction:
       "INBOX",
+
+    recipientCount: transfer.recipientCount,
+    audienceMode: transfer.audienceMode,
 
     title:
       discussionTitle(transfer, actor),
@@ -2415,16 +2419,25 @@ export async function listPieceTransferMessages(
       }),
     ]);
 
+  // Read receipts are returned only for the authenticated author's messages.
+  const [activeRecipients, reads] = await Promise.all([
+    PieceTransferRecipientModel.find({ tenantId: tenant._id, transferId: transfer._id, status: "ACTIVE" })
+      .select("recipientUserId").lean().exec(),
+    PieceTransferReadModel.find({ tenantId: tenant._id, transferId: transfer._id })
+      .select("userId lastReadMessageAt lastReadMessageId").lean().exec(),
+  ]);
+  const participantIds = [transfer.senderUserId.toString(), ...activeRecipients.map(row => row.recipientUserId.toString())];
+  const watermarks = reads.map(row => ({ userId: row.userId.toString(),
+    at: row.lastReadMessageAt, messageId: row.lastReadMessageId.toString() }));
+
   return {
-    items:
-      messages.reverse().map(
-        (message) =>
-          serializeMessage(
-            message,
-            transfer,
-            actor,
-          ),
-      ),
+    items: messages.reverse().map(message => ({
+      ...serializeMessage(message, transfer, actor),
+      ...(message.senderUserId.toString() === actor.userId && message.status !== "DELETED" ? {
+        receipt: computeMessageReceipt({ senderUserId: actor.userId, createdAt: message.createdAt,
+          id: message._id.toString() }, participantIds, watermarks),
+      } : {}),
+    })),
 
     serverNow:
       new Date().toISOString(),
@@ -4781,4 +4794,24 @@ export async function forwardPieceTransferToAgents(tenant: TenantDocument, actor
     }
   }
   return { mode, transfers, failedRecipientUserIds };
+}
+
+/** Resolve a photo target without opening the discussion or marking messages as read. */
+export async function getCommunicationAvatarTarget(
+  tenant: TenantDocument, actor: Actor, transferId: string, targetUserId?: string,
+): Promise<string | null> {
+  await getActorUser(tenant, actor);
+  const { transfer, isSender } = await getTransferAndAccess(tenant, actor, transferId);
+  if (targetUserId) {
+    if (transfer.senderUserId.toString() === targetUserId) return targetUserId;
+    const participant = await PieceTransferRecipientModel.exists({ tenantId: tenant._id,
+      transferId: transfer._id, recipientUserId: new Types.ObjectId(targetUserId) });
+    if (!participant) throw new AppError("Cette personne ne participe pas à la discussion.", 403, "AVATAR_PARTICIPANT_REQUIRED");
+    return targetUserId;
+  }
+  if (transfer.groupName || transfer.audienceMode !== "SELECTED" || transfer.recipientCount !== 1) return null;
+  if (!isSender) return transfer.senderUserId.toString();
+  const recipients = await PieceTransferRecipientModel.find({ tenantId: tenant._id, transferId: transfer._id })
+    .select("recipientUserId").limit(2).lean().exec();
+  return recipients.length === 1 ? recipients[0]!.recipientUserId.toString() : null;
 }

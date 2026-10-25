@@ -1,0 +1,82 @@
+/* L'indicateur est un enfant direct du lien, hors du texte masqué en mode réduit. */
+.dashboard-sidebar .dashboard-tasks-link { position: relative; }
+.dashboard-sidebar .dashboard-tasks-link > .dashboard-task-notification {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex: 0 0 auto;
+  min-width: 24px;
+  min-height: 24px;
+  margin-inline-start: auto;
+  overflow: visible;
+  color: inherit;
+}
+.dashboard-task-notification > svg {
+  display: block;
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+}
+.dashboard-task-notification > .dashboard-task-notification-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-width: 20px;
+  height: 20px;
+  padding-inline: 5px;
+  border-radius: 999px;
+  background: var(--tenant-on-sidebar-active, #fff);
+  color: var(--tenant-sidebar-active, #046242);
+  font-size: .6875rem;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+.dashboard-task-notification > .dashboard-task-notification-dot {
+  display: block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: .65;
+}
+.dashboard-task-notification.is-unknown > .dashboard-task-notification-dot {
+  background: #e9b521;
+  opacity: 1;
+}
+@media (min-width: 1024px) {
+  .dashboard-sidebar.is-collapsed .dashboard-tasks-link > .dashboard-task-notification {
+    display: inline-flex;
+    position: absolute;
+    inset-inline-end: 2px;
+    top: 1px;
+    min-width: 15px;
+    min-height: 15px;
+    margin: 0;
+    gap: 0;
+  }
+  .dashboard-sidebar.is-collapsed .dashboard-task-notification > svg {
+    display: block;
+    width: 12px;
+    height: 12px;
+  }
+  .dashboard-sidebar.is-collapsed .dashboard-task-notification > .dashboard-task-notification-count {
+    position: absolute;
+    top: 10px;
+    inset-inline-end: 0;
+    min-width: 16px;
+    height: 16px;
+    padding-inline: 3px;
+    font-size: .625rem;
+  }
+  .dashboard-sidebar.is-collapsed .dashboard-task-notification > .dashboard-task-notification-dot {
+    position: absolute;
+    top: 1px;
+    inset-inline-end: 0;
+    width: 4px;
+    height: 4px;
+  }
+}

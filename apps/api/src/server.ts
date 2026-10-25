@@ -1,12 +1,12 @@
-import { PayrollModel } from "./modules/payroll/payroll.model.js";
+import {
+  PayrollModel,
+  PayrollDeliveryModel,
+} from "./modules/payroll/payroll.model.js";
 import { AgentPhotoAsset } from "./modules/agents/agent-photo.js";
 import { startAgentPhotoCleanup } from "./modules/agents/agent-photo.js";
 import type { Server } from "node:http";
 import { app } from "./app.js";
-import {
-  connectDatabase,
-  disconnectDatabase,
-} from "./config/database.js";
+import { connectDatabase, disconnectDatabase } from "./config/database.js";
 import { env } from "./config/env.js";
 
 import { startSettingsLogoCleanupWorker } from "./modules/settings/settings-logo.storage.js";
@@ -22,14 +22,13 @@ async function bootstrap(): Promise<void> {
   await connectDatabase();
   // Ensure uniqueness before accepting concurrent payroll writes.
   await PayrollModel.createIndexes();
+  await PayrollDeliveryModel.createIndexes();
   await AgentPhotoAsset.createIndexes();
   stopPhotoCleanup = startAgentPhotoCleanup();
   stopLogoCleanup = startSettingsLogoCleanupWorker();
 
   httpServer = app.listen(env.port, () => {
-    console.log(
-      `✅ API disponible sur http://localhost:${env.port}`,
-    );
+    console.log(`✅ API disponible sur http://localhost:${env.port}`);
   });
 }
 
@@ -39,13 +38,19 @@ async function shutdown(signal: string): Promise<void> {
   shuttingDown = true;
   console.log(`\n${signal} reçu. Arrêt sécurisé du serveur...`);
   try {
-    if (httpServer) await new Promise<void>((resolve, reject) => httpServer!.close(error => error ? reject(error) : resolve()));
+    if (httpServer)
+      await new Promise<void>((resolve, reject) =>
+        httpServer!.close((error) => (error ? reject(error) : resolve())),
+      );
     stopPhotoCleanup?.();
     await stopLogoCleanup?.();
     await disconnectDatabase();
     console.log("Serveur HTTP arrêté.");
     process.exit(0);
-  } catch (error) { console.error("Erreur lors de l’arrêt :", error); process.exit(1); }
+  } catch (error) {
+    console.error("Erreur lors de l’arrêt :", error);
+    process.exit(1);
+  }
 }
 
 process.once("SIGINT", () => {

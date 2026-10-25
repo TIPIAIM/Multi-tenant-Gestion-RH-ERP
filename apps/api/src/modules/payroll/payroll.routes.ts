@@ -1,3 +1,22 @@
+import { listPayrollController } from "./payroll-list.controller.js";
+import {
+  getTenantDocumentMarks,
+  loadTenantDocumentMark,
+} from "../settings/settings-document-marks.js";
+import { z } from "zod";
+import { getPublicTenantSettings } from "../settings/settings.service.js";
+import {
+  loadPayslipLogo,
+  payslipFilename,
+  payslipMarkBytes,
+  renderPayslipPdf,
+} from "./payroll.pdf.js";
+import {
+  assertPayrollShareable,
+  getPayrollRecipients,
+  getPayrollDiscussions,
+  sharePayroll,
+} from "./payroll-sharing.service.js";
 import { requireTrustedMutationOrigin } from "../../middlewares/mutation-origin.middleware.js";
 import type { QueryFilter, UpdateQuery } from "mongoose";
 import { Router, type Request, type RequestHandler } from "express";
@@ -12,7 +31,6 @@ import { calculatePayroll } from "./payroll.calculation.js";
 import {
   payrollId,
   payrollInput,
-  payrollPeriod,
   payrollTransition,
   payrollUpdate,
 } from "./payroll.schema.js";
@@ -69,6 +87,8 @@ function serialize(row: any) {
   const value = row.toObject ? row.toObject() : row;
   return {
     ...value,
+    stampImage: undefined,
+    signatureImage: undefined,
     id: value._id.toString(),
     agentId: value.agentId.toString(),
     _id: undefined,
@@ -125,55 +145,7 @@ payrollRouter.get(
     });
   }),
 );
-payrollRouter.get(
-  "/",
-  handle(async (req, res) => {
-    const c = await actor(req);
-    const period = req.query.period
-      ? payrollPeriod.parse(req.query.period)
-      : undefined;
-    const page = Math.max(
-      1,
-      Math.min(10000, Math.floor(Number(req.query.page)) || 1),
-    );
-    const limit = 20;
-    const filter: Record<string, unknown> = {
-      tenantId: c.tenantId,
-      ...(period ? { period } : {}),
-    };
-    if (!c.manager) {
-      const agent = await (AgentModel as any)
-        .findOne({
-          tenantId: c.tenantId,
-          ...(c.user.agentId
-            ? { _id: c.user.agentId }
-            : { userId: c.user._id }),
-        })
-        .select("_id")
-        .lean()
-        .exec();
-      if (!agent) {
-        res.json({ success: true, data: { items: [], total: 0, page, limit } });
-        return;
-      }
-      filter.agentId = agent._id;
-      filter.status = { $in: ["APPROVED", "PAID"] };
-    }
-    const [rows, total] = await Promise.all([
-      PayrollModel.find(filter)
-        .sort({ period: -1, _id: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .lean()
-        .exec(),
-      PayrollModel.countDocuments(filter).exec(),
-    ]);
-    res.json({
-      success: true,
-      data: { items: rows.map(serialize), total, page, limit },
-    });
-  }),
-);
+payrollRouter.get("/", listPayrollController);
 payrollRouter.post(
   "/",
   handle(async (req, res) => {
@@ -215,7 +187,7 @@ payrollRouter.patch(
           events: { action: "UPDATED", actorId: c.user._id, at: new Date() },
         },
       },
-      { new: true },
+      { returnDocument: "after" },
     ).exec();
     if (!row)
       throw new AppError(
@@ -274,11 +246,232 @@ payrollRouter.post(
       $push: { events: { action: data.action, actorId: c.user._id, at: now } },
     };
     const row = await PayrollModel.findOneAndUpdate(filter, updateDoc, {
-      new: true,
+      returnDocument: "after",
     }).exec();
     if (!row)
       throw new AppError(
         "Transition impossible : rechargez le bulletin.",
+        409,
+        "PAYROLL_CONFLICT",
+      );
+    res.json({ success: true, data: { payroll: serialize(row) } });
+  }),
+);
+
+// The PDF is generated from server-side amounts and published company settings.
+payrollRouter.get(
+  ["/:id/pdf", "/:id/marks/:kind"],
+  handle(async (req, res) => {
+    const c = await actor(req);
+    const id = payrollId.parse(req.params.id);
+    const row = await PayrollModel.findOne({ _id: id, tenantId: c.tenantId })
+      .select("+stampImage +signatureImage")
+      .lean()
+      .exec();
+    if (!row)
+      throw new AppError("Bulletin introuvable.", 404, "PAYROLL_NOT_FOUND");
+    if (!c.manager) {
+      const linkedToThisAgent =
+        !c.user.agentId || String(c.user.agentId) === String(row.agentId);
+      const own =
+        linkedToThisAgent &&
+        (await (AgentModel as any).exists({
+          _id: row.agentId,
+          tenantId: c.tenantId,
+          ...(c.user.agentId ? {} : { userId: c.user._id }),
+        }));
+      if (!own) throw new AppError("Accès interdit.", 403, "PAYROLL_FORBIDDEN");
+      assertPayrollShareable(row);
+    }
+    if (
+      req.query.revision !== undefined &&
+      z.coerce.number().int().min(0).parse(req.query.revision) !== row.revision
+    )
+      throw new AppError(
+        "Le bulletin a changé. Rechargez-le avant de télécharger.",
+        409,
+        "PAYROLL_CONFLICT",
+      );
+    if (req.params.kind) {
+      const kind = z.enum(["stamp", "signature"]).parse(req.params.kind);
+      const enabled =
+        kind === "stamp" ? row.includeStamp : row.includeSignature;
+      const image = payslipMarkBytes(
+        kind === "stamp" ? row.stampImage : row.signatureImage,
+      );
+      if (!enabled || !image)
+        throw new AppError(
+          "Visuel absent de ce bulletin.",
+          404,
+          "PAYROLL_MARK_NOT_FOUND",
+        );
+      res
+        .set({
+          "Content-Type": "image/png",
+          "Cache-Control": "private, no-store",
+          "X-Content-Type-Options": "nosniff",
+        })
+        .send(Buffer.from(image));
+      return;
+    }
+    const settings = await getPublicTenantSettings(req.tenant!);
+    const pdf = await renderPayslipPdf(
+      row,
+      id,
+      settings,
+      await loadPayslipLogo(settings),
+    );
+    res
+      .set({
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${payslipFilename(row)}"`,
+        "Cache-Control": "private, no-store",
+        "X-Content-Type-Options": "nosniff",
+      })
+      .send(pdf);
+  }),
+);
+payrollRouter.get(
+  "/:id/share-options",
+  handle(async (req, res) => {
+    const c = await actor(req);
+    requireManager(c.manager);
+    const row = await PayrollModel.findOne({
+      _id: payrollId.parse(req.params.id),
+      tenantId: c.tenantId,
+    })
+      .lean()
+      .exec();
+    if (!row)
+      throw new AppError("Bulletin introuvable.", 404, "PAYROLL_NOT_FOUND");
+    assertPayrollShareable(row);
+    const recipients = await getPayrollRecipients(
+      c.tenantId,
+      row.agentId,
+      String(c.user._id),
+    );
+    const discussions = await getPayrollDiscussions(
+      c.tenantId,
+      String(c.user._id),
+      recipients.map((r) => r.id),
+    );
+    res
+      .set("Cache-Control", "private, no-store")
+      .json({ success: true, data: { recipients, discussions } });
+  }),
+);
+const shareInput = z
+  .object({
+    revision: z.number().int().min(0),
+    recipientUserId: payrollId,
+    discussionId: payrollId.optional(),
+    requestId: z.uuid(),
+    message: z.string().trim().max(1000).optional(),
+  })
+  .strict();
+payrollRouter.post(
+  "/:id/share",
+  handle(async (req, res) => {
+    const c = await actor(req);
+    requireManager(c.manager);
+    const data = shareInput.parse(req.body);
+    const result = await sharePayroll({
+      ...data,
+      tenant: req.tenant!,
+      actor: { userId: String(c.user._id), role: c.user.role },
+      payrollId: payrollId.parse(req.params.id),
+    });
+    res.json({ success: true, data: result });
+  }),
+);
+
+// Explicit RH choice; this changes presentation only, never payroll amounts.
+payrollRouter.patch(
+  "/:id/presentation",
+  handle(async (req, res) => {
+    const c = await actor(req);
+    requireManager(c.manager);
+    const id = payrollId.parse(req.params.id);
+    const data = z
+      .object({
+        revision: z.number().int().min(0),
+        marksRevision: z.number().int().min(0),
+        includeStamp: z.boolean(),
+        includeSignature: z.boolean(),
+      })
+      .strict()
+      .parse(req.body);
+    const original = await PayrollModel.findOne({
+      _id: id,
+      tenantId: c.tenantId,
+      revision: data.revision,
+      status: { $in: ["APPROVED", "PAID"] },
+    })
+      .lean()
+      .exec();
+    if (!original)
+      throw new AppError(
+        "Validez le bulletin ou rechargez sa dernière révision.",
+        409,
+        "PAYROLL_CONFLICT",
+      );
+    const checkMarks = async () => {
+      if (
+        (await getTenantDocumentMarks(c.tenantId)).revision !==
+        data.marksRevision
+      )
+        throw new AppError(
+          "Les visuels de l’entreprise ont changé. Rechargez le bulletin.",
+          409,
+          "DOCUMENT_MARK_CONFLICT",
+        );
+    };
+    await checkMarks();
+    const [stamp, signature] = await Promise.all([
+      data.includeStamp
+        ? loadTenantDocumentMark(c.tenantId, "stamp")
+        : undefined,
+      data.includeSignature
+        ? loadTenantDocumentMark(c.tenantId, "signature")
+        : undefined,
+    ]);
+    await checkMarks();
+    const row = await PayrollModel.findOneAndUpdate(
+      {
+        _id: id,
+        tenantId: c.tenantId,
+        revision: data.revision,
+        status: { $in: ["APPROVED", "PAID"] },
+      },
+      {
+        $set: {
+          includeStamp: data.includeStamp,
+          includeSignature: data.includeSignature,
+          ...(stamp ? { stampImage: stamp } : {}),
+          ...(signature ? { signatureImage: signature } : {}),
+        },
+        ...(!stamp || !signature
+          ? {
+              $unset: {
+                ...(!stamp ? { stampImage: 1 } : {}),
+                ...(!signature ? { signatureImage: 1 } : {}),
+              },
+            }
+          : {}),
+        $inc: { revision: 1 },
+        $push: {
+          events: {
+            action: "DOCUMENT_PRESENTATION",
+            actorId: c.user._id,
+            at: new Date(),
+          },
+        },
+      },
+      { returnDocument: "after" },
+    ).exec();
+    if (!row)
+      throw new AppError(
+        "Le bulletin a changé. Rechargez-le.",
         409,
         "PAYROLL_CONFLICT",
       );

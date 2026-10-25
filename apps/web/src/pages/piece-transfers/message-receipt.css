@@ -1,0 +1,10 @@
+/* Complément indépendant : la CSS V8 reste inchangée. */
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble
+  .piece-transfer-bubble-meta .communication-message-receipt {
+  display: inline-flex; align-items: center; gap: 3px;
+  color: #606878; flex: 0 0 auto; font-size: .6875rem;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble
+  .piece-transfer-bubble-meta .communication-message-receipt.is-read { color: #1765c1; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble
+  .piece-transfer-bubble-meta .communication-message-receipt > span { color: inherit; }

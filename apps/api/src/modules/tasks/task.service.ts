@@ -484,7 +484,7 @@ async function generateTaskReference(
         },
       },
       {
-        new: true,
+        returnDocument: "after",
         upsert: true,
       },
     ).exec();

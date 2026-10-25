@@ -343,10 +343,6 @@ import {
               Directions et <span>Services.</span>
             </h2>
   
-            <p>
-              Organisez la structure interne avant de rattacher les
-              agents, les tâches, les pointages et les cahiers de route.
-            </p>
           </div>
   
           <div className="organization-hero-actions">

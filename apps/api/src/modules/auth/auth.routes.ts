@@ -1,3 +1,4 @@
+import { getOwnAvatar } from "./auth-avatar.js";
 import { Router } from "express";
 import { requireAuth } from "../../middlewares/auth.middleware.js";
 import { tenantContextMiddleware } from "../../middlewares/tenant-context.middleware.js";
@@ -14,3 +15,6 @@ authRouter.post("/refresh", tenantContextMiddleware, refreshController);
 authRouter.get("/me", requireAuth, tenantContextMiddleware, getMeController);
 authRouter.post("/change-password", requireAuth, tenantContextMiddleware, changePasswordController);
 authRouter.post("/logout", tenantContextMiddleware, logoutController);
+
+// Photo du compte connecté, sans accès au dossier RH ni dépendance au module Agents.
+authRouter.get("/me/avatar", requireAuth, tenantContextMiddleware, getOwnAvatar);

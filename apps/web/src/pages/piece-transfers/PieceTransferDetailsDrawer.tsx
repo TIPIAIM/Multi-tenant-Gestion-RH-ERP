@@ -1,3 +1,7 @@
+import "./communication-emoji-position.css";
+import "./communication-exchange-refinement.css";
+import CommunicationAvatar from "./CommunicationAvatar";
+import MessageReceipt from "./MessageReceipt";
 import CommunicationVoiceRecorder from "./CommunicationVoiceRecorder";
 import CommunicationAttachmentCard from "./CommunicationAttachmentCard";
 import {
@@ -253,6 +257,7 @@ export default function PieceTransferDetailsDrawer({
   const detailQuery = useQuery({
     queryKey: ["piece-transfers", "detail", transferId, user?.id],
     queryFn: () => getPieceTransferById(transferId!),
+    refetchInterval: transferId ? 5_000 : false,
     enabled: Boolean(transferId),
     refetchOnWindowFocus: true,
   });
@@ -296,7 +301,7 @@ export default function PieceTransferDetailsDrawer({
       ? lastPage.pagination.page + 1 : undefined,
     enabled: Boolean(transferId),
     staleTime: 5_000,
-    refetchInterval: transferId ? 15_000 : false,
+    refetchInterval: transferId ? 5_000 : false,
     refetchOnWindowFocus: true,
   });
 
@@ -670,7 +675,7 @@ export default function PieceTransferDetailsDrawer({
         </button>
 
         <div className="piece-transfer-chat-avatar">
-          {initials(transfer.title)}
+          <CommunicationAvatar transferId={transfer.id} name={transfer.title} group={transfer.recipientCount > 1 || transfer.audienceMode === "ALL"} />
         </div>
 
         <button
@@ -814,15 +819,19 @@ export default function PieceTransferDetailsDrawer({
           <article
             className={`piece-transfer-bubble ${transfer.senderUserId === user?.id ? "is-mine" : "is-theirs"}`}
           >
-            {transfer.senderUserId !== user?.id && (
-              <strong className="piece-transfer-bubble-author">
-                {transfer.senderName}
-              </strong>
+            {transfer.senderUserId !== user?.id && (transfer.recipientCount > 1 || transfer.audienceMode === "ALL") && (
+              <div className="communication-message-author">
+                <span className="communication-message-author-avatar"><CommunicationAvatar transferId={transfer.id} userId={transfer.senderUserId} name={transfer.senderName} /></span>
+                <strong className="piece-transfer-bubble-author">{transfer.senderName}</strong>
+              </div>
             )}
             <p>{transfer.description}</p>
             <footer className="piece-transfer-bubble-meta">
               <time>{formatTime(transfer.createdAt)}</time>
-              {transfer.senderUserId === user?.id && <Check size={13} />}
+              {transfer.senderUserId === user?.id && <MessageReceipt receipt={transfer.recipients ? {
+                recipientCount: transfer.recipients.filter(recipient => recipient.userId !== user?.id).length,
+                readCount: transfer.recipients.filter(recipient => recipient.userId !== user?.id && recipient.isRead).length,
+              } : undefined} />}
             </footer>
           </article>
         )}
@@ -868,16 +877,17 @@ export default function PieceTransferDetailsDrawer({
               deleteMessageMutation.variables === message.id;
 
             return (
+              <div key={message.id} className={`communication-message-unit ${mine ? "is-mine" : "is-theirs"}`}>
               <article
-                key={message.id}
                 id={`communication-message-${message.id}`}
                 tabIndex={-1}
                 className={`piece-transfer-bubble ${mine ? "is-mine" : "is-theirs"} ${message.status === "DELETED" ? "is-deleted" : ""}`}
               >
-                {!mine && message.status !== "DELETED" && (
-                  <strong className="piece-transfer-bubble-author">
-                    {message.senderName}
-                  </strong>
+                {!mine && message.status !== "DELETED" && (transfer.recipientCount > 1 || transfer.audienceMode === "ALL") && (
+                  <div className="communication-message-author">
+                    <span className="communication-message-author-avatar"><CommunicationAvatar transferId={transfer.id} userId={message.senderUserId} name={message.senderName} /></span>
+                    <strong className="piece-transfer-bubble-author">{message.senderName}</strong>
+                  </div>
                 )}
 
                 {message.status === "DELETED" ? (
@@ -958,15 +968,10 @@ export default function PieceTransferDetailsDrawer({
                   </>
                 )}
 
-                {message.status !== "DELETED" && <div className="communication-reactions" aria-label="Réactions au message">
-                  {(message.reactions ?? []).map(reaction => <button key={reaction.emoji} type="button" aria-pressed={reaction.reactedByMe} aria-label={`${reaction.emoji} : ${reaction.count} réaction(s)${reaction.reactedByMe ? ", votre réaction" : ""}`} disabled={!transfer.permissions.canSendMessage || reactionMutation.isPending} onClick={() => { setLocalError(null); reactionMutation.mutate({ source: transfer.id, messageId: message.id, emoji: reaction.reactedByMe ? null : reaction.emoji }); }}>{reaction.emoji}<span>{reaction.count}</span></button>)}
-
-                  {reactingMessageId === message.id && <div className="communication-reaction-picker" aria-label="Choisir une réaction">{[{ emoji: "👍", label: "J’aime" }, { emoji: "❤️", label: "Cœur" }, { emoji: "😂", label: "Joie" }, { emoji: "🙏", label: "Merci" }, { emoji: "💪", label: "Force" }, { emoji: "👋", label: "Salutation" }, { emoji: "👏", label: "Bravo" }, { emoji: "✅", label: "Approuvé" }].map(item => <button type="button" key={item.emoji} title={item.label} aria-label={item.label} disabled={reactionMutation.isPending} onClick={() => { setLocalError(null); reactionMutation.mutate({ source: transfer.id, messageId: message.id, emoji: message.reactions?.some(reaction => reaction.emoji === item.emoji && reaction.reactedByMe) ? null : item.emoji }); }}>{item.emoji}</button>)}<button type="button" aria-label="Fermer les réactions" onClick={() => setReactingMessageId(null)}><X size={14} /></button></div>}
-                </div>}
                 <footer className="piece-transfer-bubble-meta">
                   {message.editedAt && <span>modifié</span>}
                   <time>{formatTime(message.createdAt)}</time>
-                  {mine && message.status !== "DELETED" && <Check size={13} />}
+                  {mine && message.status !== "DELETED" && <MessageReceipt receipt={message.receipt} />}
 
                   {message.status !== "DELETED" && !editing && transfer.permissions.canSendMessage && (
                     <div className="communication-message-actions">
@@ -1003,6 +1008,12 @@ export default function PieceTransferDetailsDrawer({
                   )}
                 </footer>
               </article>
+                {message.status !== "DELETED" && <div className="communication-reactions" aria-label="Réactions au message">
+                  {(message.reactions ?? []).map(reaction => <button key={reaction.emoji} type="button" aria-pressed={reaction.reactedByMe} aria-label={`${reaction.emoji} : ${reaction.count} réaction(s)${reaction.reactedByMe ? ", votre réaction" : ""}`} disabled={!transfer.permissions.canSendMessage || reactionMutation.isPending} onClick={() => { setLocalError(null); reactionMutation.mutate({ source: transfer.id, messageId: message.id, emoji: reaction.reactedByMe ? null : reaction.emoji }); }}>{reaction.emoji}<span>{reaction.count}</span></button>)}
+
+                  {reactingMessageId === message.id && <div className="communication-reaction-picker" aria-label="Choisir une réaction">{[{ emoji: "👍", label: "J’aime" }, { emoji: "❤️", label: "Cœur" }, { emoji: "😂", label: "Joie" }, { emoji: "🙏", label: "Merci" }, { emoji: "💪", label: "Force" }, { emoji: "👋", label: "Salutation" }, { emoji: "👏", label: "Bravo" }, { emoji: "✅", label: "Approuvé" }].map(item => <button type="button" key={item.emoji} title={item.label} aria-label={item.label} disabled={reactionMutation.isPending} onClick={() => { setLocalError(null); reactionMutation.mutate({ source: transfer.id, messageId: message.id, emoji: message.reactions?.some(reaction => reaction.emoji === item.emoji && reaction.reactedByMe) ? null : item.emoji }); }}>{item.emoji}</button>)}<button type="button" aria-label="Fermer les réactions" onClick={() => setReactingMessageId(null)}><X size={14} /></button></div>}
+                </div>}
+              </div>
             );
           })
         )}

@@ -155,6 +155,7 @@ export const listTasksQuerySchema = z.object({
 });
 
 export const taskBoardQuerySchema = z.object({
+  status: z.enum(taskStatuses).optional(),
   search: z.string().trim().max(120).optional(),
   priority: z.enum(taskPriorities).optional(),
   directionId: objectIdSchema.optional(),

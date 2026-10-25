@@ -86,7 +86,7 @@ export default function UserDetailsDrawer({ user, onClose }: Props) {
         </section>
 
         <section className="users-drawer-section">
-          <h4>Agent RH lié</h4>
+          <h4>Agent lié au Compte</h4>
 
           {user.linkedAgent ? (
             <div className="users-linked-agent-card">
@@ -101,7 +101,7 @@ export default function UserDetailsDrawer({ user, onClose }: Props) {
               </small>
             </div>
           ) : (
-            <p className="users-muted">Aucun Agent RH lié à ce compte.</p>
+            <p className="users-muted">Aucun Agent lié à ce compte.</p>
           )}
         </section>
 

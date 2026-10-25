@@ -1,3 +1,4 @@
+import { uploadAgentCreationPhoto } from "./agent-creation-photo.api";
 import { AgentAvatar } from "./AgentPhoto";
 import {
   useEffect,
@@ -342,18 +343,31 @@ export default function AgentsPage() {
     ]);
   }
 
+  const [pendingCreatedAgent, setPendingCreatedAgent] = useState<Agent | null>(null);
+
   function closeAgentModal(): void {
+    if (createMutation.isPending || photoMutation.isPending || updateMutation.isPending) return;
+    setPendingCreatedAgent(null);
     setModalMode(null);
     setEditingAgent(null);
   }
 
   const createMutation = useMutation({
-    mutationFn: createAgent,
+    mutationFn: async (input: CreateAgentInput) => {
+      const created = await createAgent(input);
+      setPendingCreatedAgent(created);
+      return created;
+    },
+    retry: false,
     onSuccess: async () => {
       await refreshAgentData();
       setPage(1);
-      closeAgentModal();
     },
+  });
+
+  const photoMutation = useMutation({
+    mutationFn: ({ agentId, file }: { agentId: string; file: File }) => uploadAgentCreationPhoto(agentId, file),
+    retry: false,
   });
 
   const updateMutation = useMutation({
@@ -373,7 +387,8 @@ export default function AgentsPage() {
         });
       }
 
-      closeAgentModal();
+      setModalMode(null);
+      setEditingAgent(null);
     },
   });
 
@@ -409,9 +424,11 @@ export default function AgentsPage() {
 
   const formError = createMutation.isError
     ? getApiErrorMessage(createMutation.error)
-    : updateMutation.isError
-      ? getApiErrorMessage(updateMutation.error)
-      : null;
+    : photoMutation.isError
+      ? `Le dossier est enregistré, mais la photo n’a pas été confirmée. ${getApiErrorMessage(photoMutation.error)}`
+      : updateMutation.isError
+        ? getApiErrorMessage(updateMutation.error)
+        : null;
 
   const historyError = addHistoryMutation.isError
     ? getApiErrorMessage(addHistoryMutation.error)
@@ -422,6 +439,8 @@ export default function AgentsPage() {
     : null;
 
   function openCreateModal(): void {
+    setPendingCreatedAgent(null);
+    photoMutation.reset();
     createMutation.reset();
     updateMutation.reset();
     setEditingAgent(null);
@@ -429,6 +448,8 @@ export default function AgentsPage() {
   }
 
   function openEditModal(agent: Agent): void {
+    setPendingCreatedAgent(null);
+    photoMutation.reset();
     createMutation.reset();
     updateMutation.reset();
     setEditingAgent(agent);
@@ -437,6 +458,7 @@ export default function AgentsPage() {
 
   async function handleSaveAgent(
     input: CreateAgentInput,
+    photo?: File | null,
   ): Promise<void> {
     if (modalMode === "EDIT" && editingAgent) {
       await updateMutation.mutateAsync({
@@ -447,7 +469,14 @@ export default function AgentsPage() {
       return;
     }
 
-    await createMutation.mutateAsync(input);
+    const created = pendingCreatedAgent ?? await createMutation.mutateAsync(input);
+    if (photo) await photoMutation.mutateAsync({ agentId: created.id, file: photo });
+    await refreshAgentData();
+    await queryClient.invalidateQueries({ queryKey: ["agent", created.id] });
+    await queryClient.invalidateQueries({ queryKey: ["agent-photo"] });
+    setPendingCreatedAgent(null);
+    setModalMode(null);
+    setEditingAgent(null);
   }
 
   async function handleAddHistory(
@@ -980,8 +1009,9 @@ export default function AgentsPage() {
           directions={directions}
           supervisors={supervisorsQuery.data?.items ?? []}
           isSubmitting={
-            createMutation.isPending || updateMutation.isPending
+            createMutation.isPending || photoMutation.isPending || updateMutation.isPending
           }
+          creationSaved={modalMode === "CREATE" && Boolean(pendingCreatedAgent)}
           errorMessage={formError}
           onClose={closeAgentModal}
           onSubmit={handleSaveAgent}

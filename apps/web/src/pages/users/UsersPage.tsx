@@ -387,7 +387,7 @@ export default function UsersPage() {
                 <tr>
                   <th>Utilisateur</th>
                   <th>Rôle</th>
-                  <th>Agent RH lié</th>
+                  <th>Agent lié au Compte "RH"</th>
                   <th>Statut</th>
                   <th>Dernière connexion</th>
                   <th>Actions</th>

@@ -1,3 +1,4 @@
+import { tenantDocumentMarksRouter } from "./settings-document-marks.js";
 import { env } from "../../config/env.js";
 import { Router, type RequestHandler } from "express";
 import { AppError } from "../../core/errors/app-error.js";
@@ -27,21 +28,56 @@ export const settingsRouter = Router();
 const optionalAuth: RequestHandler = (request, response, next) => {
   void requireAuth(request, response, () => next());
 };
-settingsRouter.get("/public", optionalAuth, tenantContextMiddleware, getPublicSettingsController);
+settingsRouter.get(
+  "/public",
+  optionalAuth,
+  tenantContextMiddleware,
+  getPublicSettingsController,
+);
 settingsRouter.use(requireAuth, tenantContextMiddleware);
 settingsRouter.use((request, _response, next) => {
   const origin = request.get("origin");
-  if (!["GET", "HEAD", "OPTIONS"].includes(request.method) && origin && origin !== new URL(env.webUrl).origin) {
-    next(new AppError("Origine de la requête non autorisée.", 403, "SETTINGS_ORIGIN_FORBIDDEN")); return;
+  if (
+    !["GET", "HEAD", "OPTIONS"].includes(request.method) &&
+    origin &&
+    origin !== new URL(env.webUrl).origin
+  ) {
+    next(
+      new AppError(
+        "Origine de la requête non autorisée.",
+        403,
+        "SETTINGS_ORIGIN_FORBIDDEN",
+      ),
+    );
+    return;
   }
   next();
 });
+settingsRouter.use("/document-marks", tenantDocumentMarksRouter);
 const adminOnly: RequestHandler = (request, _response, next) => {
-  if (request.auth?.role !== "TENANT_ADMIN") { next(new AppError("Seul l’administrateur peut modifier l’apparence.", 403, "SETTINGS_SECTION_MANAGE_FORBIDDEN")); return; }
+  if (request.auth?.role !== "TENANT_ADMIN") {
+    next(
+      new AppError(
+        "Seul l’administrateur peut modifier l’apparence.",
+        403,
+        "SETTINGS_SECTION_MANAGE_FORBIDDEN",
+      ),
+    );
+    return;
+  }
   next();
 };
-settingsRouter.post("/branding/logo", adminOnly, settingsLogoUploadMiddleware, uploadSettingsLogoController);
-settingsRouter.post("/draft/branding/reset", adminOnly, resetSettingsAppearanceController);
+settingsRouter.post(
+  "/branding/logo",
+  adminOnly,
+  settingsLogoUploadMiddleware,
+  uploadSettingsLogoController,
+);
+settingsRouter.post(
+  "/draft/branding/reset",
+  adminOnly,
+  resetSettingsAppearanceController,
+);
 
 settingsRouter.get("/", getSettingsController);
 settingsRouter.get("/impact", getSettingsImpactController);
@@ -52,4 +88,7 @@ settingsRouter.patch("/draft/:section", saveSettingsSectionController);
 settingsRouter.post("/draft/validate", validateSettingsDraftController);
 settingsRouter.post("/draft/discard", discardSettingsDraftController);
 settingsRouter.post("/publish", publishSettingsController);
-settingsRouter.post("/history/:version/restore", restoreSettingsRevisionController);
+settingsRouter.post(
+  "/history/:version/restore",
+  restoreSettingsRevisionController,
+);

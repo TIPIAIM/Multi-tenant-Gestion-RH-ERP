@@ -35,6 +35,10 @@ const payrollSchema = new Schema(
     paidBy: Schema.Types.ObjectId,
     paidAt: Date,
     paymentReference: String,
+    includeStamp: { type: Boolean, default: false },
+    includeSignature: { type: Boolean, default: false },
+    stampImage: { type: Buffer, select: false },
+    signatureImage: { type: Buffer, select: false },
     events: [
       { _id: false, action: String, actorId: Schema.Types.ObjectId, at: Date },
     ],
@@ -52,9 +56,43 @@ payrollSchema.index({ tenantId: 1, period: -1, status: 1 });
 export type PayrollRecord = InferSchemaType<typeof payrollSchema>;
 export const PayrollModel: Model<InferSchemaType<typeof payrollSchema>> =
   (mongoose.models.Payroll as
-    | Model<InferSchemaType<typeof payrollSchema>>
-    | undefined) ??
+    Model<InferSchemaType<typeof payrollSchema>> | undefined) ??
   mongoose.model<InferSchemaType<typeof payrollSchema>>(
     "Payroll",
     payrollSchema,
+  );
+
+// Persistent delivery receipts: a retry with the same requestId never sends twice.
+const payrollDeliverySchema = new Schema(
+  {
+    tenantId: { type: Schema.Types.ObjectId, required: true },
+    payrollId: { type: Schema.Types.ObjectId, required: true },
+    actorId: { type: Schema.Types.ObjectId, required: true },
+    recipientUserId: { type: Schema.Types.ObjectId, required: true },
+    requestId: { type: String, required: true },
+    destinationId: String,
+    revision: { type: Number, required: true },
+    status: {
+      type: String,
+      enum: ["PENDING", "COMPLETED", "FAILED"],
+      required: true,
+    },
+    transferId: String,
+    completedAt: Date,
+  },
+  { timestamps: true },
+);
+payrollDeliverySchema.index(
+  { tenantId: 1, actorId: 1, requestId: 1 },
+  { unique: true },
+);
+export type PayrollDeliveryRecord = InferSchemaType<
+  typeof payrollDeliverySchema
+>;
+export const PayrollDeliveryModel: Model<PayrollDeliveryRecord> =
+  (mongoose.models.PayrollDelivery as
+    Model<PayrollDeliveryRecord> | undefined) ??
+  mongoose.model<PayrollDeliveryRecord>(
+    "PayrollDelivery",
+    payrollDeliverySchema,
   );

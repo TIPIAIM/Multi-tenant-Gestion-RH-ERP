@@ -54,6 +54,8 @@ type TaskDetailsDrawerProps = {
   directionName: string;
   serviceName: string;
 
+  isPreparingEdit?: boolean;
+  editError?: string | null;
   canManage: boolean;
   canUpdateProgress: boolean;
 
@@ -133,6 +135,8 @@ export default function TaskDetailsDrawer({
   assigneeName,
   directionName,
   serviceName,
+  isPreparingEdit = false,
+  editError = null,
   canManage,
   canUpdateProgress,
   onClose,
@@ -561,7 +565,8 @@ export default function TaskDetailsDrawer({
           </p>
         </section>
 
-        {/* Actions : même principe que Roadmap */}
+        {editError && <p className="task-ux-error" role="alert">{editError}</p>}
+        {/* Actions de la tâche */}
         {(effectiveCanManage ||
           effectiveCanUpdateProgress) && (
           <section className="task-drawer-actions">
@@ -569,12 +574,14 @@ export default function TaskDetailsDrawer({
               <button
                 className="task-secondary-action"
                 type="button"
+                disabled={isPreparingEdit}
+                aria-busy={isPreparingEdit}
                 onClick={() =>
                   onEdit(task)
                 }
               >
-                <Pencil size={16} />
-                <span>Modifier</span>
+                {isPreparingEdit ? <LoaderCircle size={16} className="is-spinning" aria-hidden="true" /> : <Pencil size={16} aria-hidden="true" />}
+                <span>{isPreparingEdit ? "Chargement…" : "Modifier"}</span>
               </button>
             )}
 
