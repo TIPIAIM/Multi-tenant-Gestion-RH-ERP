@@ -1,3 +1,4 @@
+import { trainingRouter } from "./modules/trainings/training.routes.js";
 import { payrollRouter } from "./modules/payroll/payroll.routes.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -22,8 +23,12 @@ import { roadmapRouter } from "./modules/roadmaps/roadmap.routes.js";
 import { evaluationRouter } from "./modules/evaluations/evaluation.routes.js";
 import { managementReportRouter } from "./modules/reports/report.routes.js";
 import { settingsRouter } from "./modules/settings/settings.routes.js";
- 
+
+import { recruitmentRouter } from "./modules/recruitment/recruitment.routes.js";
 import { pieceTransferRouter } from "./modules/piece-transfers/piece-transfer.routes.js";
+import { backupRouter } from "./modules/backups/backup.routes.js";
+
+import { filesRouter } from "./modules/files/files.routes.js";
 
 export const app = express();
 
@@ -80,6 +85,12 @@ app.use("/api/v1/settings", settingsRouter);
 app.use("/api/v1/piece-transfers", pieceTransferRouter);
 
 app.use("/api/v1/payroll", payrollRouter);
+
+app.use("/api/v1/trainings", trainingRouter);
+app.use("/api/v1/recruitment", recruitmentRouter);
+app.use("/api/v1/backups", backupRouter);
+
+app.use("/api/v1/files", filesRouter);
 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

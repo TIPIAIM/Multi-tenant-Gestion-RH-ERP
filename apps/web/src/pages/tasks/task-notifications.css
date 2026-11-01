@@ -109,3 +109,17 @@
     display: none !important;
   }
 }
+/* Boutons : retour d’interaction harmonisé avec Évaluations. */
+@media screen {
+  .task-notices button { box-sizing: border-box; min-width: 44px; min-height: 44px; touch-action: manipulation; transition: box-shadow 150ms ease, background-color 150ms ease, transform 100ms ease; }
+  .task-notices button:focus-visible { outline: 3px solid var(--tenant-accent, #e9b521); outline-offset: 3px; box-shadow: 0 0 0 5px #0b2536; }
+  .task-notices button:not(:disabled):active { transform: translateY(1px); box-shadow: inset 0 2px 5px rgba(11,37,54,.22); }
+  .task-notices button:disabled { cursor: not-allowed; opacity: .6; transform: none; }
+}
+@media screen and (hover: hover) {
+  .task-notices button:not(:disabled):hover { box-shadow: 0 3px 9px rgba(11,37,54,.18); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .task-notices button { transition: none; }
+  .task-notices button:not(:disabled):active, .task-notices button:not(:disabled):hover { transform: none; }
+}

@@ -13,7 +13,7 @@ export function usePayrollDialog(active: boolean, close: () => void) {
       ".payroll-overlay .payroll-dialog",
     );
     const selector =
-      'button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),[tabindex="0"]';
+      'a[href],button:not(:disabled),input:not(:disabled):not([type="hidden"]),select:not(:disabled),textarea:not(:disabled),[tabindex="0"]';
     const frame = requestAnimationFrame(() =>
       dialog?.querySelector<HTMLElement>(selector)?.focus(),
     );
@@ -23,7 +23,13 @@ export function usePayrollDialog(active: boolean, close: () => void) {
         closeRef.current();
       }
       if (event.key !== "Tab" || !dialog) return;
-      const items = Array.from(dialog.querySelectorAll<HTMLElement>(selector));
+      const items = Array.from(
+        dialog.querySelectorAll<HTMLElement>(selector),
+      ).filter(
+        (item) =>
+          item.getClientRects().length > 0 &&
+          item.getAttribute("aria-hidden") !== "true",
+      );
       const first = items[0],
         last = items.at(-1);
       if (!first || !last) {

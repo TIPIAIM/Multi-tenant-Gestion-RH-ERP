@@ -1,10 +1,6 @@
+import { useAttendanceDialog } from "./use-attendance-dialog";
 import { useState } from "react";
-import {
-  CalendarClock,
-  LoaderCircle,
-  PencilLine,
-  X,
-} from "lucide-react";
+import { CalendarClock, LoaderCircle, PencilLine, X } from "lucide-react";
 import type {
   Attendance,
   AttendanceStatus,
@@ -24,9 +20,7 @@ type AttendanceCorrectionModalProps = {
 
   onClose: () => void;
 
-  onSubmit: (
-    input: UpdateAttendanceInput,
-  ) => Promise<void>;
+  onSubmit: (input: UpdateAttendanceInput) => Promise<void>;
 };
 
 export default function AttendanceCorrectionModal({
@@ -36,9 +30,7 @@ export default function AttendanceCorrectionModal({
   onClose,
   onSubmit,
 }: AttendanceCorrectionModalProps) {
-  const [status, setStatus] = useState<AttendanceStatus>(
-    attendance.status,
-  );
+  const [status, setStatus] = useState<AttendanceStatus>(attendance.status);
 
   const [checkInAt, setCheckInAt] = useState(
     toDateTimeLocalInput(attendance.checkInAt),
@@ -50,22 +42,18 @@ export default function AttendanceCorrectionModal({
 
   const [note, setNote] = useState(attendance.note ?? "");
 
-  const [clientError, setClientError] = useState<
-    string | null
-  >(null);
+  const [clientError, setClientError] = useState<string | null>(null);
 
   function handleSubmit(): void {
     setClientError(null);
 
     const checkInIso = toIsoFromDateTimeLocal(checkInAt);
-    const checkOutIso =
-      toIsoFromDateTimeLocal(checkOutAt);
+    const checkOutIso = toIsoFromDateTimeLocal(checkOutAt);
 
     if (
       checkInIso &&
       checkOutIso &&
-      new Date(checkOutIso).getTime() <
-        new Date(checkInIso).getTime()
+      new Date(checkOutIso).getTime() < new Date(checkInIso).getTime()
     ) {
       setClientError(
         "L’heure de départ ne peut pas être antérieure à l’heure d’arrivée.",
@@ -82,10 +70,13 @@ export default function AttendanceCorrectionModal({
     });
   }
 
+  useAttendanceDialog(isSubmitting, onClose);
+
   return (
     <div className="attendance-modal-layer">
       <button
         className="attendance-modal-backdrop"
+        disabled={isSubmitting}
         type="button"
         aria-label="Fermer"
         onClick={onClose}
@@ -101,9 +92,7 @@ export default function AttendanceCorrectionModal({
           <div>
             <p>CORRECTION ADMINISTRATIVE</p>
 
-            <h3 id="attendance-correction-title">
-              Corriger le pointage
-            </h3>
+            <h3 id="attendance-correction-title">Corriger le pointage</h3>
           </div>
 
           <button
@@ -112,6 +101,7 @@ export default function AttendanceCorrectionModal({
             aria-label="Fermer"
             onClick={onClose}
             disabled={isSubmitting}
+            aria-busy={isSubmitting}
           >
             <X size={20} />
           </button>
@@ -140,18 +130,14 @@ export default function AttendanceCorrectionModal({
               value={status}
               disabled={isSubmitting}
               onChange={(event) =>
-                setStatus(
-                  event.target.value as AttendanceStatus,
-                )
+                setStatus(event.target.value as AttendanceStatus)
               }
             >
-              {Object.entries(attendanceStatusLabels).map(
-                ([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ),
-              )}
+              {Object.entries(attendanceStatusLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
             </select>
           </label>
 
@@ -162,9 +148,7 @@ export default function AttendanceCorrectionModal({
               type="datetime-local"
               value={checkInAt}
               disabled={isSubmitting}
-              onChange={(event) =>
-                setCheckInAt(event.target.value)
-              }
+              onChange={(event) => setCheckInAt(event.target.value)}
             />
           </label>
 
@@ -176,9 +160,7 @@ export default function AttendanceCorrectionModal({
               min={checkInAt || undefined}
               value={checkOutAt}
               disabled={isSubmitting}
-              onChange={(event) =>
-                setCheckOutAt(event.target.value)
-              }
+              onChange={(event) => setCheckOutAt(event.target.value)}
             />
           </label>
 
@@ -190,9 +172,7 @@ export default function AttendanceCorrectionModal({
               value={note}
               disabled={isSubmitting}
               placeholder="Ex. Heure rectifiée après vérification de la feuille de présence."
-              onChange={(event) =>
-                setNote(event.target.value)
-              }
+              onChange={(event) => setNote(event.target.value)}
             />
           </label>
         </div>
@@ -203,6 +183,7 @@ export default function AttendanceCorrectionModal({
             type="button"
             onClick={onClose}
             disabled={isSubmitting}
+            aria-busy={isSubmitting}
           >
             Annuler
           </button>
@@ -211,14 +192,12 @@ export default function AttendanceCorrectionModal({
             className="attendance-primary-button"
             type="button"
             disabled={isSubmitting}
+            aria-busy={isSubmitting}
             onClick={handleSubmit}
           >
             {isSubmitting ? (
               <>
-                <LoaderCircle
-                  size={17}
-                  className="is-spinning"
-                />
+                <LoaderCircle size={17} className="is-spinning" />
                 <span>Correction...</span>
               </>
             ) : (

@@ -1,0 +1,10 @@
+import mongoose,{Schema,type Model,type Types} from "mongoose";
+export interface TrainingNeed {
+ tenantId:Types.ObjectId;agentId:Types.ObjectId;agentName:string;matricule:string;directionId:Types.ObjectId;serviceId:Types.ObjectId|null;
+ competency:string;justification:string;priority:"NORMAL"|"HIGH"|"URGENT";sourceKind:"EVALUATION"|"REPORT"|"MANAGER_OBSERVATION"|"AGENT_REQUEST";sourceReference:string;evaluationId?:Types.ObjectId;
+ targetDate:string;status:"IDENTIFIED"|"APPROVED"|"PLANNED"|"COMPLETED"|"CANCELLED";createdByUserId:Types.ObjectId;
+ reviewComment?:string;impactDueDate?:Date;impact?:string;impactComment?:string;impactReviewedAt?:Date;impactReviewedBy?:string;createdAt?:Date;updatedAt?:Date;
+}
+const schema=new Schema<TrainingNeed>({tenantId:{type:Schema.Types.ObjectId,required:true},agentId:{type:Schema.Types.ObjectId,required:true},agentName:{type:String,required:true},matricule:String,directionId:{type:Schema.Types.ObjectId,required:true},serviceId:{type:Schema.Types.ObjectId,default:null},competency:{type:String,required:true},justification:{type:String,required:true},priority:{type:String,enum:["NORMAL","HIGH","URGENT"],required:true},sourceKind:{type:String,enum:["EVALUATION","REPORT","MANAGER_OBSERVATION","AGENT_REQUEST"],required:true},sourceReference:{type:String,required:true},evaluationId:Schema.Types.ObjectId,targetDate:{type:String,required:true},status:{type:String,enum:["IDENTIFIED","APPROVED","PLANNED","COMPLETED","CANCELLED"],default:"IDENTIFIED"},createdByUserId:{type:Schema.Types.ObjectId,required:true},reviewComment:String,impactDueDate:Date,impact:String,impactComment:String,impactReviewedAt:Date,impactReviewedBy:String},{timestamps:true,versionKey:false});
+schema.index({tenantId:1,status:1,createdAt:-1});schema.index({tenantId:1,agentId:1,status:1});schema.index({tenantId:1,directionId:1,serviceId:1,createdAt:-1});
+export const TrainingNeedModel:Model<TrainingNeed>=(mongoose.models.TrainingNeed as Model<TrainingNeed>|undefined)??mongoose.model<TrainingNeed>("TrainingNeed",schema);

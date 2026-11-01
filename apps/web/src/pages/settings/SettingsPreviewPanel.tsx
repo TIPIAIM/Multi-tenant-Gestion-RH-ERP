@@ -1,3 +1,4 @@
+import {featureLabels} from "../../features/settings/settings.presentation";
 import { Clock3, FileText, MonitorSmartphone, ShieldCheck } from "lucide-react";
 import type { SettingsSectionKey, TenantSettingsPayload } from "../../features/settings/settings.types";
 
@@ -21,8 +22,10 @@ export default function SettingsPreviewPanel({ settings, section }: { settings: 
       )}
       {section === "attendance" && <article className="settings-rule-preview"><Clock3 /><div><span>Simulation du pointage</span><strong>Arrivée normale : {settings.attendance.checkInTime}</strong><p>Retard après {settings.attendance.lateToleranceMinutes} minute(s) de tolérance.</p></div></article>}
       {section === "security" && <article className="settings-rule-preview"><ShieldCheck /><div><span>Niveau de sécurité</span><strong>Mot de passe : {settings.security.minimumPasswordLength} caractères minimum</strong><p>{settings.security.maxLoginAttempts} tentative(s), blocage {settings.security.lockoutMinutes} min.</p></div></article>}
-      {section === "featureFlags" && <article className="settings-modules-preview"><MonitorSmartphone /><strong>Modules actifs</strong><div>{Object.entries(settings.featureFlags).map(([key, enabled]) => <span className={enabled ? "is-on" : ""} key={key}>{key}</span>)}</div></article>}
-      <div className="settings-preview-note"><FileText size={16} /> Les snapshots historiques déjà validés ne sont pas modifiés automatiquement.</div>
+      {section === "featureFlags" && <article className="settings-modules-preview"><MonitorSmartphone /><strong>Modules actifs</strong><div>{Object.entries(settings.featureFlags).map(([key, enabled]) => <span className={enabled ? "is-on" : ""} key={key}>{featureLabels[key as keyof typeof featureLabels]??"Module"}</span>)}</div></article>}
+      {section==="training"&&<article className="settings-rule-preview"><div><span>Prochaine formation</span><strong>{settings.training.defaultCapacity} places · {settings.training.defaultDurationHours} heures</strong><p>Bilan au poste : {settings.training.impactReviewDelayDays} jours après la fin.</p></div></article>}
+      {section==="recruitment"&&<article className="settings-rule-preview"><div><span>Prochaine offre</span><strong>{settings.recruitment.defaultPositions} poste(s)</strong><p>Candidatures pendant {settings.recruitment.defaultApplicationDeadlineDays} jours.</p><p>{settings.recruitment.interviewReportRequired?"Compte rendu demandé avant proposition":"Entretien et compte rendu facultatifs"}</p></div></article>}
+      <div className="settings-preview-note"><FileText size={16} /> Les documents déjà validés conservent leurs informations historiques.</div>
     </aside>
   );
 }

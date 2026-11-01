@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "./auth.context";
+import { useAuth } from "../auth/auth.context";
 import { api } from "../../lib/api";
 import { getAgentById, getAgentScope } from "../agents/agent.api";
 import "./connected-user-avatar.css";

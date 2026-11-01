@@ -3,7 +3,26 @@ import PayslipDocument from "./PayslipDocument";
 import { usePayrollDialog } from "./payroll-dialog";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, CreditCard, Share2, Pencil, Plus, X } from "lucide-react";
+import {
+  Check,
+  CreditCard,
+  Share2,
+  Pencil,
+  Plus,
+  X,
+  Eye,
+  Search,
+  Filter,
+  RefreshCw,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  ChevronLeft,
+  ChevronRight,
+  FileText,
+  LoaderCircle,
+  CircleAlert,
+} from "lucide-react";
 import { useAuth } from "../auth/auth.context";
 import { getApiErrorMessage } from "../auth/auth.api";
 import {
@@ -13,8 +32,11 @@ import {
   transitionPayroll,
   type Payroll,
   type PayrollInput,
+  type PayrollListFilters,
+  type PayrollSortField,
 } from "./payroll.api";
 import "./payroll.css";
+import "./payroll-table.css";
 const statusLabels = {
   DRAFT: "Brouillon",
   APPROVED: "Validé",
@@ -37,8 +59,59 @@ function localMonth() {
 export default function PayrollPage() {
   const { user } = useAuth();
   const manager = user?.role === "TENANT_ADMIN" || user?.role === "RH_MANAGER";
-  const [period, setPeriod] = useState(localMonth);
-  const [page, setPage] = useState(1);
+  const [view, setView] = useState<
+    PayrollListFilters & { period: string; page: number }
+  >({
+    period: localMonth(),
+    page: 1,
+    search: "",
+    status: "",
+    currency: "",
+    sortBy: "period",
+    sortOrder: "desc",
+    limit: 20,
+  });
+  const [search, setSearch] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(
+      () =>
+        setView((current) =>
+          current.search === search.trim()
+            ? current
+            : { ...current, search: search.trim(), page: 1 },
+        ),
+      300,
+    );
+    return () => clearTimeout(timer);
+  }, [search]);
+  function updateView(patch: Partial<PayrollListFilters & { period: string }>) {
+    setView((current) => ({ ...current, ...patch, page: 1 }));
+  }
+  function resetFilters() {
+    setSearch("");
+    setView((current) => ({
+      ...current,
+      period: localMonth(),
+      search: "",
+      status: "",
+      currency: "",
+      page: 1,
+    }));
+  }
+  function sortBy(field: PayrollSortField) {
+    setView((current) => ({
+      ...current,
+      sortBy: field,
+      sortOrder:
+        current.sortBy === field && current.sortOrder === "asc"
+          ? "desc"
+          : "asc",
+      page: 1,
+    }));
+  }
+  const hasFilters = Boolean(
+    search || view.status || view.currency || view.period !== localMonth(),
+  );
   const [editor, setEditor] = useState<Payroll | "new" | null>(null);
   const [documentBusy, setDocumentBusy] = useState(false);
   const [selected, setSelected] = useState<Payroll | null>(null);
@@ -51,9 +124,48 @@ export default function PayrollPage() {
   const client = useQueryClient();
   const key = ["payroll", user?.tenantId, user?.id];
   const query = useQuery({
-    queryKey: [...key, period, page],
-    queryFn: () => listPayroll(period, page),
+    queryKey: [...key, "list", view],
+    queryFn: ({ signal }) => listPayroll(view.period, view.page, view, signal),
   });
+  useEffect(() => {
+    if (query.data && query.data.page !== view.page)
+      setView((current) => ({ ...current, page: query.data.page }));
+  }, [query.data, view.page]);
+  const items = query.data?.items ?? [];
+  const total = query.data?.total ?? 0;
+  const limit = query.data?.limit ?? view.limit;
+  const totalPages = Math.max(1, Math.ceil(total / limit));
+  function sortHeader(label: string, field: PayrollSortField, numeric = false) {
+    const active = view.sortBy === field;
+    const Icon = active
+      ? view.sortOrder === "asc"
+        ? ArrowUp
+        : ArrowDown
+      : ArrowUpDown;
+    return (
+      <th
+        scope="col"
+        className={numeric ? "is-number" : undefined}
+        aria-sort={
+          active
+            ? view.sortOrder === "asc"
+              ? "ascending"
+              : "descending"
+            : undefined
+        }
+      >
+        <button
+          type="button"
+          className="payroll-sort-button"
+          onClick={() => sortBy(field)}
+          aria-label={`Trier par ${label}, ${active && view.sortOrder === "asc" ? "ordre décroissant" : "ordre croissant"}`}
+        >
+          {label}
+          <Icon size={14} aria-hidden="true" />
+        </button>
+      </th>
+    );
+  }
   const mutation = useMutation({
     mutationFn: ({
       row,
@@ -81,149 +193,432 @@ export default function PayrollPage() {
   usePayrollDialog(Boolean(selected || confirmation), closeDialog);
   return (
     <div className="payroll-page">
-      <header className="payroll-hero">
+      <header className="payroll-hero payroll-table-hero">
         <div>
-          <h2>Paie</h2>
-          <p>
-            Préparez, contrôlez et suivez les bulletins de votre organisation.
+          <p className="payroll-eyebrow">GESTION DES RESSOURCES HUMAINES</p>
+          <h2>
+            Gestion de <span>Paie.</span>
+          </h2>
+          <p className="payroll-hero-description">
+            {manager
+              ? " Consultez et gérez les bulletins de vos collaborateurs."
+              : "Consultez vos bulletins validés et vos paiements."}
           </p>
         </div>
-        {manager && (
-          <button className="payroll-primary" onClick={() => setEditor("new")}>
-            <Plus size={18} /> Nouveau bulletin
-          </button>
-        )}
-      </header>
-      <div className="payroll-toolbar">
-        <label>
-          Période{" "}
-          <input
-            type="month"
-            value={period}
-            onChange={(e) => {
-              setPeriod(e.target.value);
-              setPage(1);
-            }}
-          />
-        </label>
-        <span>{query.data?.total ?? 0} bulletin(s)</span>
-      </div>
-      {query.isPending && <p role="status">Chargement des bulletins…</p>}
-      {query.isError && (
-        <div role="alert">
-          {getApiErrorMessage(query.error)}{" "}
-          <button onClick={() => void query.refetch()}>Réessayer</button>
-        </div>
-      )}
-      {query.data?.items.length === 0 && (
-        <div className="payroll-empty">Aucun bulletin pour cette période.</div>
-      )}
-      <div className="payroll-grid">
-        {query.data?.items.map((row) => (
-          <article className="payroll-card" key={row.id}>
-            <div className="payroll-card-heading">
-              <div>
-                <h3>{row.agentName}</h3>
-                <small>
-                  {row.matricule} · {row.period}
-                </small>
-              </div>
-              <span className={`payroll-status is-${row.status.toLowerCase()}`}>
-                {statusLabels[row.status]}
-              </span>
-            </div>
-            <dl>
-              <div>
-                <dt>Brut</dt>
-                <dd>{money(row.gross, row)}</dd>
-              </div>
-              <div>
-                <dt>Net à payer</dt>
-                <dd>{money(row.net, row)}</dd>
-              </div>
-            </dl>
-            <div className="payroll-actions">
-              <button onClick={() => setSelected(row)}>Voir le bulletin</button>
-              {manager && ["APPROVED", "PAID"].includes(row.status) && (
-                <button
-                  aria-label={`Partager le bulletin de ${row.agentName}`}
-                  title="Partager à l’agent"
-                  onClick={() => setShare(row)}
-                >
-                  <Share2 size={17} />
-                </button>
-              )}
-              {manager && row.status === "DRAFT" && (
-                <>
-                  <button
-                    aria-label="Modifier le bulletin"
-                    title="Modifier"
-                    onClick={() => setEditor(row)}
-                  >
-                    <Pencil size={17} />
-                  </button>
-                  <button
-                    aria-label="Valider le bulletin"
-                    title="Valider"
-                    onClick={() => {
-                      mutation.reset();
-                      setConfirmation({ row, action: "APPROVE" });
-                    }}
-                  >
-                    <Check size={17} />
-                  </button>
-                </>
-              )}
-              {manager && row.status === "APPROVED" && (
-                <button
-                  title="Enregistrer un paiement"
-                  aria-label="Enregistrer un paiement"
-                  onClick={() => {
-                    mutation.reset();
-                    setReference("");
-                    setConfirmation({ row, action: "PAY" });
-                  }}
-                >
-                  <CreditCard size={17} />
-                </button>
-              )}
-              {manager && ["DRAFT", "APPROVED"].includes(row.status) && (
-                <button
-                  title="Annuler le bulletin"
-                  aria-label="Annuler le bulletin"
-                  onClick={() => {
-                    mutation.reset();
-                    setConfirmation({ row, action: "CANCEL" });
-                  }}
-                >
-                  <X size={17} />
-                </button>
-              )}
-            </div>
-          </article>
-        ))}
-      </div>
-      {query.data && query.data.total > 20 && (
-        <nav
-          className="payroll-pagination"
-          aria-label="Pagination des bulletins"
-        >
-          <button disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
-            Précédent
-          </button>
-          <span>Page {page}</span>
+        <div className="payroll-hero-actions">
           <button
-            disabled={page * 20 >= query.data.total}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Suivant
+            type="button"
+            className="payroll-secondary"
+            onClick={() => void query.refetch()}
+            disabled={query.isFetching}
+            title="Actualiser les bulletins"
+            aria-label="Actualiser les bulletins"
+            data-ui-action="compact"
+           aria-busy={query.isFetching}>
+            <RefreshCw
+              size={18}
+              className={query.isFetching ? "is-spinning" : undefined}
+            />
+            <span className="ui-action-label">Actualiser</span>
           </button>
-        </nav>
-      )}
+          {manager && (
+            <button
+              type="button"
+              className="payroll-primary"
+              onClick={() => setEditor("new")}
+            >
+              <Plus size={18} />
+              Nouveau bulletin
+            </button>
+          )}
+        </div>
+      </header>
+      <section
+        className="payroll-filter-panel"
+        aria-labelledby="payroll-filter-title"
+      >
+        <div className="payroll-filter-heading">
+          <Filter size={19} aria-hidden="true" />
+          <div>
+            <strong id="payroll-filter-title">Recherche et filtres</strong>
+            <span>
+              {manager
+                ? "Retrouvez un collaborateur, un matricule ou une référence de paiement."
+                : "Retrouvez vos bulletins par période, statut ou référence de paiement."}
+            </span>
+          </div>
+        </div>
+        <div className="payroll-filters">
+          <label className="payroll-search-field">
+            <span className="payroll-sr-only">Rechercher un bulletin</span>
+            <Search size={18} aria-hidden="true" />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              maxLength={100}
+              placeholder="Nom, matricule ou référence…"
+            />
+          </label>
+          <label className="payroll-filter-field">
+            <span>Période</span>
+            <input
+              type="month"
+              value={view.period}
+              onChange={(event) => updateView({ period: event.target.value })}
+            />
+            <button
+              type="button"
+              className="payroll-all-periods"
+              disabled={!view.period}
+              onClick={() => updateView({ period: "" })}
+            >
+              Toutes les périodes
+            </button>
+          </label>
+          <label className="payroll-filter-field">
+            <span>Statut</span>
+            <select
+              value={view.status}
+              onChange={(event) =>
+                updateView({
+                  status: event.target.value as PayrollListFilters["status"],
+                })
+              }
+            >
+              <option value="">Tous les statuts</option>
+              {Object.entries(statusLabels)
+                .filter(
+                  ([status]) =>
+                    manager || ["APPROVED", "PAID"].includes(status),
+                )
+                .map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <label className="payroll-filter-field">
+            <span>Devise</span>
+            <select
+              value={view.currency}
+              onChange={(event) => updateView({ currency: event.target.value })}
+            >
+              <option value="">Toutes les devises</option>
+              {["GNF", "EUR", "USD", "XOF", "XAF"].map((currency) => (
+                <option key={currency}>{currency}</option>
+              ))}
+            </select>
+          </label>
+          <button
+            className="payroll-clear"
+            type="button"
+            onClick={resetFilters}
+            disabled={!hasFilters}
+          >
+            <X size={16} />
+            Effacer
+          </button>
+        </div>
+      </section>
+      <section
+        className="payroll-list-panel"
+        aria-labelledby="payroll-list-title"
+        aria-busy={query.isFetching}
+      >
+        <header className="payroll-list-header">
+          <div>
+            <p>BULLETINS ET PAIEMENTS</p>
+            <h3 id="payroll-list-title">
+              {manager ? "Liste des bulletins" : "Mes bulletins"}
+            </h3>
+          </div>
+          <span className="payroll-list-count" role="status">
+            {query.data ? `${total} résultat${total > 1 ? "s" : ""}` : "…"}
+          </span>
+        </header>
+        <div className="payroll-table-tools">
+          <span id="payroll-table-help">
+            Cliquez sur un en-tête pour trier les résultats.
+          </span>
+          <label>
+            <span>Lignes par page</span>
+            <select
+              value={view.limit}
+              onChange={(event) =>
+                updateView({
+                  limit: Number(event.target.value) as 20 | 50 | 100,
+                })
+              }
+            >
+              {[20, 50, 100].map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        {query.isPending && (
+          <div className="payroll-list-state" role="status">
+            <LoaderCircle size={24} className="is-spinning" />
+            <span>Chargement des bulletins…</span>
+          </div>
+        )}
+        {query.isError && (
+          <div className="payroll-list-error" role="alert">
+            <CircleAlert size={20} />
+            <div>
+              <strong>Liste indisponible</strong>
+              <p>{getApiErrorMessage(query.error)}</p>
+              <button type="button" onClick={() => void query.refetch()}>
+                Réessayer
+              </button>
+            </div>
+          </div>
+        )}
+        {!query.isPending && !query.isError && items.length === 0 && (
+          <div className="payroll-list-state">
+            <FileText size={32} />
+            <strong>Aucun bulletin trouvé</strong>
+            <p>
+              {hasFilters
+                ? "Modifiez vos filtres ou votre recherche pour afficher d’autres résultats."
+                : manager
+                  ? "Créez votre premier bulletin pour cette période."
+                  : "Aucun bulletin validé n’est disponible pour cette période."}
+            </p>
+            {hasFilters && (
+              <button type="button" onClick={resetFilters}>
+                Effacer les filtres
+              </button>
+            )}
+          </div>
+        )}
+        {!query.isError && items.length > 0 && (
+          <>
+            <p className="payroll-table-mobile-hint">
+              <ArrowUpDown size={14} aria-hidden="true" />
+              Faites défiler le tableau pour voir les montants et les actions.
+            </p>
+            <div
+              className="payroll-table-scroll"
+              role="region"
+              aria-label="Tableau des bulletins, défilement horizontal"
+              tabIndex={0}
+            >
+              <table
+                className="payroll-list-table"
+                aria-describedby="payroll-table-help"
+              >
+                <caption className="payroll-sr-only">
+                  Bulletins de paie avec tri sur l’ensemble des résultats
+                  filtrés
+                </caption>
+                <thead>
+                  <tr>
+                    {sortHeader("Collaborateur", "agentName")}
+                    {sortHeader("Période", "period")}
+                    {sortHeader("Brut", "gross", true)}
+                    <th scope="col" className="is-number">
+                      Retenues
+                    </th>
+                    {sortHeader("Net à payer", "net", true)}
+                    <th scope="col">Statut</th>
+                    {sortHeader("Paiement", "paidAt")}
+                    <th scope="col" className="payroll-actions-heading">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((row) => (
+                    <tr key={row.id}>
+                      <th scope="row" className="payroll-person-cell">
+                        <button
+                          type="button"
+                          className="payroll-person-link"
+                          aria-haspopup="dialog"
+                          onClick={() => setSelected(row)}
+                        >
+                          {row.agentName}
+                        </button>
+                        <span>{row.matricule}</span>
+                      </th>
+                      <td className="payroll-period-cell">
+                        {new Intl.DateTimeFormat("fr-FR", {
+                          month: "short",
+                          year: "numeric",
+                          timeZone: "UTC",
+                        }).format(new Date(`${row.period}-01T00:00:00Z`))}
+                      </td>
+                      <td className="is-number">{money(row.gross, row)}</td>
+                      <td className="is-number">
+                        {money(
+                          row.employeeContribution + row.tax + row.deductions,
+                          row,
+                        )}
+                      </td>
+                      <td className="is-number payroll-net-cell">
+                        {money(row.net, row)}
+                      </td>
+                      <td>
+                        <span
+                          className={`payroll-status is-${row.status.toLowerCase()}`}
+                        >
+                          {statusLabels[row.status]}
+                        </span>
+                      </td>
+                      <td className="payroll-payment-cell">
+                        {row.paidAt ? (
+                          <time dateTime={row.paidAt}>
+                            {new Intl.DateTimeFormat("fr-FR", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                              timeZone: "UTC",
+                            }).format(new Date(row.paidAt))}
+                          </time>
+                        ) : (
+                          <span className="payroll-muted">—</span>
+                        )}
+                        {row.paymentReference && (
+                          <small title={row.paymentReference}>
+                            {row.paymentReference}
+                          </small>
+                        )}
+                      </td>
+                      <td>
+                        <div className="payroll-row-actions">
+                          <button
+                            type="button"
+                            className="payroll-view-button"
+                            aria-haspopup="dialog"
+                          onClick={() => setSelected(row)}
+                            aria-label={`Voir le bulletin de ${row.agentName}`}
+                            title="Voir le bulletin"
+                          >
+                            <Eye size={20} aria-hidden="true" />
+                            <span>Voir</span>
+                          </button>
+                          {manager &&
+                            ["APPROVED", "PAID"].includes(row.status) && (
+                              <button
+                                type="button"
+                                onClick={() => setShare(row)}
+                                aria-label={`Partager le bulletin de ${row.agentName}`}
+                                title="Partager à l’agent"
+                              >
+                                <Share2 size={17} />
+                              </button>
+                            )}
+                          {manager && row.status === "DRAFT" && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => setEditor(row)}
+                                aria-label={`Modifier le bulletin de ${row.agentName}`}
+                                title="Modifier"
+                              >
+                                <Pencil size={17} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  mutation.reset();
+                                  setConfirmation({ row, action: "APPROVE" });
+                                }}
+                                aria-label={`Valider le bulletin de ${row.agentName}`}
+                                title="Valider"
+                              >
+                                <Check size={17} />
+                              </button>
+                            </>
+                          )}
+                          {manager && row.status === "APPROVED" && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                mutation.reset();
+                                setReference("");
+                                setConfirmation({ row, action: "PAY" });
+                              }}
+                              aria-label={`Enregistrer le paiement de ${row.agentName}`}
+                              title="Enregistrer un paiement"
+                            >
+                              <CreditCard size={17} />
+                            </button>
+                          )}
+                          {manager &&
+                            ["DRAFT", "APPROVED"].includes(row.status) && (
+                              <button
+                                type="button"
+                                className="payroll-cancel-action"
+                                onClick={() => {
+                                  mutation.reset();
+                                  setConfirmation({ row, action: "CANCEL" });
+                                }}
+                                aria-label={`Annuler le bulletin de ${row.agentName}`}
+                                title="Annuler le bulletin"
+                              >
+                                <X size={17} />
+                              </button>
+                            )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <footer className="payroll-table-pagination">
+              <p>
+                {(view.page - 1) * limit + 1}–
+                {Math.min(view.page * limit, total)} sur {total} · Page{" "}
+                {view.page} sur {totalPages}
+              </p>
+              <div>
+                <button
+                  type="button"
+                  disabled={view.page <= 1 || query.isFetching}
+                  onClick={() =>
+                    setView((current) => ({
+                      ...current,
+                      page: current.page - 1,
+                    }))
+                  }
+                >
+                  <ChevronLeft size={17} />
+                  Précédent
+                </button>
+                <button
+                  type="button"
+                  disabled={view.page >= totalPages || query.isFetching}
+                  onClick={() =>
+                    setView((current) => ({
+                      ...current,
+                      page: current.page + 1,
+                    }))
+                  }
+                >
+                  Suivant
+                  <ChevronRight size={17} />
+                </button>
+              </div>
+            </footer>
+          </>
+        )}
+        {!view.currency && ["gross", "net"].includes(view.sortBy) && (
+          <p className="payroll-sort-note">
+            Les montants sont regroupés par devise, puis triés par valeur.
+          </p>
+        )}
+      </section>
       {editor && (
         <PayrollEditor
           existing={editor === "new" ? undefined : editor}
-          period={period}
+          period={view.period || localMonth()}
           onClose={() => setEditor(null)}
           onSaved={async () => {
             setEditor(null);
@@ -313,10 +708,10 @@ export default function PayrollPage() {
                 type="button"
                 disabled={mutation.isPending}
                 onClick={() => setConfirmation(null)}
-              >
+               aria-busy={mutation.isPending}>
                 Retour
               </button>
-              <button className="payroll-primary" disabled={mutation.isPending}>
+              <button className="payroll-primary" disabled={mutation.isPending} aria-busy={mutation.isPending}>
                 Confirmer
               </button>
             </div>
@@ -569,10 +964,10 @@ function PayrollEditor({
           <p role="alert">{error || getApiErrorMessage(mutation.error)}</p>
         )}
         <div className="payroll-actions">
-          <button type="button" disabled={mutation.isPending} onClick={onClose}>
+          <button type="button" disabled={mutation.isPending} onClick={onClose} aria-busy={mutation.isPending}>
             Annuler
           </button>
-          <button className="payroll-primary" disabled={mutation.isPending}>
+          <button className="payroll-primary" disabled={mutation.isPending} aria-busy={mutation.isPending}>
             Enregistrer le brouillon
           </button>
         </div>

@@ -44,13 +44,40 @@ export type PayrollInput = Pick<
   | "rulesNote"
   | "note"
 >;
-export async function listPayroll(period: string, page: number) {
-  return (
-    await api.get<{ data: { items: Payroll[]; total: number; limit: number } }>(
-      "/payroll",
-      { params: { period, page } },
-    )
+export type PayrollSortField =
+  "agentName" | "matricule" | "period" | "gross" | "net" | "paidAt";
+export type PayrollListFilters = {
+  search: string;
+  status: "" | Payroll["status"];
+  currency: string;
+  sortBy: PayrollSortField;
+  sortOrder: "asc" | "desc";
+  limit: 20 | 50 | 100;
+};
+export type PayrollListResult = {
+  items: Payroll[];
+  total: number;
+  page: number;
+  limit: number;
+  listVersion: "payroll-table-1";
+};
+export async function listPayroll(
+  period: string,
+  page: number,
+  options?: PayrollListFilters,
+  signal?: AbortSignal,
+): Promise<PayrollListResult> {
+  const result = (
+    await api.get<{ data: PayrollListResult }>("/payroll", {
+      params: { ...options, period: period || undefined, page },
+      signal,
+    })
   ).data.data;
+  if (options && result.listVersion !== "payroll-table-1")
+    throw new Error(
+      "La route de liste Paie doit être mise à jour côté serveur. Consultez la notice d’intégration du tableau.",
+    );
+  return result;
 }
 export async function searchPayrollAgents(search: string) {
   return (

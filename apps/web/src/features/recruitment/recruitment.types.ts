@@ -1,0 +1,12 @@
+export type JobStatus="DRAFT"|"PUBLISHED"|"CLOSED"|"CANCELLED";
+export type Stage="APPLIED"|"SCREENING"|"INTERVIEW"|"OFFERED"|"HIRED"|"REJECTED"|"WITHDRAWN";
+export type JobInput={title:string;department:string;location:string;contract:"CDI"|"CDD"|"INTERNSHIP"|"CONSULTING";positions:number;deadline:string;description:string;requirements:string;reference:string};
+export type Job=JobInput&{id:string;status:JobStatus;createdAt:string;applicationCount?:number;hiredCount?:number};
+export type CandidateInput={jobId:string;fullName:string;email:string;phone:string;source:"DIRECT"|"REFERRAL"|"JOB_BOARD"|"OTHER";cvUrl:string;summary:string};
+export type Application=Omit<CandidateInput,"email">&{id:string;email?:string;stage:Stage;createdAt:string;updatedAt:string;jobTitle?:string;jobReference?:string;startDate?:string;decisionComment?:string;anonymizedAt?:string};
+export type InterviewInput={startsAt:string;endsAt:string;interviewer:string;location:string;mode:"IN_PERSON"|"REMOTE"|"PHONE";notes:string};
+export type Interview=InterviewInput&{id:string;jobId:string;applicationId:string;candidateName?:string;status:"SCHEDULED"|"DONE"|"CANCELLED";recommendation?:"FAVORABLE"|"RESERVED"|"UNFAVORABLE";comment:string};
+export type History={id:string;action:string;actorName:string;comment:string;createdAt:string};
+export type Dossier=Application&{job:Job|null;interviews:Interview[];history:History[]};
+export type Page<T>={items:T[];pagination:{page:number;limit:number;total:number;totalPages:number}};
+export type Dashboard={openJobs:number;activeApplications:number;upcomingInterviews:number;hires:number;pipeline:{_id:string;total:number}[]};

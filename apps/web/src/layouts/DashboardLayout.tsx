@@ -1,13 +1,20 @@
+import TrainingNotificationToasts from "../features/trainings/TrainingNotificationToasts";
+import LeaveNotificationToasts from "../features/leaves/LeaveNotificationToasts";
+import RoadmapNotificationToasts from "../features/roadmaps/RoadmapNotificationToasts";
+import TaskNotificationToasts from "../features/tasks/TaskNotificationToasts";
 import ConnectedUserAvatar from "../features/auth/ConnectedUserAvatar";
 import { featureForPath } from "../features/settings/module-access";
 import { useTenantSettings } from "../features/settings/settings.context";
 import { appearanceVariables } from "../features/settings/settings.appearance";
 import CommunicationMentionNotice from "../features/piece-transfers/CommunicationMentionNotice";
-import {
+import RecruitmentNotificationToasts from "../features/recruitment/RecruitmentNotificationToasts";
+
+import { 
     useEffect,
     useState,
     useRef,
   } from "react";
+
    import { useQuery } from "@tanstack/react-query";
   import {
     Bell,
@@ -370,6 +377,11 @@ import {
           <main id="main-content" tabIndex={-1} className="dashboard-content">
             <span className="communication-sr-only" role="status" aria-live="polite" aria-atomic="true">{notificationLabel}</span>
             <CommunicationMentionNotice />
+            <TaskNotificationToasts />
+            <RoadmapNotificationToasts />
+            <LeaveNotificationToasts />
+            <TrainingNotificationToasts />
+            <RecruitmentNotificationToasts />
             <Outlet />
           </main>
         </div>

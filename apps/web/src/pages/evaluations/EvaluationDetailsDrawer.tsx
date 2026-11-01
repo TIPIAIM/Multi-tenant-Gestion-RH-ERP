@@ -7643,7 +7643,7 @@ export default function EvaluationDetailsDrawer({
             <p>DOSSIER D’ÉVALUATION</p>
             <h3>{evaluation.reference}</h3>
           </div>
-          <button className="evaluation-icon-button" type="button" onClick={onClose}>
+          <button className="evaluation-icon-button" type="button" aria-label="Fermer le dossier d’évaluation" autoFocus onClick={onClose}>
             <X size={20} />
           </button>
         </header>

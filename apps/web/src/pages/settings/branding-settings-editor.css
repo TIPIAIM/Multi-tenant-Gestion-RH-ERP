@@ -52,3 +52,5 @@
 .branding-confirm > div { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 12px; }
 @media (min-width: 900px) { .branding-presets { grid-template-columns: repeat(4,minmax(0,1fr)); } }
 @media (max-width: 767px) { .branding-color-field input:not([type=color]) { font-size: 16px; } }
+
+.branding-feedback.is-error{border-color:rgba(233,181,33,.4);background:rgba(233,181,33,.1);color:var(--tenant-text,#0b2536)}.branding-color-field input[type=color]{width:44px;min-width:44px;height:44px;cursor:pointer}.branding-color-label{font-size:.75rem}.branding-color-field:focus-within{outline:2px solid var(--tenant-primary,#046242);outline-offset:3px}

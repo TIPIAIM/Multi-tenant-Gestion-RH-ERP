@@ -1,3 +1,4 @@
+import {normalizeTenantSettings} from "./settings.normalize.js";
 import mongoose, { type Types, type ClientSession } from "mongoose";
 import { TenantModel } from "../tenants/tenant.model.js";
 import { SettingsLogoAssetModel } from "./settings-logo.model.js";
@@ -57,7 +58,7 @@ async function ensureSettingsRecord(tenant: TenantDocument) {
 }
 
 function normalizePayload(value: TenantSettingsPayload): TenantSettingsPayload {
-  return { ...clone(value), branding: brandingSchema.parse(value.branding) };
+  return { ...normalizeTenantSettings(clone(value)), branding: brandingSchema.parse(value.branding) };
 }
 
 async function mutateSettings<T>(tenant: TenantDocument, expectedRevision: number | undefined,
@@ -134,7 +135,7 @@ function serializeRecord(record: any) {
     draftUpdatedAt: record.draftUpdatedAt?.toISOString?.() ?? null,
     publishedByName: record.publishedByName ?? null,
     publishedAt: record.publishedAt?.toISOString?.() ?? null,
-    maturity: calculateMaturity(((record.draft as TenantSettingsPayload | null | undefined) ?? record.active) as TenantSettingsPayload),
+    maturity: calculateMaturity(normalizePayload(((record.draft as TenantSettingsPayload | null | undefined) ?? record.active) as TenantSettingsPayload)),
   };
 }
 
@@ -148,6 +149,8 @@ export async function getPublicTenantSettings(tenant: TenantDocument) {
   const record = await ensureSettingsRecord(tenant);
   const active = normalizePayload(record.active as TenantSettingsPayload);
   return {
+    training: active.training, recruitment: active.recruitment,
+    notifications: {enabled:active.notifications.enabled,inAppEnabled:active.notifications.inAppEnabled,trainingPopupEnabled:active.notifications.trainingPopupEnabled,recruitmentPopupEnabled:active.notifications.recruitmentPopupEnabled},
     institution: active.institution,
     branding: active.branding,
     featureFlags: active.featureFlags,
@@ -189,10 +192,10 @@ export async function discardTenantSettingsDraft(tenant: TenantDocument, actor: 
 export async function validateTenantSettingsDraft(tenant: TenantDocument, actor: SettingsActor) {
   assertCanViewSettings(actor);
   const record = await ensureSettingsRecord(tenant);
-  const candidate = (record.draft ?? record.active) as TenantSettingsPayload;
+  const candidate = normalizePayload((record.draft ?? record.active) as TenantSettingsPayload);
   const parsed = tenantSettingsPayloadSchema.parse(candidate);
   const impact = record.draft
-    ? await computeSettingsImpact({ tenantId: tenant._id as Types.ObjectId, active: record.active as TenantSettingsPayload, draft: parsed })
+    ? await computeSettingsImpact({ tenantId: tenant._id as Types.ObjectId, active: normalizePayload(record.active as TenantSettingsPayload), draft: parsed })
     : null;
   return { valid: true, maturity: calculateMaturity(parsed), impact };
 }
@@ -206,7 +209,7 @@ export async function getTenantSettingsImpact(tenant: TenantDocument, actor: Set
   return computeSettingsImpact({
     tenantId: tenant._id as Types.ObjectId,
     active: normalizePayload(record.active as TenantSettingsPayload),
-    draft: record.draft as TenantSettingsPayload,
+    draft: normalizePayload(record.draft as TenantSettingsPayload),
   });
 }
 
@@ -278,7 +281,7 @@ export async function restoreTenantSettingsRevision(input: { tenant: TenantDocum
   return mutateSettings(input.tenant, input.expectedRevision, async (record, session) => {
     const revision = await TenantSettingsRevisionModel.findOne({ tenantId: input.tenant._id, version: input.version }).session(session).lean().exec();
     if (!revision) throw new AppError("Cette version est introuvable.", 404, "SETTINGS_REVISION_NOT_FOUND");
-    const restored = normalizePayload(revision.snapshot as TenantSettingsPayload);
+    const restored = normalizePayload(normalizeTenantSettings(revision.snapshot as TenantSettingsPayload,record.active));
     await preserveCurrentLogosOnRestore(String(input.tenant._id), restored, record.active, session);
     setDraft(record, restored, input.actor); record.draftBaseVersion = record.activeVersion;
     return publishRecord(record, input.tenant, input.actor, `${input.reason} — restauration de la version ${input.version}`, session, input.version);
@@ -292,7 +295,7 @@ export async function exportTenantSettings(tenant: TenantDocument, actor: Settin
     exportedAt: new Date().toISOString(),
     tenantId: String(tenant._id),
     activeVersion: record.activeVersion,
-    settings: record.active,
+    settings: normalizePayload(record.active),
   };
 }
 

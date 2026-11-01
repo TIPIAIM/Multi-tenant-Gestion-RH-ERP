@@ -1,0 +1,536 @@
+/* Interface commune. Les clones d’export conservent leurs styles documentaires. */
+@media screen {
+  :is(.reports-page, .report-modal, .report-drawer, .report-delete-modal) {
+    --report-ink: #0b2536;
+    --report-primary: var(--tenant-primary, #046242);
+    --report-accent: var(--tenant-accent, #e9b521);
+    --report-border: rgba(11, 37, 54, 0.14);
+    min-width: 0;
+    color: var(--report-ink);
+  }
+  :is(.reports-page, .report-modal, .report-drawer, .report-delete-modal) *,
+  :is(.reports-page, .report-modal, .report-drawer, .report-delete-modal)
+    *::before,
+  :is(.reports-page, .report-modal, .report-drawer, .report-delete-modal)
+    *::after {
+    box-sizing: border-box;
+  }
+  .reports-page {
+    width: 100%;
+    gap: 18px;
+  }
+  .reports-page .reports-hero {
+    padding: 24px;
+    gap: 20px;
+    border: 1px solid var(--report-border);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: none;
+    align-items: center;
+  }
+  .reports-hero::after {
+    display: none;
+  }
+  .reports-hero .reports-eyebrow {
+    color: var(--report-primary);
+    font-size: 0.6875rem;
+  }
+  .reports-hero h2 {
+    margin: 8px 0 0;
+    color: var(--report-ink);
+    font-size: clamp(1.4rem, 3vw, 1.9rem);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+  .reports-hero h2 span {
+    color: var(--report-primary);
+  }
+  :is(.reports-filter-panel, .reports-list-panel) {
+    min-width: 0;
+    padding: 20px;
+    border-color: var(--report-border);
+    border-radius: 14px;
+    box-shadow: none;
+  }
+  :is(.reports-page, .report-modal, .report-drawer, .report-delete-modal)
+    button:not([class*="backdrop"]) {
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 10px;
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    touch-action: manipulation;
+    transition:
+      background-color 0.15s,
+      border-color 0.15s,
+      box-shadow 0.15s;
+  }
+  :is(.reports-page, .report-modal, .report-drawer, .report-delete-modal)
+    button
+    svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+  :is(.reports-page, .report-modal, .report-drawer, .report-delete-modal)
+    button:disabled {
+    opacity: 0.58;
+    cursor: not-allowed;
+  }
+  :is(.reports-page, .report-modal, .report-drawer, .report-delete-modal)
+    button:is(
+      .report-secondary-button,
+      .report-cancel-button,
+      .report-clear-button,
+      .report-icon-button
+    ) {
+    border: 1px solid var(--report-border);
+    background: #fff;
+    color: var(--report-primary);
+  }
+  :is(.reports-page, .report-modal, .report-drawer)
+    button.report-primary-button {
+    background: var(--report-accent);
+    border-color: var(--report-accent);
+    color: var(--report-ink);
+  }
+  :is(.reports-page, .report-delete-modal) button.report-danger-button {
+    background: #b33428;
+    border-color: #b33428;
+    color: #fff;
+  }
+  .report-card-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  :is(.report-card-actions button, .report-icon-button) {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    flex: 0 0 44px;
+  }
+  .report-card-actions button.report-view-button {
+    border-color: var(--report-primary);
+    background: var(--report-primary);
+    color: #fff;
+  }
+  .reports-hero-actions .ui-action-label,
+  .report-drawer-actions .ui-action-label,
+  .report-modal-footer .ui-action-label,
+  .report-delete-modal .ui-action-label {
+    display: inline;
+  }
+  .reports-metrics-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .reports-metric-card {
+    min-height: 116px;
+    padding: 16px;
+    align-items: center;
+    border-color: var(--report-border);
+    border-radius: 12px;
+    box-shadow: none;
+  }
+  .reports-metric-card .reports-metric-icon {
+    display: grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    border-radius: 10px;
+  }
+  .reports-metric-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+  .reports-metric-icon:is(.total, .monthly, .validated) {
+    background: rgba(4, 98, 66, 0.08);
+    color: var(--report-primary);
+  }
+  .reports-metric-icon.index {
+    background: rgba(233, 181, 33, 0.15);
+    color: var(--report-ink);
+  }
+  .reports-metric-icon.archived {
+    background: rgba(11, 37, 54, 0.06);
+    color: var(--report-ink);
+  }
+  .reports-metric-card > div > span {
+    color: rgba(11, 37, 54, 0.73);
+    font-size: 0.75rem;
+  }
+  .reports-metric-card strong {
+    font-size: 1.45rem;
+    color: var(--report-ink);
+    line-height: 1.2;
+  }
+  .reports-metric-card p {
+    color: rgba(11, 37, 54, 0.65);
+    font-size: 0.6875rem;
+    line-height: 1.5;
+  }
+  .reports-filters {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: end;
+  }
+  .reports-search-field {
+    grid-column: 1 / -1;
+  }
+  .reports-page .reports-search-field input,
+  .reports-page .report-filter-field :is(input, select),
+  .report-modal .report-field :is(input, select, textarea),
+  .report-validation-modal .report-field textarea {
+    min-width: 0;
+    max-width: 100%;
+    min-height: 44px;
+    border-color: var(--report-border);
+    border-radius: 10px;
+    color: var(--report-ink);
+    font: inherit;
+    font-size: 0.8125rem;
+  }
+  .report-field,
+  .report-filter-field {
+    min-width: 0;
+  }
+  :is(.report-field, .report-filter-field) > span {
+    color: var(--report-ink);
+    font-size: 0.75rem;
+  }
+  .report-card {
+    padding: 16px;
+    border-color: var(--report-border);
+    border-radius: 12px;
+    box-shadow: none;
+    transform: none;
+    min-width: 0;
+    grid-template-columns:
+      minmax(0, 1.65fr) minmax(85px, 0.45fr) minmax(150px, 0.8fr)
+      auto;
+  }
+  .report-card:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: var(--report-primary);
+  }
+  .report-card-main {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .report-card h4 {
+    font-size: 0.9375rem;
+    color: var(--report-ink);
+    line-height: 1.45;
+  }
+  .report-card p,
+  .report-card small {
+    font-size: 0.75rem;
+    line-height: 1.5;
+  }
+  .report-reference,
+  .reports-list-header > span {
+    border-radius: 6px;
+  }
+  .reports-list-header {
+    flex-wrap: wrap;
+  }
+  .reports-list-header h3 {
+    font-size: 1.05rem;
+  }
+  .reports-list-header p {
+    font-size: 0.6875rem;
+  }
+  .reports-pagination {
+    flex-wrap: wrap;
+  }
+  .reports-pagination button {
+    border-color: var(--report-border);
+  }
+  .report-modal-layer,
+  .report-delete-layer {
+    z-index: 175;
+    padding: 20px;
+    place-items: center;
+  }
+  .report-drawer-layer {
+    z-index: 160;
+  }
+  .report-modal-backdrop,
+  .report-drawer-backdrop,
+  .report-delete-backdrop {
+    background: rgba(11, 37, 54, 0.45);
+  }
+  .report-modal {
+    width: min(940px, 100%);
+    max-height: calc(100dvh - 40px);
+    padding: 24px;
+    border-radius: 14px;
+  }
+  .report-drawer {
+    width: min(1120px, 100%);
+    height: 100dvh;
+    min-height: 0;
+    padding: 24px;
+  }
+  .report-delete-modal {
+    max-height: calc(100dvh - 40px);
+    border-radius: 14px;
+  }
+  .report-modal-header h3,
+  .report-drawer-header h3 {
+    margin-top: 6px;
+    font-size: 1.05rem;
+    line-height: 1.4;
+    color: var(--report-ink);
+    overflow-wrap: anywhere;
+  }
+  .report-modal-header p,
+  .report-drawer-header p {
+    font-size: 0.6875rem;
+  }
+  .report-form-fields {
+    display: grid;
+    gap: 20px;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    min-width: 0;
+  }
+  .report-form-section {
+    min-width: 0;
+    padding: 16px;
+    border-radius: 12px;
+    border-color: var(--report-border);
+    background: #fff;
+  }
+  .report-form-section-highlight {
+    background: rgba(4, 98, 66, 0.025);
+  }
+  .report-form-section-heading {
+    flex-wrap: wrap;
+  }
+  .report-editorial-field.is-confidential {
+    border-radius: 12px;
+  }
+  .report-editorial-field > span {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .report-editorial-field > span small {
+    white-space: nowrap;
+  }
+  .report-modal-footer {
+    flex-wrap: wrap;
+  }
+  .report-drawer .report-access-banner {
+    border-radius: 12px;
+    border-color: var(--report-border);
+  }
+  .report-drawer .report-printable-document {
+    border-radius: 14px;
+    border-color: var(--report-border);
+    box-shadow: none;
+    min-width: 0;
+  }
+  .report-drawer .report-document-title {
+    border-color: var(--report-border);
+    border-radius: 12px;
+    background: rgba(4, 98, 66, 0.025);
+  }
+  .report-drawer .report-document-title h1 {
+    overflow-wrap: anywhere;
+  }
+  .report-drawer .report-index-badge {
+    border-radius: 12px;
+    box-shadow: none;
+  }
+  .report-drawer
+    :is(
+      .report-meta-card,
+      .report-kpi-card,
+      .report-module-card,
+      .report-analysis-card,
+      .report-editorial-block,
+      .report-executive-summary,
+      .report-director-note
+    ) {
+    border-radius: 12px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .report-drawer
+    :is(
+      .report-meta-grid,
+      .report-kpi-grid,
+      .report-module-grid,
+      .report-analysis-grid,
+      .report-section
+    ) {
+    min-width: 0;
+  }
+  .report-drawer .report-table-wrap {
+    max-width: 100%;
+    min-width: 0;
+    border-radius: 10px;
+  }
+  .report-drawer .report-table {
+    font-size: 0.75rem;
+  }
+  .report-drawer .report-table thead th {
+    background: var(--report-primary);
+  }
+  .report-drawer .report-table tbody tr:nth-child(even) {
+    background: rgba(4, 98, 66, 0.04);
+  }
+  .report-validation-layer {
+    z-index: 170;
+    padding: 20px;
+  }
+  .report-validation-modal {
+    max-height: calc(100dvh - 40px);
+    border-radius: 14px;
+    overflow: auto;
+    padding: 24px;
+  }
+  .report-validation-modal > header {
+    gap: 12px;
+  }
+  .report-validation-modal h3 {
+    overflow-wrap: anywhere;
+    line-height: 1.4;
+  }
+  .report-validation-modal footer {
+    flex-wrap: wrap;
+  }
+  :is(.reports-alert, .report-error, .reports-empty) {
+    border-radius: 10px;
+  }
+  .reports-page .module-view-status:empty {
+    display: none;
+  }
+  .reports-page .module-view-status {
+    color: var(--report-primary);
+    font-size: 0.875rem;
+  }
+  .reports-page .module-view-error {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 14px;
+    border: 1px solid #efc8c0;
+    border-radius: 10px;
+    background: #fff8f6;
+  }
+  .reports-page .module-view-error p {
+    flex-basis: 100%;
+    color: #9a382b;
+    margin: 0;
+  }
+  :is(.reports-page, .report-modal, .report-drawer, .report-delete-modal)
+    :is(button, input, textarea, select):focus-visible {
+    outline: 3px solid var(--report-primary);
+    outline-offset: 3px;
+  }
+  .reports-page .module-button-spinner {
+    animation: report-spin 800ms linear infinite;
+  }
+}
+@media screen and (max-width: 1199px) {
+  .reports-page .reports-hero {
+    grid-template-columns: 1fr;
+  }
+  .report-card {
+    grid-template-columns: minmax(0, 1fr) minmax(100px, 0.5fr);
+  }
+  .report-card-main {
+    grid-column: 1 / -1;
+  }
+  .report-card-actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+  .report-drawer .report-kpi-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .report-drawer .report-module-grid,
+  .report-drawer .report-meta-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media screen and (max-width: 679px) {
+  .reports-page .reports-hero,
+  .reports-filter-panel,
+  .reports-list-panel {
+    padding: 16px;
+  }
+  .reports-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .reports-metric-card {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px;
+    gap: 10px;
+  }
+  .reports-filters {
+    grid-template-columns: 1fr;
+  }
+  .reports-hero-actions {
+    width: 100%;
+  }
+  .report-modal-layer,
+  .report-delete-layer {
+    padding: 10px;
+  }
+  .report-modal,
+  .report-delete-modal {
+    max-height: calc(100dvh - 20px);
+    padding: 18px;
+  }
+  .report-drawer {
+    padding: 16px;
+  }
+  .report-modal-footer > button {
+    width: 100%;
+  }
+  .report-drawer-actions > button {
+    flex: 1 1 44%;
+  }
+  .report-drawer .report-kpi-grid,
+  .report-drawer .report-module-grid,
+  .report-drawer .report-meta-grid,
+  .report-drawer .report-analysis-grid {
+    grid-template-columns: 1fr;
+  }
+  .report-validation-layer {
+    padding: 10px;
+  }
+  .report-validation-modal {
+    max-height: calc(100dvh - 20px);
+    padding: 18px;
+  }
+  .report-validation-modal footer > button {
+    width: 100%;
+  }
+}
+@media screen and (hover: hover) {
+  :is(.reports-page, .report-modal, .report-drawer, .report-delete-modal)
+    button:not(:disabled):not([class*="backdrop"]):hover {
+    transform: none;
+    box-shadow: 0 2px 7px rgba(11, 37, 54, 0.12);
+    filter: brightness(0.98);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.reports-page, .report-modal, .report-drawer, .report-delete-modal) * {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Rend le dimensionnement A4 indépendant des styles globaux du dashboard. */
+.report-export-host,
+.report-export-host * {
+  box-sizing: border-box;
+}

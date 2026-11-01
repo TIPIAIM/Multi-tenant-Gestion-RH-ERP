@@ -272,7 +272,7 @@ export async function exportManagementReportsCsvController(
     response.setHeader("Content-Type", "text/csv; charset=utf-8");
     response.setHeader(
       "Content-Disposition",
-      'attachment; filename="rapports-fades-rh.csv"'
+      'attachment; filename="rapportsades-rh.csv"'
     );
     response.status(200).send(csv);
   } catch (error) {

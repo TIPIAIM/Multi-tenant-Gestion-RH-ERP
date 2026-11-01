@@ -1,0 +1,33 @@
+import {assertPublishedModuleEnabled} from "../settings/settings.module-runtime.js";
+import {Router,type Request,type Response,type NextFunction} from "express";
+import {requireAuth} from "../../middlewares/auth.middleware.js";
+import {tenantContextMiddleware} from "../../middlewares/tenant-context.middleware.js";
+import {AppError} from "../../core/errors/app-error.js";
+import {resolveRecruitmentActor,type RecruitmentActor} from "./recruitment.access.js";
+import * as schemas from "./recruitment.schema.js";
+import * as service from "./recruitment.service.js";
+import {safeCsv} from "./recruitment.rules.js";
+export const recruitmentRouter=Router();
+recruitmentRouter.use(requireAuth,tenantContextMiddleware);
+function handle(work:(a:RecruitmentActor,r:Request,s:Response)=>Promise<unknown>){return (r:Request,s:Response,next:NextFunction):void=>{void(async()=>{
+ if(!r.tenant||!r.auth)throw new AppError("Authentification requise.",401,"RECRUITMENT_AUTH_REQUIRED");const a=await resolveRecruitmentActor(r.tenant._id,r.auth.userId);await assertPublishedModuleEnabled(a.tenantId,"recruitment");const data=await work(a,r,s);if(!s.headersSent)s.status(200).json({success:true,data});
+ })().catch(e=>next((e as {code?:number}).code===11000?new AppError("Une offre avec cette référence ou une candidature avec cet e-mail existe déjà.",409,"RECRUITMENT_DUPLICATE"):e));};}
+const id=(r:Request)=>schemas.idSchema.parse(r.params.id);
+recruitmentRouter.get("/dashboard",handle(a=>service.dashboard(a)));
+recruitmentRouter.get("/notifications/popups",handle((a,r)=>service.popups(a,schemas.idSchema.parse(r.query.after??"000000000000000000000000"))));
+recruitmentRouter.get("/jobs",handle((a,r)=>service.listJobs(a,schemas.listSchema.parse(r.query))));
+recruitmentRouter.post("/jobs",handle((a,r)=>service.saveJob(a,schemas.jobSchema.parse(r.body))));
+recruitmentRouter.put("/jobs/:id",handle((a,r)=>service.saveJob(a,schemas.jobSchema.parse(r.body),id(r))));
+recruitmentRouter.post("/jobs/:id/status",handle((a,r)=>{const b=schemas.jobTransitionSchema.parse(r.body);return service.changeJob(a,id(r),b.status,b.reason);}));
+recruitmentRouter.get("/applications/export",handle(async(a,r,s)=>{const q=schemas.listSchema.parse(r.query),first=await service.listApplications(a,{...q,page:1,limit:100});if(first.pagination.total>5000)throw new AppError("Affinez les filtres : export limité à 5 000 dossiers.",400,"RECRUITMENT_EXPORT_LIMIT");const rows=[...first.items];for(let p=2;p<=first.pagination.totalPages;p++){const next=await service.listApplications(a,{...q,page:p,limit:100});rows.push(...next.items);}const lines=[["Candidat","E-mail","Téléphone","Offre","Étape","Date de candidature","Prise de fonction"].map(safeCsv).join(";"),...rows.map(v=>[v.fullName,v.email,v.phone,v.jobTitle,v.stage,v.createdAt.toISOString(),v.startDate].map(safeCsv).join(";"))];s.type("text/csv; charset=utf-8").setHeader("Content-Disposition",'attachment; filename="recrutement-candidatures.csv"');s.send("\uFEFF"+lines.join("\r\n"));}));
+recruitmentRouter.get("/applications",handle((a,r)=>service.listApplications(a,schemas.listSchema.parse(r.query))));
+recruitmentRouter.post("/applications",handle((a,r)=>service.saveCandidate(a,schemas.candidateSchema.parse(r.body))));
+recruitmentRouter.get("/applications/:id",handle((a,r)=>service.details(a,id(r))));
+recruitmentRouter.put("/applications/:id",handle((a,r)=>service.saveCandidate(a,schemas.candidateSchema.parse(r.body),id(r))));
+recruitmentRouter.post("/applications/:id/stage",handle((a,r)=>service.moveApplication(a,id(r),schemas.stageSchema.parse(r.body))));
+recruitmentRouter.post("/applications/:id/notes",handle((a,r)=>service.addNote(a,id(r),schemas.noteSchema.parse(r.body).comment)));
+recruitmentRouter.post("/applications/:id/anonymize",handle((a,r)=>{schemas.anonymizeSchema.parse(r.body);return service.anonymize(a,id(r));}));
+recruitmentRouter.get("/interviews",handle((a,r)=>service.listInterviews(a,schemas.listSchema.parse(r.query))));
+recruitmentRouter.post("/applications/:id/interviews",handle((a,r)=>service.saveInterview(a,id(r),schemas.interviewSchema.parse(r.body))));
+recruitmentRouter.put("/applications/:id/interviews/:interviewId",handle((a,r)=>service.saveInterview(a,id(r),schemas.interviewSchema.parse(r.body),schemas.idSchema.parse(r.params.interviewId))));
+recruitmentRouter.post("/interviews/:id/result",handle((a,r)=>service.interviewResult(a,id(r),schemas.interviewResultSchema.parse(r.body))));

@@ -11,7 +11,7 @@
   gap: 24px;
   overflow: hidden;
   padding: clamp(24px, 4vw, 42px);
-  border-radius: 0 28px 0 28px;
+  border-radius: 28px;
   background:
     radial-gradient(
       circle at 88% 16%,
@@ -85,7 +85,7 @@
   justify-content: center;
   gap: 8px;
   padding: 0 14px;
-  border-radius: 0 11px 0 11px;
+  border-radius: 11px;
   font-size: 0.78rem;
   font-weight: 850;
   cursor: pointer;
@@ -136,7 +136,7 @@
   gap: 9px;
   padding: 12px;
   border: 1px solid #efc8c0;
-  border-radius: 0 12px 0 12px;
+  border-radius: 12px;
   background: #fff4f2;
   color: #a63426;
   font-size: 0.77rem;
@@ -166,7 +166,7 @@
   gap: 12px;
   padding: 17px;
   border: 1px solid #dbe8df;
-  border-radius: 0 16px 0 16px;
+  border-radius: 16px;
   background: #ffffff;
 }
 
@@ -176,7 +176,7 @@
   height: 42px;
   flex: 0 0 42px;
   place-items: center;
-  border-radius: 0 12px 0 12px;
+  border-radius: 12px;
 }
 
 .leave-kpi-icon.total {
@@ -231,7 +231,7 @@
 .leave-panel {
   padding: clamp(18px, 3vw, 27px);
   border: 1px solid #dbe8df;
-  border-radius: 0 20px 0 20px;
+  border-radius: 20px;
   background: #ffffff;
 }
 
@@ -265,7 +265,7 @@
   gap: 6px;
   padding: 13px;
   border: 1px solid #dce8e1;
-  border-radius: 0 13px 0 13px;
+  border-radius: 13px;
   background:
     radial-gradient(
       circle at top right,
@@ -309,7 +309,7 @@
   min-height: 30px;
   padding: 0 9px;
   border: 1px solid #cfe1d6;
-  border-radius: 0 8px 0 8px;
+  border-radius: 8px;
   background: #ffffff;
   color: #046242;
   font-size: 0.68rem;
@@ -324,7 +324,7 @@
   gap: 9px;
   padding: 11px;
   border: 1px solid #e0e9e3;
-  border-radius: 0 12px 0 12px;
+  border-radius: 12px;
   background: #ffffff;
   cursor: pointer;
 }
@@ -380,7 +380,7 @@
   width: 100%;
   min-height: 42px;
   border: 1px solid #ceded4;
-  border-radius: 0 10px 0 10px;
+  border-radius: 10px;
   outline: 0;
   background: #ffffff;
   color: #173841;
@@ -434,7 +434,7 @@
   gap: 9px;
   padding: 14px;
   border: 1px dashed #c9d9cf;
-  border-radius: 0 13px 0 13px;
+  border-radius: 13px;
   background: #f9fcfa;
   color: #71868c;
   font-size: 0.76rem;
@@ -455,7 +455,7 @@
   gap: 10px;
   padding: 13px;
   border: 1px solid #dce8e1;
-  border-radius: 0 13px 0 13px;
+  border-radius: 13px;
   background: #ffffff;
   cursor: pointer;
 }
@@ -478,7 +478,7 @@
   height: 34px;
   flex: 0 0 34px;
   place-items: center;
-  border-radius: 0 10px 0 10px;
+  border-radius: 10px;
   background: linear-gradient(135deg, #046242, #0b2536);
   color: #ffffff;
   font-size: 0.65rem;
@@ -560,7 +560,7 @@
   min-height: 33px;
   padding: 0 10px;
   border: 1px solid #d2e0d7;
-  border-radius: 0 9px 0 9px;
+  border-radius: 9px;
   background: #ffffff;
   color: #42625f;
   font-size: 0.71rem;
@@ -616,7 +616,7 @@
   width: min(810px, 100%);
   max-height: 94dvh;
   padding: 22px;
-  border-radius: 0 24px 0 0;
+  border-radius: 14px;
 }
 
 .leave-drawer {
@@ -651,7 +651,7 @@
   height: 34px;
   place-items: center;
   border: 1px solid #d3e1d8;
-  border-radius: 0 9px 0 9px;
+  border-radius: 9px;
   background: #ffffff;
   color: #046242;
   cursor: pointer;
@@ -687,7 +687,7 @@
   gap: 4px;
   padding: 12px;
   border: 1px solid #d6e8dc;
-  border-radius: 0 13px 0 13px;
+  border-radius: 13px;
   background: #f7fbf8;
 }
 
@@ -738,7 +738,7 @@
   justify-content: center;
   gap: 8px;
   border: 1px solid #d4e2d9;
-  border-radius: 0 12px 0 12px;
+  border-radius: 12px;
   background: #ffffff;
   color: #53716f;
   font-size: 0.76rem;
@@ -763,7 +763,7 @@
   gap: 7px;
   margin-top: 20px;
   padding: 14px;
-  border-radius: 0 15px 0 15px;
+  border-radius: 15px;
   background:
     radial-gradient(
       circle at top right,
@@ -805,7 +805,7 @@
   margin: 12px 0 0;
   padding: 12px;
   border: 1px solid #e1ebe5;
-  border-radius: 0 12px 0 12px;
+  border-radius: 12px;
   background: #fbfdfc;
   color: #617980;
   font-size: 0.75rem;
@@ -824,7 +824,7 @@
   gap: 5px;
   padding: 12px;
   border: 1px solid #e0e9e3;
-  border-radius: 0 12px 0 12px;
+  border-radius: 12px;
   background: #ffffff;
 }
 
@@ -871,7 +871,7 @@
   gap: 8px;
   padding: 0 11px;
   border: 1px solid #d0dfd6;
-  border-radius: 0 10px 0 10px;
+  border-radius: 10px;
   background: #ffffff;
   color: #40615f;
   font-size: 0.73rem;
@@ -972,7 +972,7 @@
   }
 
   .leave-modal {
-    border-radius: 0 22px 0 22px;
+    border-radius: 22px;
   }
 
   .leave-form-grid {

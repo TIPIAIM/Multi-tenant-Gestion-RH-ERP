@@ -1,0 +1,75 @@
+.recruitment-page{--rc-green:var(--tenant-primary,#046242);--rc-navy:#0b2536;--rc-yellow:var(--tenant-accent,#e9b521);--rc-border:rgba(11,37,54,.14);--rc-muted:rgba(11,37,54,.73);display:grid;width:min(1280px,100%);margin-inline:auto;gap:18px;color:var(--rc-navy);font-family:inherit}
+.recruitment-page *,.recruitment-dialog *{box-sizing:border-box}
+.recruitment-hero{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:16px;min-height:0;padding:22px 24px;border:1px solid var(--rc-border);border-radius:14px;background:#fff;box-shadow:none}
+.recruitment-hero p{margin:0;color:var(--rc-green);font-size:.6875rem;letter-spacing:.08em;font-weight:700}
+.recruitment-hero h2{margin:6px 0 0;font-size:clamp(1.4rem,2.4vw,1.9rem);line-height:1.2;letter-spacing:-.025em;color:var(--rc-navy)}
+.recruitment-hero h2 span{color:var(--rc-green)}
+.rc-actions{display:flex;align-items:center;flex-wrap:nowrap;gap:6px}
+.rc-button,.rc-icon{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 14px;border:1px solid var(--rc-border);border-radius:10px;background:#fff;color:var(--rc-green);font:inherit;font-size:.8125rem;font-weight:650;cursor:pointer;transition:background-color 140ms ease,transform 100ms ease}
+.rc-icon{width:44px;height:44px;min-width:44px;flex:0 0 44px;padding:0}
+.rc-primary{background:var(--rc-green);border-color:var(--rc-green);color:#fff}
+.rc-button:hover:not(:disabled),.rc-icon:hover:not(:disabled){background:rgba(4,98,66,.07)}
+.rc-primary:hover:not(:disabled){background:var(--rc-green);color:#fff;filter:brightness(.92)}
+.recruitment-page button:active:not(:disabled),.recruitment-dialog button:active:not(:disabled){transform:translateY(1px)}
+.recruitment-page button:disabled,.recruitment-dialog button:disabled{opacity:.55;cursor:not-allowed}
+.recruitment-page :is(button,input,select,textarea,[tabindex]):focus-visible,.recruitment-dialog :is(button,input,select,textarea,summary,[tabindex]):focus-visible{outline:2px solid var(--rc-green);outline-offset:3px}
+.rc-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;align-items:stretch}
+.rc-stat-card{display:flex;align-items:flex-start;gap:12px;min-width:0;min-height:116px;height:100%;padding:16px;border:1px solid var(--rc-border);border-radius:12px;background:#fff}
+.rc-stat-icon{display:grid;place-items:center;width:36px;height:36px;flex:0 0 36px;border-radius:10px;background:rgba(4,98,66,.07);color:var(--rc-green)}
+.rc-stat-content{min-width:0}.rc-stat-content>span{font-size:.75rem;font-weight:600;color:var(--rc-muted)}
+.rc-stats strong{display:block;margin-top:5px;font-size:1.5rem;line-height:1.15;font-variant-numeric:tabular-nums}
+.rc-stats p{margin:5px 0 0;font-size:.6875rem;line-height:1.45;color:var(--rc-muted)}
+.rc-panel{padding:20px;border:1px solid var(--rc-border);border-radius:14px;background:#fff;min-width:0}
+.rc-tabs{display:flex;flex-wrap:wrap;gap:8px;padding-bottom:16px;border-bottom:1px solid var(--rc-border)}
+.rc-tabs button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 14px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--rc-muted);font:inherit;font-size:.8125rem;cursor:pointer}
+.rc-tabs button[aria-current=page]{color:var(--rc-green);border-color:var(--rc-border);background:rgba(4,98,66,.05);font-weight:650}
+.rc-filters{display:grid;grid-template-columns:minmax(220px,2fr) minmax(150px,1fr) minmax(180px,1fr) auto;align-items:end;gap:12px;margin-top:18px}
+.rc-filters label,.rc-fields label,.rc-enroll-form label{display:grid;min-width:0;gap:7px;font-size:.75rem;line-height:1.4;font-weight:600;color:var(--rc-navy)}
+.recruitment-page input:not([type=checkbox]),.recruitment-page select,.recruitment-dialog input:not([type=checkbox]),.recruitment-dialog select,.recruitment-dialog textarea{box-sizing:border-box;width:100%;min-width:0;height:44px;margin:0;padding:10px 12px;border:1px solid var(--rc-border);border-radius:9px;background:#fff;color:var(--rc-navy);font:inherit;font-size:.8125rem;line-height:1.4}
+.recruitment-dialog textarea{height:auto;min-height:100px;resize:vertical}.recruitment-dialog input[type=checkbox]{width:18px;height:18px;accent-color:var(--rc-green);flex:0 0 18px}
+.rc-register-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:22px 0 16px}
+.rc-register-heading p,.recruitment-dialog header p{margin:0;color:var(--rc-green);font-size:.6875rem;font-weight:700;letter-spacing:.08em}
+.rc-register-heading h3{margin:5px 0 0;font-size:.875rem;color:var(--rc-navy)}.rc-register-heading>small{display:flex;align-items:center;gap:6px;color:var(--rc-muted);font-size:.6875rem}
+.rc-table-scroll{width:100%;overflow-x:auto;overscroll-behavior-inline:contain;border:1px solid var(--rc-border);border-radius:12px;scrollbar-width:thin}
+.rc-table{width:100%;min-width:1000px;border-collapse:separate;border-spacing:0;text-align:left;font-size:.8125rem;color:var(--rc-navy)}
+.rc-table th{padding:13px 16px;background:rgba(11,37,54,.045);color:var(--rc-navy);font-size:.6875rem;font-weight:700;letter-spacing:.035em;text-transform:uppercase;white-space:nowrap;border-bottom:1px solid var(--rc-border)}
+.rc-table td{padding:16px;vertical-align:middle;border-bottom:1px solid var(--rc-border);background:#fff;line-height:1.5}
+.rc-table tbody tr:nth-child(even)>td{background:rgba(11,37,54,.015)}.rc-table tbody tr:is(:hover,:focus-within)>td{background:rgba(4,98,66,.035)}.rc-table tbody tr:last-child>td{border-bottom:0}
+.rc-table strong{display:block;max-width:340px;overflow-wrap:anywhere;font-size:.875rem;font-weight:650}.rc-table small{display:block;max-width:340px;margin-top:4px;font-size:.6875rem;color:var(--rc-muted);overflow-wrap:anywhere}
+.rc-table details p{max-width:360px;line-height:1.6}.rc-table summary,.rc-detail summary{color:var(--rc-green);cursor:pointer;font-size:.75rem;padding:8px 0}
+.rc-badge{display:inline-block;padding:5px 9px;border-radius:7px;background:rgba(11,37,54,.06);color:var(--rc-navy);font-size:.625rem;line-height:1.4;font-weight:700;white-space:nowrap}
+.rc-status-open,.rc-status-approved,.rc-status-completed{color:var(--rc-green);background:rgba(4,98,66,.08)}.rc-status-requested,.rc-status-in_progress{background:rgba(233,181,33,.16)}
+.rc-pagination{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding-top:16px;font-size:.75rem;color:var(--rc-muted)}.rc-pagination>div{display:flex;gap:6px}
+.rc-alert{padding:12px 16px;border:1px solid rgba(233,181,33,.4);border-radius:10px;background:rgba(233,181,33,.1);color:var(--rc-navy);font-size:.8125rem;line-height:1.5}
+.rc-help,.rc-cost{font-size:.75rem;line-height:1.55;color:var(--rc-muted);margin:8px 0}.rc-cost{padding:12px 16px;border:1px solid var(--rc-border);border-radius:12px;background:#fff}
+.rc-empty{padding:32px 16px;text-align:center;color:var(--rc-muted);font-size:.8125rem}
+.recruitment-dialog{--rc-green:var(--tenant-primary,#046242);--rc-navy:#0b2536;--rc-border:rgba(11,37,54,.14);--rc-muted:rgba(11,37,54,.73);box-sizing:border-box;width:min(760px,calc(100vw - 32px));max-height:calc(100dvh - 40px);overflow:auto;padding:22px;border:1px solid var(--rc-border);border-radius:14px;background:#fff;color:var(--rc-navy);box-shadow:0 24px 70px rgba(11,37,54,.18);font-family:inherit}
+.recruitment-dialog-wide{width:min(1160px,calc(100vw - 32px))}.recruitment-dialog::backdrop{background:rgba(11,37,54,.5)}
+.recruitment-dialog>header{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:22px}.recruitment-dialog h3{margin:8px 0 0;font-size:1.25rem;color:var(--rc-navy)}
+.rc-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:0;padding:0;border:0;min-width:0}.rc-full{grid-column:1/-1}.rc-fields .rc-check{display:flex;align-items:center;gap:10px;min-height:44px;font-weight:500;line-height:1.6}
+.rc-form-actions{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:10px;margin-top:20px;padding-top:16px;border-top:1px solid var(--rc-border)}
+.rc-detail{display:grid;gap:16px}.rc-detail h4{margin:4px 0;font-size:.875rem}.rc-detail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.rc-detail-grid article{display:grid;align-content:start;gap:6px;min-width:0;padding:16px;border:1px solid var(--rc-border);border-radius:12px}.rc-detail-grid span,.rc-detail-grid small{font-size:.6875rem;color:var(--rc-muted);line-height:1.5}.rc-detail-grid strong{font-size:.8125rem;overflow-wrap:anywhere;line-height:1.5}
+.rc-enroll-form{display:grid;gap:12px;padding:16px;border:1px solid var(--rc-border);border-radius:12px}.rc-enroll-form>.rc-button{justify-self:start}
+.rc-preserve{white-space:pre-wrap;overflow-wrap:anywhere;font-size:.8125rem;line-height:1.65}.rc-sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.rc-spin{animation:rc-spin 1s linear infinite}@keyframes rc-spin{to{transform:rotate(360deg)}}
+@media(max-width:1050px){.rc-stats,.rc-detail-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.rc-filters{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.recruitment-hero,.rc-panel{padding:16px}.recruitment-hero>.rc-actions{width:100%;justify-content:flex-end}.rc-stat-card{padding:12px;flex-direction:column;gap:8px}.rc-fields,.rc-filters,.rc-detail-grid{grid-template-columns:minmax(0,1fr)}.rc-full{grid-column:1}.recruitment-dialog{padding:16px;width:calc(100vw - 20px);max-height:calc(100dvh - 20px)}.recruitment-dialog :is(input:not([type=checkbox]),select,textarea),.recruitment-page :is(input,select){font-size:1rem}.rc-form-actions>.rc-button{flex:1 1 100%}.rc-register-heading{align-items:flex-start;flex-wrap:wrap}.rc-tabs button{flex:1 1 auto}}
+@media(prefers-reduced-motion:reduce){.recruitment-page *,.recruitment-dialog *{animation:none!important;transition:none!important}}
+@media print{.recruitment-page button,.rc-tabs,.rc-filters{display:none}.rc-table-scroll{overflow:visible}.rc-table{min-width:0}.recruitment-dialog{display:none}}
+
+/* Cartes actionnables : contenu compact, cible tactile conservée. */
+.rc-stat-card{font:inherit;color:inherit;text-align:left;cursor:pointer;transition:border-color 140ms ease,background-color 140ms ease}
+.rc-stat-card:hover,.rc-stat-card[aria-pressed=true]{border-color:var(--rc-green);background:rgba(4,98,66,.045)}
+.rc-stat-content{display:block}.rc-stat-content>span{font-size:.6875rem;font-weight:600;color:var(--rc-muted)}
+.rc-stat-content small{display:flex;align-items:center;gap:4px;margin-top:7px;font-size:.625rem;color:var(--rc-green)}
+.rc-stats strong{font-size:1.25rem}.rc-stat-icon{width:30px;height:30px;flex-basis:30px}
+.rc-button,.rc-tabs button,.rc-table,.rc-table strong,.recruitment-dialog input:not([type=checkbox]),.recruitment-dialog select,.recruitment-dialog textarea{font-size:.75rem}
+.recruitment-dialog h3{font-size:1.05rem}.rc-table td{padding:12px 14px}
+
+.rc-wrap{flex-wrap:wrap}.rc-help>svg{vertical-align:middle;margin-right:5px}.rc-success{padding:12px 16px;border:1px solid var(--rc-border);border-radius:10px;background:rgba(4,98,66,.06);color:var(--rc-green);font-size:.75rem}.rc-filter-state{margin-top:12px;flex-wrap:wrap;font-size:.75rem;color:var(--rc-muted)}
+.rc-status-hired,.rc-status-done,.rc-status-published{color:var(--rc-green);background:rgba(4,98,66,.08)}.rc-status-applied,.rc-status-offered,.rc-status-scheduled{background:rgba(233,181,33,.16);color:var(--rc-navy)}
+.rc-interview-list{display:grid;gap:10px;margin-top:12px}.rc-interview{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;padding:14px;border:1px solid var(--rc-border);border-radius:12px}.rc-interview>div:first-child{min-width:0;flex:1 1 230px}.rc-interview strong{font-size:.8125rem}.rc-interview small,.rc-history small{display:block;margin-top:6px;font-size:.6875rem;color:var(--rc-muted);overflow-wrap:anywhere}.rc-interview .rc-badge{margin-top:8px}
+.rc-history{display:grid;gap:12px;padding-left:20px;font-size:.75rem}.rc-history li{padding:8px 0 8px 6px;border-bottom:1px solid var(--rc-border)}.rc-document-link{justify-self:start;text-decoration:none}.recruitment-dialog a{color:var(--rc-green)}
+.recruitment-page .rc-filters{grid-template-columns:minmax(220px,2fr) minmax(150px,1fr) auto}.recruitment-page .rc-stats{gap:12px}.recruitment-page .rc-stat-card{min-height:116px}
+@media(max-width:640px){.recruitment-hero>.rc-actions{flex-wrap:wrap}.recruitment-hero>.rc-actions>.rc-button{flex:1 1 auto}.recruitment-page .rc-filters{grid-template-columns:minmax(0,1fr)}.rc-interview>.rc-actions{width:100%;justify-content:flex-end}}

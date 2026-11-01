@@ -267,9 +267,9 @@ export default function RoadmapEditorModal({
           <button
             className="roadmap-icon-button"
             type="button"
-            aria-label="Fermer"
+            aria-label="Fermer" title="Fermer le formulaire"
             onClick={onClose}
-            disabled={isSubmitting}
+            disabled={isSubmitting} aria-busy={isSubmitting}
           >
             <X size={20} />
           </button>
@@ -350,10 +350,10 @@ export default function RoadmapEditorModal({
               </div>
 
               <button
-                className="roadmap-add-line-button"
+                className="roadmap-add-line-button" title="Ajouter un objectif à la feuille de route"
                 type="button"
                 onClick={addItem}
-                disabled={isSubmitting}
+                disabled={isSubmitting} aria-busy={isSubmitting}
               >
                 <Plus size={16} />
                 <span>Ajouter une ligne</span>
@@ -368,9 +368,9 @@ export default function RoadmapEditorModal({
 
                     <button
                       type="button"
-                      aria-label="Supprimer la ligne"
+                      aria-label="Supprimer la ligne" title="Retirer cet objectif"
                       onClick={() => removeItem(item.localId)}
-                      disabled={isSubmitting}
+                      disabled={isSubmitting} aria-busy={isSubmitting}
                     >
                       <Trash2 size={16} />
                     </button>
@@ -453,16 +453,16 @@ export default function RoadmapEditorModal({
 
           <footer className="roadmap-modal-footer">
             <button
-              className="roadmap-cancel-button"
+              className="roadmap-cancel-button" title="Fermer sans enregistrer"
               type="button"
               onClick={onClose}
-              disabled={isSubmitting}
+              disabled={isSubmitting} aria-busy={isSubmitting}
             >
               Annuler
             </button>
 
             <button
-              className="roadmap-secondary-action"
+              className="roadmap-secondary-action" title="Enregistrer le brouillon sans le soumettre"
               type="submit"
               disabled={!canSubmit}
             >
@@ -477,7 +477,7 @@ export default function RoadmapEditorModal({
             </button>
 
             <button
-              className="roadmap-primary-button"
+              className="roadmap-primary-button" title="Enregistrer et soumettre pour validation"
               type="button"
               disabled={!canSubmit}
               onClick={() => {

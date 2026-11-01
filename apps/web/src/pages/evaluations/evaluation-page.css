@@ -2088,3 +2088,89 @@
       inset 14mm 1px 0 #e9b521 !important;
   }
 }
+
+/* Retour d’interaction des boutons — même charte, cibles tactiles 44 px. */
+@media screen {
+  :is(.evaluation-primary-button, .evaluation-secondary-button,
+      .evaluation-cancel-button, .evaluation-danger-button,
+      .evaluation-clear-button, .evaluation-card-actions button,
+      .evaluation-icon-button, .evaluations-pagination button,
+      .evaluation-tabs button, .evaluation-links-list button) {
+    box-sizing: border-box;
+    min-width: 44px;
+    min-height: 44px;
+    touch-action: manipulation;
+    transition: background-color 150ms ease, border-color 150ms ease,
+      box-shadow 150ms ease, transform 100ms ease;
+  }
+  .evaluation-card-actions { flex-wrap: wrap; gap: 8px; }
+  .evaluation-card-actions button, .evaluation-icon-button {
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    flex: 0 0 44px;
+  }
+  .evaluation-card-actions .evaluation-view-button {
+    background: var(--tenant-primary, #046242);
+    border-color: var(--tenant-primary, #046242);
+    color: #fff;
+    box-shadow: 0 2px 5px rgba(11, 37, 54, .12);
+  }
+  :is(.evaluation-primary-button, .evaluation-secondary-button,
+      .evaluation-cancel-button, .evaluation-danger-button,
+      .evaluation-clear-button, .evaluation-card-actions button,
+      .evaluation-icon-button, .evaluations-pagination button,
+      .evaluation-tabs button, .evaluation-links-list button):focus-visible {
+    outline: 3px solid var(--tenant-accent, #e9b521);
+    outline-offset: 3px;
+    box-shadow: 0 0 0 5px #0b2536;
+  }
+  :is(.evaluation-primary-button, .evaluation-secondary-button,
+      .evaluation-cancel-button, .evaluation-danger-button,
+      .evaluation-clear-button, .evaluation-card-actions button,
+      .evaluation-icon-button, .evaluations-pagination button,
+      .evaluation-tabs button, .evaluation-links-list button):not(:disabled):active {
+    transform: translateY(1px) scale(.96);
+    box-shadow: inset 0 2px 5px rgba(11, 37, 54, .22);
+  }
+  :is(.evaluation-card-actions button, .evaluation-icon-button,
+      .evaluations-pagination button, .evaluation-tabs button,
+      .evaluation-links-list button):disabled {
+    opacity: .6;
+    cursor: not-allowed;
+  }
+  .evaluation-view-status:empty { display: none; }
+  .evaluation-view-status { margin-block: 12px; color: var(--tenant-primary, #046242); font-size: .875rem; }
+  .evaluation-view-status > span { display: inline-flex; align-items: center; gap: 8px; }
+  .evaluation-view-error { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 14px; margin-block: 12px; border: 1px solid #efc8c0; background: #fff8f6; border-radius: 0 11px 0 11px; }
+  .evaluation-view-error p { flex: 1 1 100%; margin: 0; color: #9a382b; }
+  .evaluation-button-spinner { animation: evaluation-button-spin 800ms linear infinite; }
+}
+@media screen and (hover: hover) {
+  :is(.evaluation-primary-button, .evaluation-secondary-button,
+      .evaluation-cancel-button, .evaluation-danger-button,
+      .evaluation-clear-button, .evaluation-card-actions button,
+      .evaluation-icon-button, .evaluations-pagination button,
+      .evaluation-tabs button, .evaluation-links-list button):not(:disabled):hover {
+    box-shadow: 0 3px 9px rgba(11, 37, 54, .18);
+    border-color: var(--tenant-primary, #046242);
+  }
+  .evaluation-card-actions .evaluation-view-button:not(:disabled):hover {
+    background: var(--tenant-secondary, #0b2536);
+    border-color: var(--tenant-secondary, #0b2536);
+  }
+}
+@keyframes evaluation-button-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  .evaluation-button-spinner { animation: none; }
+  :is(.evaluation-primary-button, .evaluation-secondary-button,
+      .evaluation-cancel-button, .evaluation-danger-button,
+      .evaluation-clear-button, .evaluation-card-actions button,
+      .evaluation-icon-button, .evaluations-pagination button,
+      .evaluation-tabs button, .evaluation-links-list button) { transition: none; }
+  :is(.evaluation-primary-button, .evaluation-secondary-button,
+      .evaluation-cancel-button, .evaluation-danger-button,
+      .evaluation-clear-button, .evaluation-card-actions button,
+      .evaluation-icon-button, .evaluations-pagination button,
+      .evaluation-tabs button, .evaluation-links-list button):not(:disabled):active { transform: none; }
+}

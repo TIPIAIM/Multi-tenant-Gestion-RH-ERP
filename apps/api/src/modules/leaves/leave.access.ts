@@ -291,9 +291,9 @@ export function assertCanFinalReviewLeaveRequest(
   request: LeaveRequestDocument,
   actor: LeaveActor
 ): void {
-  if (actor.role !== "TENANT_ADMIN" && actor.role !== "RH_MANAGER") {
+  if (actor.role !== "TENANT_ADMIN") {
     throw new AppError(
-      "La décision finale est réservée à l'administration RH.",
+      "La décision finale est réservée à l’administrateur.",
       403,
       "LEAVE_FINAL_REVIEW_FORBIDDEN"
     );
@@ -383,4 +383,9 @@ export async function getAccessibleAgentIds(
     .exec()) as Array<{ _id: Types.ObjectId }>;
 
   return agents.map((agent: { _id: Types.ObjectId }) => agent._id);
+}
+
+export function assertCanRHReviewLeaveRequest(request: LeaveRequestDocument, actor: LeaveActor): void {
+  if (actor.role !== "RH_MANAGER") throw new AppError("Cette validation est réservée aux RH.", 403, "LEAVE_RH_REVIEW_FORBIDDEN");
+  if (sameId(actor.agentId, request.agentId)) throw new AppError("Vous ne pouvez pas valider votre propre demande.", 403, "LEAVE_SELF_REVIEW_FORBIDDEN");
 }

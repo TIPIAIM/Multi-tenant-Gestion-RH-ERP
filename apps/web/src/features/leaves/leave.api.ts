@@ -152,3 +152,8 @@ export async function getLeaveActivities(
 
   return response.data.data.activities;
 }
+
+export async function reviewLeaveByRH(requestId: string, input: ReviewLeaveRequestInput): Promise<LeaveRequest> {
+  const response = await api.post<ApiSuccess<{ leaveRequest: LeaveRequest }>>(`/leaves/requests/${requestId}/rh-review`, input);
+  return response.data.data.leaveRequest;
+}

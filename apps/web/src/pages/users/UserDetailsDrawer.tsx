@@ -46,7 +46,7 @@ export default function UserDetailsDrawer({ user, onClose }: Props) {
       <button
         className="users-drawer-backdrop"
         type="button"
-        aria-label="Fermer"
+        aria-label="Fermer" title="Fermer cette fenêtre"
         onClick={onClose}
       />
 
@@ -58,7 +58,7 @@ export default function UserDetailsDrawer({ user, onClose }: Props) {
             <span>{user.email}</span>
           </div>
 
-          <button type="button" onClick={onClose} aria-label="Fermer">
+          <button type="button" onClick={onClose} aria-label="Fermer" title="Fermer cette fenêtre">
             <X size={20} />
           </button>
         </header>

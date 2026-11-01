@@ -130,6 +130,20 @@ async function resolveAgentByUser(input: {
   tenantId: Types.ObjectId;
   user: LeanUserForTask;
 }): Promise<LeanAgentForTask | null> {
+  // Le rattachement explicite du compte fait autorité. Un lien invalide
+  // ne doit jamais déclencher une recherche vers le dossier d'une autre personne.
+  if (input.user.agentId) {
+    return (await (AgentModel as any)
+      .findOne({
+        _id: input.user.agentId,
+        tenantId: input.tenantId,
+        employmentStatus: "ACTIVE",
+      })
+      .select("_id firstName lastName fullName email directionId serviceId")
+      .lean()
+      .exec()) as LeanAgentForTask | null;
+  }
+
   const byUserId = (await (AgentModel as any)
     .findOne({
       tenantId: input.tenantId,
@@ -607,15 +621,8 @@ export function assertCanCreateTaskInScope(
     serviceId?: string | null;
   },
 ): void {
-  if (actor.role === "RH_MANAGER") {
-    throw new AppError(
-      "Le rôle RH dispose d'un accès en lecture seule aux tâches des services.",
-      403,
-      "TASK_RH_READ_ONLY",
-    );
-  }
-
-  if (actor.role === "TENANT_ADMIN") return;
+  // RH : création globale dans l'entreprise, sans droit de modification.
+  if (actor.role === "TENANT_ADMIN" || actor.role === "RH_MANAGER") return;
 
   ensureActorConfigured(actor);
 
@@ -659,7 +666,12 @@ export function assertCanAssignTaskToAgent(
     directionId?: Types.ObjectId | string | null;
     serviceId?: Types.ObjectId | string | null;
   },
+  operation: "CREATE" | "UPDATE" = "UPDATE",
 ): void {
+  // L'exception RH vaut seulement lors d'une création. Les appels existants
+  // sans contexte continuent à refuser une réattribution par les RH.
+  if (actor.role === "RH_MANAGER" && operation === "CREATE") return;
+
   if (actor.role === "RH_MANAGER") {
     throw new AppError(
       "Le rôle RH ne peut pas attribuer ou modifier une tâche.",

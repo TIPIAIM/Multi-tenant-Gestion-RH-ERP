@@ -1,3 +1,4 @@
+import { taskNotificationRouter } from "./task-notifications.js";
 import { requireTenantFeature } from "../../middlewares/feature.middleware.js";
 import { Router } from "express";
 import { requireAuth } from "../../middlewares/auth.middleware.js";
@@ -35,8 +36,11 @@ taskRouter.use(requireTenantFeature("tasks"));
  * DIRECTION : lecture/écriture dans sa Direction.
  * SERVICE_MANAGER : lecture/écriture dans son Service.
  * AGENT : lecture de ses propres tâches + progression + dépôt KPI.
- * RH_MANAGER : lecture globale uniquement ; téléchargement des preuves KPI autorisé.
+ * RH_MANAGER : création/attribution initiale globale ; autres droits conservés.
  */
+// Avant /:id pour éviter de traiter notifications comme un identifiant.
+taskRouter.use("/notifications", taskNotificationRouter);
+
 taskRouter.get("/scope", getTaskScopeController);
 taskRouter.get("/stats", getTaskStatsController);
 taskRouter.get("/board", getTaskBoardController);

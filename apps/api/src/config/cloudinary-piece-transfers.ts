@@ -17,7 +17,7 @@ import {
  * Ce fichier est volontairement séparé de `cloudinary.ts`.
  *
  * Le fichier `cloudinary.ts` existant est déjà utilisé par les autres modules
- * FADES-RH et ne doit pas être remplacé/modifié pour intégrer le module
+ *  et ne doit pas être remplacé/modifié pour intégrer le module
  * Communications.
  */
 

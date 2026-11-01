@@ -15,10 +15,15 @@ export function useTaskNotificationEvents(enabled: boolean): void {
       api.getUri({ url: "/tasks/notifications/events" }), { withCredentials: true },
     );
     stream?.addEventListener("tasks-changed", refresh);
+    // En cas d'authentification par en-tête ou de proxy sans SSE,
+    // la requête protégée périodique du composant assure le relais.
+    const failed = () => { stream?.close(); refresh(); };
+    stream?.addEventListener("error", failed);
     const visible = () => { if (document.visibilityState === "visible") refresh(); };
     document.addEventListener("visibilitychange", visible);
     return () => {
       stream?.removeEventListener("tasks-changed", refresh);
+      stream?.removeEventListener("error", failed);
       stream?.close();
       document.removeEventListener("visibilitychange", visible);
     };

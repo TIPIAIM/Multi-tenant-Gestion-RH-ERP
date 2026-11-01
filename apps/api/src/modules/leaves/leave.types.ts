@@ -15,6 +15,7 @@ export const leaveRequestStatuses = [
   "DRAFT",
   "SUBMITTED",
   "MANAGER_APPROVED",
+  "RH_APPROVED",
   "APPROVED",
   "REJECTED",
   "CANCELLED",
@@ -30,6 +31,7 @@ export const leaveActivityActions = [
   "UPDATED",
   "SUBMITTED",
   "MANAGER_APPROVED",
+  "RH_APPROVED",
   "APPROVED",
   "REJECTED",
   "CANCELLED",
@@ -37,6 +39,7 @@ export const leaveActivityActions = [
   "BALANCE_ADJUSTED",
   "BALANCE_CONSUMED",
   "BALANCE_RESTORED",
+  "BALANCE_ACCRUED",
 ] as const;
 
 export type LeaveType = (typeof leaveTypes)[number];
@@ -53,6 +56,13 @@ export interface LeaveReview {
 }
 
 export interface LeaveBalance {
+  accrualVersion?: number;
+  accrualAsOfDate?: string;
+  accrualStartDate?: string;
+  legacySnapshot?: {
+    openingDays: number; entitledDays: number; carriedOverDays: number;
+    adjustmentDays: number; consumedDays: number;
+  };
   tenantId: Types.ObjectId;
   agentId: Types.ObjectId;
   calendarYear: number;
@@ -68,6 +78,7 @@ export interface LeaveBalance {
 }
 
 export interface LeaveRequest {
+  balanceCalendarYear?: number;
   tenantId: Types.ObjectId;
   agentId: Types.ObjectId;
   directionId: Types.ObjectId;
@@ -80,6 +91,7 @@ export interface LeaveRequest {
   status: LeaveRequestStatus;
   submittedAt?: Date;
   managerReview?: LeaveReview;
+  rhReview?: LeaveReview;
   finalReview?: LeaveReview;
   cancelledAt?: Date;
   cancelledByUserId?: Types.ObjectId;
@@ -118,6 +130,12 @@ export type PublicLeaveAgent = {
 };
 
 export type PublicLeaveBalance = {
+  reservedDays?: number;
+  bookAvailableDays?: number;
+  monthlyAccruals?: { month: string; days: number }[];
+  accrualStartDate?: string;
+  accrualAsOfDate?: string;
+
   id: string;
   agentId: string;
   agent?: PublicLeaveAgent;
@@ -156,6 +174,7 @@ export type PublicLeaveRequest = {
   status: LeaveRequestStatus;
   submittedAt?: string;
   managerReview?: PublicLeaveReview;
+  rhReview?: PublicLeaveReview;
   finalReview?: PublicLeaveReview;
   cancelledAt?: string;
   cancelledByUserId?: string;

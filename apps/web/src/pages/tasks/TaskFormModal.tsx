@@ -533,7 +533,7 @@ export default function TaskFormModal({
             aria-label="Fermer"
             onClick={() => { if (!isSubmitting && !savingRef.current) onClose(); }}
             disabled={isSubmitting}
-          >
+           aria-busy={isSubmitting}>
             <X size={20} />
           </button>
         </header>
@@ -1132,7 +1132,7 @@ export default function TaskFormModal({
               type="button"
               onClick={() => { if (!isSubmitting && !savingRef.current) onClose(); }}
               disabled={isSubmitting}
-            >
+             aria-busy={isSubmitting}>
               Annuler
             </button>
 

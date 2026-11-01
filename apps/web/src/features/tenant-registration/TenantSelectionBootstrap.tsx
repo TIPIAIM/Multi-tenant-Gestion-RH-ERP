@@ -23,7 +23,7 @@ export default function TenantSelectionBootstrap() {
 
     void selectTenantWorkspace(tenant).catch((error) => {
       console.error(
-        "[FADES-RH] Impossible de confirmer la sélection du tenant.",
+        "[ Impossible de confirmer la sélection du tenant.",
         error,
       );
     });

@@ -2,9 +2,16 @@ import PayrollShareDialog from "./PayrollShareDialog";
 import PayslipDocument from "./PayslipDocument";
 import { usePayrollDialog } from "./payroll-dialog";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import {
   Check,
+  Clock3,
+  BadgeCheck,
   CreditCard,
   Share2,
   Pencil,
@@ -37,6 +44,7 @@ import {
 } from "./payroll.api";
 import "./payroll.css";
 import "./payroll-table.css";
+import "./payroll-ui.css";
 const statusLabels = {
   DRAFT: "Brouillon",
   APPROVED: "Validé",
@@ -131,6 +139,64 @@ export default function PayrollPage() {
     if (query.data && query.data.page !== view.page)
       setView((current) => ({ ...current, page: query.data.page }));
   }, [query.data, view.page]);
+  const statCards: {
+    status: PayrollListFilters["status"];
+    label: string;
+    description: string;
+    icon: typeof FileText;
+  }[] = [
+    {
+      status: "",
+      label: "Tous les bulletins",
+      description: "Selon la période et les filtres",
+      icon: FileText,
+    },
+    ...(manager
+      ? [
+          {
+            status: "DRAFT" as const,
+            label: "Brouillons",
+            description: "À compléter ou à valider",
+            icon: Pencil,
+          },
+        ]
+      : []),
+    {
+      status: "APPROVED",
+      label: "Validés",
+      description: "En attente de paiement",
+      icon: Clock3,
+    },
+    {
+      status: "PAID",
+      label: "Payés",
+      description: "Paiement enregistré",
+      icon: BadgeCheck,
+    },
+  ];
+  const statistics = useQueries({
+    queries: statCards.map((card) => ({
+      queryKey: [
+        ...key,
+        "statistics",
+        {
+          period: view.period,
+          search: view.search,
+          currency: view.currency,
+          status: card.status,
+        },
+      ],
+      queryFn: ({ signal }: { signal: AbortSignal }) =>
+        listPayroll(
+          view.period,
+          1,
+          { ...view, status: card.status, limit: 20 },
+          signal,
+        ),
+      enabled: Boolean(user),
+      staleTime: 30_000,
+    })),
+  });
   const items = query.data?.items ?? [];
   const total = query.data?.total ?? 0;
   const limit = query.data?.limit ?? view.limit;
@@ -192,16 +258,16 @@ export default function PayrollPage() {
   }, [mutation.isPending, documentBusy]);
   usePayrollDialog(Boolean(selected || confirmation), closeDialog);
   return (
-    <div className="payroll-page">
+    <div className="payroll-page" aria-label="Gestion de la paie">
       <header className="payroll-hero payroll-table-hero">
         <div>
           <p className="payroll-eyebrow">GESTION DES RESSOURCES HUMAINES</p>
           <h2>
-            Gestion de <span>Paie.</span>
+            Gestion de la <span>paie</span>
           </h2>
           <p className="payroll-hero-description">
             {manager
-              ? " Consultez et gérez les bulletins de vos collaborateurs."
+              ? "Préparez les bulletins et suivez les paiements."
               : "Consultez vos bulletins validés et vos paiements."}
           </p>
         </div>
@@ -214,6 +280,7 @@ export default function PayrollPage() {
             title="Actualiser les bulletins"
             aria-label="Actualiser les bulletins"
             data-ui-action="compact"
+            aria-busy={query.isFetching}
           >
             <RefreshCw
               size={18}
@@ -234,6 +301,36 @@ export default function PayrollPage() {
         </div>
       </header>
       <section
+        className={`payroll-stats-grid${manager ? "" : " is-personal"}`}
+        aria-label="Suivi des bulletins"
+      >
+        {statCards.map((card, index) => {
+          const result = statistics[index];
+          const Icon = card.icon;
+          return (
+            <button
+              key={card.status || "all"}
+              type="button"
+              className="payroll-stat-card"
+              aria-pressed={view.status === card.status}
+              aria-label={`Afficher : ${card.label.toLowerCase()}`}
+              onClick={() => updateView({ status: card.status })}
+            >
+              <span className="payroll-stat-icon">
+                <Icon size={18} aria-hidden="true" />
+              </span>
+              <span className="payroll-stat-content">
+                <span>{card.label}</span>
+                <strong aria-live="polite">{result?.data?.total ?? "—"}</strong>
+                <small>
+                  {result?.isError ? "Compteur indisponible" : card.description}
+                </small>
+              </span>
+            </button>
+          );
+        })}
+      </section>
+      <section
         className="payroll-filter-panel"
         aria-labelledby="payroll-filter-title"
       >
@@ -250,7 +347,7 @@ export default function PayrollPage() {
         </div>
         <div className="payroll-filters">
           <label className="payroll-search-field">
-            <span className="payroll-sr-only">Rechercher un bulletin</span>
+            <span className="payroll-search-label">Rechercher un bulletin</span>
             <Search size={18} aria-hidden="true" />
             <input
               type="search"
@@ -439,6 +536,7 @@ export default function PayrollPage() {
                         <button
                           type="button"
                           className="payroll-person-link"
+                          aria-haspopup="dialog"
                           onClick={() => setSelected(row)}
                         >
                           {row.agentName}
@@ -493,12 +591,12 @@ export default function PayrollPage() {
                           <button
                             type="button"
                             className="payroll-view-button"
+                            aria-haspopup="dialog"
                             onClick={() => setSelected(row)}
                             aria-label={`Voir le bulletin de ${row.agentName}`}
                             title="Voir le bulletin"
                           >
-                            <Eye size={17} />
-                            <span>Voir</span>
+                            <Eye size={20} aria-hidden="true" />
                           </button>
                           {manager &&
                             ["APPROVED", "PAID"].includes(row.status) && (
@@ -706,10 +804,15 @@ export default function PayrollPage() {
                 type="button"
                 disabled={mutation.isPending}
                 onClick={() => setConfirmation(null)}
+                aria-busy={mutation.isPending}
               >
                 Retour
               </button>
-              <button className="payroll-primary" disabled={mutation.isPending}>
+              <button
+                className="payroll-primary"
+                disabled={mutation.isPending}
+                aria-busy={mutation.isPending}
+              >
                 Confirmer
               </button>
             </div>
@@ -962,10 +1065,19 @@ function PayrollEditor({
           <p role="alert">{error || getApiErrorMessage(mutation.error)}</p>
         )}
         <div className="payroll-actions">
-          <button type="button" disabled={mutation.isPending} onClick={onClose}>
+          <button
+            type="button"
+            disabled={mutation.isPending}
+            onClick={onClose}
+            aria-busy={mutation.isPending}
+          >
             Annuler
           </button>
-          <button className="payroll-primary" disabled={mutation.isPending}>
+          <button
+            className="payroll-primary"
+            disabled={mutation.isPending}
+            aria-busy={mutation.isPending}
+          >
             Enregistrer le brouillon
           </button>
         </div>

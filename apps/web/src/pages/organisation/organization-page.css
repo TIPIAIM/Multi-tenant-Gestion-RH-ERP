@@ -857,3 +857,28 @@
       transition-duration: 0.01ms !important;
     }
   }
+/* Harmonisation des interactions : écran uniquement, styles initiaux conservés. */
+@media screen {
+  :is(button[class*="organization-"], button[class*="organizations-"], [class*="organization-"] button, [class*="organizations-"] button):not([class*="backdrop"]) { box-sizing: border-box; min-width: 44px; min-height: 44px; touch-action: manipulation; transition: box-shadow 150ms ease, background-color 150ms ease, transform 100ms ease; }
+  :is(button[class*="organization-"], button[class*="organizations-"], [class*="organization-"] button, [class*="organizations-"] button):not([class*="backdrop"]):focus-visible { outline: 3px solid var(--tenant-accent, #e9b521); outline-offset: 3px; box-shadow: 0 0 0 5px #0b2536; }
+  :is(button[class*="organization-"], button[class*="organizations-"], [class*="organization-"] button, [class*="organizations-"] button):not([class*="backdrop"]):not(:disabled):active { transform: translateY(1px) scale(.97); box-shadow: inset 0 2px 5px rgba(11,37,54,.22); }
+  :is(button[class*="organization-"], button[class*="organizations-"], [class*="organization-"] button, [class*="organizations-"] button):not([class*="backdrop"]):disabled { cursor: not-allowed; opacity: .58; transform: none; }
+  :is(.organization-icon-button, .organization-card-actions button, .organization-record-actions button) { width: 44px; height: 44px; padding: 0; flex: 0 0 auto; }
+  .organization-card-actions, .organization-record-actions { gap: 8px; flex-wrap: wrap; }
+  .organization-card-actions .organization-view-button, .organization-record-actions .organization-view-button { color: #fff; background: var(--tenant-primary, #046242); border-color: var(--tenant-primary, #046242); }
+  .module-view-status:empty { display: none; }
+  .module-view-status { margin-block: 12px; color: var(--tenant-primary, #046242); font-size: .875rem; }
+  .module-view-error { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 14px; margin-block: 12px; border: 1px solid #efc8c0; background: #fff8f6; }
+  .module-view-error p { flex: 1 1 100%; margin: 0; color: #9a382b; }
+  .module-button-spinner { animation: module-button-spin 800ms linear infinite; }
+}
+@media screen and (hover: hover) {
+  :is(button[class*="organization-"], button[class*="organizations-"], [class*="organization-"] button, [class*="organizations-"] button):not([class*="backdrop"]):not(:disabled):hover { box-shadow: 0 3px 9px rgba(11,37,54,.18); }
+  .organization-card-actions .organization-view-button:not(:disabled):hover, .organization-record-actions .organization-view-button:not(:disabled):hover { background: var(--tenant-secondary, #0b2536); border-color: var(--tenant-secondary, #0b2536); }
+}
+@keyframes module-button-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  :is(button[class*="organization-"], button[class*="organizations-"], [class*="organization-"] button, [class*="organizations-"] button):not([class*="backdrop"]) { transition: none; }
+  :is(button[class*="organization-"], button[class*="organizations-"], [class*="organization-"] button, [class*="organizations-"] button):not([class*="backdrop"]):not(:disabled):active, :is(button[class*="organization-"], button[class*="organizations-"], [class*="organization-"] button, [class*="organizations-"] button):not([class*="backdrop"]):not(:disabled):hover { transform: none; }
+  .module-button-spinner { animation: none; }
+}

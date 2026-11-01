@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import {
   Award,
   BadgeCheck,
@@ -173,6 +173,13 @@ export default function EvaluationsPage() {
   const [selectedEvaluationId, setSelectedEvaluationId] = useState<
     string | null
   >(null);
+  const viewTriggerRef = useRef<HTMLButtonElement | null>(null);
+
+  function closeEvaluationDetails(): void {
+    setSelectedEvaluationId(null);
+    window.requestAnimationFrame(() => viewTriggerRef.current?.focus());
+  }
+
   const [evaluationToDelete, setEvaluationToDelete] =
     useState<Evaluation | null>(null);
 
@@ -793,10 +800,19 @@ export default function EvaluationsPage() {
               <div className="evaluation-card-actions">
                 <button
                   type="button"
-                  onClick={() => setSelectedEvaluationId(evaluation.id)}
-                  title="Ouvrir l’évaluation"
-                 aria-label="Ouvrir l’évaluation">
-                  <Eye size={17} />
+                  className="evaluation-view-button"
+                  onClick={(event) => {
+                    viewTriggerRef.current = event.currentTarget;
+                    setSelectedEvaluationId(evaluation.id);
+                  }}
+                  disabled={Boolean(selectedEvaluationId && selectedEvaluationQuery.isPending)}
+                  aria-busy={selectedEvaluationId === evaluation.id && selectedEvaluationQuery.isPending}
+                  aria-haspopup="dialog"
+                  title="Consulter l’évaluation"
+                  aria-label={`Consulter l’évaluation ${evaluation.reference}`}>
+                  {selectedEvaluationId === evaluation.id && selectedEvaluationQuery.isPending
+                    ? <LoaderCircle size={20} className="evaluation-button-spinner" aria-hidden="true" />
+                    : <Eye size={20} strokeWidth={2} aria-hidden="true" />}
                 </button>
 
                 {canManageEvaluation && (
@@ -875,7 +891,28 @@ export default function EvaluationsPage() {
         />
       )}
 
-      {selectedEvaluationQuery.data && (
+      <div className="evaluation-view-status" role="status" aria-live="polite" aria-atomic="true">
+        {selectedEvaluationId && selectedEvaluationQuery.isPending && (
+          <span><LoaderCircle size={18} className="evaluation-button-spinner" aria-hidden="true" /> Ouverture de l’évaluation…</span>
+        )}
+      </div>
+      {selectedEvaluationId && selectedEvaluationQuery.isPending && (
+        <button className="evaluation-cancel-button" type="button" onClick={closeEvaluationDetails}>
+          Annuler l’ouverture
+        </button>
+      )}
+      {selectedEvaluationId && selectedEvaluationQuery.isError && !selectedEvaluationQuery.data && (
+        <div className="evaluation-view-error" role="alert">
+          <p>Impossible d’ouvrir l’évaluation : {getApiErrorMessage(selectedEvaluationQuery.error)}</p>
+          <button className="evaluation-secondary-button" type="button"
+            disabled={selectedEvaluationQuery.isFetching}
+            onClick={() => void selectedEvaluationQuery.refetch()}>
+            {selectedEvaluationQuery.isFetching ? "Chargement…" : "Réessayer"}
+          </button>
+          <button className="evaluation-cancel-button" type="button" onClick={closeEvaluationDetails}>Fermer</button>
+        </div>
+      )}
+      {selectedEvaluationId && selectedEvaluationQuery.data && (
         <EvaluationDetailsDrawer
           evaluation={selectedEvaluationQuery.data}
           currentRole={role}
@@ -886,7 +923,7 @@ export default function EvaluationsPage() {
             recomputeMutation.isPending
           }
           errorMessage={actionError}
-          onClose={() => setSelectedEvaluationId(null)}
+          onClose={closeEvaluationDetails}
           onSubmitSelfReview={async (input) => {
             await selfReviewMutation.mutateAsync({
               id: selectedEvaluationQuery.data.id,

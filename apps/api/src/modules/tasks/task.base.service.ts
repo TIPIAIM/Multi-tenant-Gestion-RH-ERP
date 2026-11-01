@@ -718,9 +718,11 @@ function buildTaskFilter(input: {
     due: string;
   };
 }): MongoFilter {
+  // Le périmètre serveur reste indépendant des filtres de la page.
+  // Un paramètre assignedToAgentId ne peut que restreindre ce périmètre.
   const filter: MongoFilter = {
     tenantId: input.tenant._id,
-    ...getTaskScopeFilter(input.actor),
+    $and: [getTaskScopeFilter(input.actor)],
   };
 
   if (input.query.status) {
@@ -784,7 +786,7 @@ export async function createTask(
       assignedToAgentId: input.assignedToAgentId,
     });
 
-  assertCanAssignTaskToAgent(actor, assignedAgent);
+  assertCanAssignTaskToAgent(actor, assignedAgent, "CREATE");
 
   const startDate = cleanOptionalDate(input.startDate);
   const dueDate = cleanOptionalDate(input.dueDate);
@@ -943,17 +945,6 @@ export async function getTaskBoard(
     query,
   });
 
-  const tasks = await (TaskModel as any)
-    .find(filter)
-    .select("+kpis.file.storagePath")
-    .sort({
-      dueDate: 1,
-      priority: -1,
-      updatedAt: -1,
-    })
-    .limit(query.limit)
-    .exec();
-
   const columns: Record<TaskStatus, PublicTask[]> = {
     TODO: [],
     IN_PROGRESS: [],
@@ -962,11 +953,20 @@ export async function getTaskBoard(
     CANCELLED: [],
   };
 
-  tasks.forEach((task: TaskDocument) => {
-    columns[task.status].push(
-      serializeTask(task, actor),
-    );
-  });
+  // Trier chaque colonne avant sa limite : une ancienne tâche tout juste
+  // terminée ne doit pas être écartée par les créations des autres colonnes.
+  await Promise.all((Object.keys(columns) as TaskStatus[]).map(async (status) => {
+    const sort: Record<string, 1 | -1> = status === "COMPLETED"
+      ? { completedAt: -1, updatedAt: -1, createdAt: -1, _id: -1 }
+      : { updatedAt: -1, createdAt: -1, _id: -1 };
+    const tasks = await (TaskModel as any)
+      .find({ $and: [filter, { status }] })
+      .select("+kpis.file.storagePath")
+      .sort(sort)
+      .limit(query.limit)
+      .exec();
+    columns[status] = tasks.map((task: TaskDocument) => serializeTask(task, actor));
+  }));
 
   return { columns };
 }

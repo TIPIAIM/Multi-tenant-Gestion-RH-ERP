@@ -9,6 +9,8 @@ import {
 } from "../../middlewares/tenant-context.middleware.js";
 import {
   cancelLeaveRequestController,
+  listLeavePopupsController,
+  rhReviewLeaveRequestController,
   createLeaveRequestController,
   finalReviewLeaveRequestController,
   getLeaveDashboardController,
@@ -29,6 +31,9 @@ export const leaveRouter = Router();
 leaveRouter.use(requireAuth);
 leaveRouter.use(tenantContextMiddleware);
 leaveRouter.use(requireTenantFeature("leave"));
+
+leaveRouter.get("/notifications/popups", requirePermissions("LEAVE_VIEW"), listLeavePopupsController);
+leaveRouter.post("/requests/:id/rh-review", requirePermissions("LEAVE_MANAGE"), rhReviewLeaveRequestController);
 
 leaveRouter.get(
   "/dashboard",

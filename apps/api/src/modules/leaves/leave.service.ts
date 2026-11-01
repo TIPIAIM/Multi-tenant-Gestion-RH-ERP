@@ -11,6 +11,7 @@ import {
   assertCanCreateLeaveForAgent,
   assertCanEditLeaveRequest,
   assertCanFinalReviewLeaveRequest,
+  assertCanRHReviewLeaveRequest,
   assertCanManageLeaveBalances,
   assertCanManagerReviewLeaveRequest,
   assertCanReadLeaveRequest,
@@ -54,6 +55,11 @@ import type {
   PublicLeaveReview,
   LeaveDashboard,
 } from "./leave.types.js";
+
+import { annualAccrual } from "./leave.accrual.js";
+import { reservedAnnualLeave, synchronizeAnnualLeave, withLeaveBalanceTransaction } from "./leave.accrual.service.js";
+
+import { recordLeavePopup } from "./leave.notification.js";
 
 const balanceDeductingLeaveTypes: readonly LeaveType[] = [
   "ANNUAL_LEAVE",
@@ -163,6 +169,7 @@ function serializeRequest(input: {
     status: request.status,
     submittedAt: request.submittedAt?.toISOString(),
     managerReview: serializeReview(request.managerReview),
+    rhReview: serializeReview(request.rhReview),
     finalReview: serializeReview(request.finalReview),
     cancelledAt: request.cancelledAt?.toISOString(),
     cancelledByUserId:
@@ -194,10 +201,27 @@ function serializeBalance(input: {
     adjustmentDays: balance.adjustmentDays,
     consumedDays: balance.consumedDays,
     availableDays: calculateAvailableDays(balance),
+    accrualStartDate: balance.accrualStartDate,
+    accrualAsOfDate: balance.accrualVersion === 1 ? getConakryDateKey() : undefined,
     updatedByUserId: balance.updatedByUserId.toString(),
     createdAt: balance.createdAt?.toISOString(),
     updatedAt: balance.updatedAt?.toISOString(),
   };
+}
+
+async function decorateAnnualBalance(
+  tenant: TenantDocument, balance: PublicLeaveBalance, session?: ClientSession,
+): Promise<PublicLeaveBalance> {
+  if (balance.leaveType !== "ANNUAL_LEAVE" || !balance.accrualStartDate) return balance;
+  const currentYear = getCalendarYear(getConakryDateKey());
+  const reserved = balance.calendarYear === currentYear
+    ? await reservedAnnualLeave(tenant, new Types.ObjectId(balance.agentId), session) : 0;
+  const agent = await AgentModel.findOne({ _id: balance.agentId, tenantId: tenant._id })
+    .select("employmentEndDate").session(session ?? null).lean().exec();
+  const earned = annualAccrual(balance.accrualStartDate, balance.calendarYear, getConakryDateKey(),
+    agent?.employmentEndDate ? getConakryDateKey(new Date(agent.employmentEndDate)) : undefined);
+  return { ...balance, reservedDays: reserved, bookAvailableDays: balance.availableDays,
+    availableDays: balance.availableDays - reserved, monthlyAccruals: earned.monthlyAccruals };
 }
 
 function serializeActivity(activity: {
@@ -438,12 +462,9 @@ async function hydrateBalances(
     });
   });
 
-  return balances.map((balance) =>
-    serializeBalance({
-      balance,
-      agent: byId.get(balance.agentId.toString()),
-    }),
-  );
+  return Promise.all(balances.map(balance => decorateAnnualBalance(tenant,
+    serializeBalance({ balance, agent: byId.get(balance.agentId.toString()) }),
+  )));
 }
 
 async function assertNoOverlap(input: {
@@ -458,7 +479,7 @@ async function assertNoOverlap(input: {
     tenantId: input.tenant._id,
     agentId: input.agentId,
     status: {
-      $in: ["SUBMITTED", "MANAGER_APPROVED", "APPROVED"],
+      $in: ["SUBMITTED", "MANAGER_APPROVED", "RH_APPROVED", "APPROVED"],
     },
     startDate: { $lte: input.endDate },
     endDate: { $gte: input.startDate },
@@ -494,7 +515,7 @@ async function getBalanceForRequestOrThrow(input: {
   const query = LeaveBalanceModel.findOne({
     tenantId: input.tenant._id,
     agentId: input.request.agentId,
-    calendarYear: getCalendarYear(input.request.startDate),
+    calendarYear: input.request.balanceCalendarYear ?? getCalendarYear(input.request.startDate),
     leaveType: input.request.leaveType,
   });
 
@@ -517,6 +538,7 @@ async function getBalanceForRequestOrThrow(input: {
 
 async function assertBalanceAvailable(input: {
   tenant: TenantDocument;
+  actor: LeaveActor;
   request: LeaveRequestDocument;
   session?: ClientSession;
 }): Promise<void> {
@@ -524,10 +546,12 @@ async function assertBalanceAvailable(input: {
     return;
   }
 
-  const balance = await getBalanceForRequestOrThrow(input);
+  if (!input.session) throw new Error("Le contrôle du solde requiert une transaction.");
+  const balance = await synchronizeAnnualLeave(input.tenant, input.actor, input.request.agentId, input.session);
+  const reserved = await reservedAnnualLeave(input.tenant, input.request.agentId, input.session, input.request._id);
 
   if (
-    calculateAvailableDays(balance) <
+    calculateAvailableDays(balance) - reserved <
     input.request.requestedDays
   ) {
     throw new AppError(
@@ -669,70 +693,70 @@ export async function updateLeaveRequest(
   requestId: string,
   input: UpdateLeaveRequestInput,
 ): Promise<PublicLeaveRequest> {
-  const request = await getRequestOrThrow(tenant, requestId);
+  const target = await getRequestOrThrow(tenant, requestId);
+  assertCanEditLeaveRequest(target, actor);
+  await withLeaveBalanceTransaction(tenant, target.agentId, async session => {
+    const request = await getRequestOrThrow(tenant, requestId, session);
 
-  assertCanEditLeaveRequest(request, actor);
+    assertCanEditLeaveRequest(request, actor);
 
-  const startDate = input.startDate ?? request.startDate;
-  const endDate = input.endDate ?? request.endDate;
+    const startDate = input.startDate ?? request.startDate;
+    const endDate = input.endDate ?? request.endDate;
 
-  assertLeaveDateRange({ startDate, endDate });
+    assertLeaveDateRange({ startDate, endDate });
 
-  const requestedDays = calculateWorkingDays({
-    startDate,
-    endDate,
-  });
-
-  const changes: string[] = [];
-
-  if (input.leaveType && input.leaveType !== request.leaveType) {
-    request.leaveType = input.leaveType;
-    changes.push("Type d'absence modifié");
-  }
-
-  if (startDate !== request.startDate) {
-    request.startDate = startDate;
-    changes.push("Date de début modifiée");
-  }
-
-  if (endDate !== request.endDate) {
-    request.endDate = endDate;
-    changes.push("Date de fin modifiée");
-  }
-
-  if (requestedDays !== request.requestedDays) {
-    request.requestedDays = requestedDays;
-    changes.push("Nombre de jours recalculé");
-  }
-
-  if (
-    input.reason !== undefined &&
-    input.reason.trim() !== request.reason
-  ) {
-    request.reason = input.reason.trim();
-    changes.push("Motif modifié");
-  }
-
-  request.lastUpdatedByUserId = actor.userId;
-  await request.save();
-
-  if (changes.length) {
-    await recordActivity({
-      tenant,
-      leaveRequestId: request._id,
-      agentId: request.agentId,
-      actor,
-      action: "UPDATED",
-      summary: changes.join(" · "),
+    const requestedDays = calculateWorkingDays({
+      startDate,
+      endDate,
     });
-  }
 
-  const agent = await getAgentSnapshotOrThrow(
-    tenant,
-    request.agentId,
-  );
+    const changes: string[] = [];
 
-  return serializeRequest({ request, agent });
+    if (input.leaveType && input.leaveType !== request.leaveType) {
+      request.leaveType = input.leaveType;
+      changes.push("Type d'absence modifié");
+    }
+
+    if (startDate !== request.startDate) {
+      request.startDate = startDate;
+      changes.push("Date de début modifiée");
+    }
+
+    if (endDate !== request.endDate) {
+      request.endDate = endDate;
+      changes.push("Date de fin modifiée");
+    }
+
+    if (requestedDays !== request.requestedDays) {
+      request.requestedDays = requestedDays;
+      changes.push("Nombre de jours recalculé");
+    }
+
+    if (
+      input.reason !== undefined &&
+      input.reason.trim() !== request.reason
+    ) {
+      request.reason = input.reason.trim();
+      changes.push("Motif modifié");
+    }
+
+    request.lastUpdatedByUserId = actor.userId;
+    await request.save({ session });
+
+    if (changes.length) {
+      await recordActivity({
+        tenant,
+        leaveRequestId: request._id,
+        agentId: request.agentId,
+        actor,
+        session,
+        action: "UPDATED",
+        summary: changes.join(" · "),
+      });
+    }
+
+  });
+  return getLeaveRequestById(tenant, actor, requestId);
 }
 
 export async function submitLeaveRequest(
@@ -740,49 +764,51 @@ export async function submitLeaveRequest(
   actor: LeaveActor,
   requestId: string,
 ): Promise<PublicLeaveRequest> {
-  const request = await getRequestOrThrow(tenant, requestId);
+  const target = await getRequestOrThrow(tenant, requestId);
+  assertCanSubmitLeaveRequest(target, actor);
+  await withLeaveBalanceTransaction(tenant, target.agentId, async session => {
+    const request = await getRequestOrThrow(tenant, requestId, session);
 
-  assertCanSubmitLeaveRequest(request, actor);
+    assertCanSubmitLeaveRequest(request, actor);
 
-  if (request.status !== "DRAFT") {
-    throw new AppError(
-      "Seule une demande en brouillon peut être soumise.",
-      400,
-      "LEAVE_SUBMISSION_DRAFT_REQUIRED",
-    );
-  }
+    if (request.status !== "DRAFT") {
+      throw new AppError(
+        "Seule une demande en brouillon peut être soumise.",
+        400,
+        "LEAVE_SUBMISSION_DRAFT_REQUIRED",
+      );
+    }
 
-  await assertNoOverlap({
-    tenant,
-    agentId: request.agentId,
-    startDate: request.startDate,
-    endDate: request.endDate,
-    excludeRequestId: request._id,
+    await assertNoOverlap({
+      tenant,
+      agentId: request.agentId,
+      startDate: request.startDate,
+      endDate: request.endDate,
+      excludeRequestId: request._id,
+      session,
+    });
+
+    await assertBalanceAvailable({ tenant, actor, request, session });
+
+    request.status = "SUBMITTED";
+    request.submittedAt = new Date();
+    request.lastUpdatedByUserId = actor.userId;
+    await request.save({ session });
+
+    await recordActivity({
+      tenant,
+      leaveRequestId: request._id,
+      agentId: request.agentId,
+      actor,
+      session,
+      action: "SUBMITTED",
+      summary:
+        "Demande soumise pour validation hiérarchique et RH.",
+    });
+
+    await recordLeavePopup(tenant, actor, request, "SUBMITTED", session);
   });
-
-  await assertBalanceAvailable({ tenant, request });
-
-  request.status = "SUBMITTED";
-  request.submittedAt = new Date();
-  request.lastUpdatedByUserId = actor.userId;
-  await request.save();
-
-  await recordActivity({
-    tenant,
-    leaveRequestId: request._id,
-    agentId: request.agentId,
-    actor,
-    action: "SUBMITTED",
-    summary:
-      "Demande soumise pour validation hiérarchique et RH.",
-  });
-
-  const agent = await getAgentSnapshotOrThrow(
-    tenant,
-    request.agentId,
-  );
-
-  return serializeRequest({ request, agent });
+  return getLeaveRequestById(tenant, actor, requestId);
 }
 
 export async function reviewLeaveRequestByManager(
@@ -791,56 +817,57 @@ export async function reviewLeaveRequestByManager(
   requestId: string,
   input: ReviewLeaveRequestInput,
 ): Promise<PublicLeaveRequest> {
-  const request = await getRequestOrThrow(tenant, requestId);
+  const target = await getRequestOrThrow(tenant, requestId);
+  assertCanManagerReviewLeaveRequest(target, actor);
+  await withLeaveBalanceTransaction(tenant, target.agentId, async session => {
+    const request = await getRequestOrThrow(tenant, requestId, session);
 
-  assertCanManagerReviewLeaveRequest(request, actor);
+    assertCanManagerReviewLeaveRequest(request, actor);
 
-  if (request.status !== "SUBMITTED") {
-    throw new AppError(
-      "Cette demande n'est plus en attente de validation hiérarchique.",
-      400,
-      "LEAVE_MANAGER_REVIEW_STATUS_INVALID",
-    );
-  }
+    if (request.status !== "SUBMITTED") {
+      throw new AppError(
+        "Cette demande n'est plus en attente de validation hiérarchique.",
+        400,
+        "LEAVE_MANAGER_REVIEW_STATUS_INVALID",
+      );
+    }
 
-  request.managerReview = {
-    reviewedByUserId: actor.userId,
-    reviewedByName: actor.fullName,
-    decision: input.decision,
-    comment: trimOptional(input.comment),
-    decidedAt: new Date(),
-  };
+    request.managerReview = {
+      reviewedByUserId: actor.userId,
+      reviewedByName: actor.fullName,
+      decision: input.decision,
+      comment: trimOptional(input.comment),
+      decidedAt: new Date(),
+    };
 
-  request.status =
-    input.decision === "APPROVED"
-      ? "MANAGER_APPROVED"
-      : "REJECTED";
-  request.lastUpdatedByUserId = actor.userId;
-
-  await request.save();
-
-  await recordActivity({
-    tenant,
-    leaveRequestId: request._id,
-    agentId: request.agentId,
-    actor,
-    action:
+    request.status =
       input.decision === "APPROVED"
         ? "MANAGER_APPROVED"
-        : "REJECTED",
-    summary:
-      input.decision === "APPROVED"
-        ? "Demande validée par le responsable hiérarchique."
-        : "Demande refusée par le responsable hiérarchique.",
-    metadata: { comment: trimOptional(input.comment) },
+        : "REJECTED";
+    request.lastUpdatedByUserId = actor.userId;
+
+    await request.save({ session });
+
+    await recordActivity({
+      tenant,
+      leaveRequestId: request._id,
+      agentId: request.agentId,
+      actor,
+      session,
+      action:
+        input.decision === "APPROVED"
+          ? "MANAGER_APPROVED"
+          : "REJECTED",
+      summary:
+        input.decision === "APPROVED"
+          ? "Demande validée par le responsable hiérarchique."
+          : "Demande refusée par le responsable hiérarchique.",
+      metadata: { comment: trimOptional(input.comment) },
+    });
+
+    await recordLeavePopup(tenant, actor, request, "MANAGER_REVIEWED", session);
   });
-
-  const agent = await getAgentSnapshotOrThrow(
-    tenant,
-    request.agentId,
-  );
-
-  return serializeRequest({ request, agent });
+  return getLeaveRequestById(tenant, actor, requestId);
 }
 
 export async function reviewLeaveRequestFinal(
@@ -849,10 +876,9 @@ export async function reviewLeaveRequestFinal(
   requestId: string,
   input: ReviewLeaveRequestInput,
 ): Promise<PublicLeaveRequest> {
-  const session = await mongoose.startSession();
-
-  try {
-    await session.withTransaction(async () => {
+  const target = await getRequestOrThrow(tenant, requestId);
+  assertCanFinalReviewLeaveRequest(target, actor);
+  await withLeaveBalanceTransaction(tenant, target.agentId, async session => {
       const request = await getRequestOrThrow(
         tenant,
         requestId,
@@ -863,15 +889,19 @@ export async function reviewLeaveRequestFinal(
 
       if (
         request.status !== "SUBMITTED" &&
-        request.status !== "MANAGER_APPROVED"
+        request.status !== "MANAGER_APPROVED" &&
+        request.status !== "RH_APPROVED"
       ) {
         throw new AppError(
-          "Cette demande n'est plus en attente de décision RH.",
+          "Cette demande n'est plus en attente de décision de l’administrateur.",
           400,
           "LEAVE_FINAL_REVIEW_STATUS_INVALID",
         );
       }
 
+      if (input.decision === "APPROVED" && request.status !== "RH_APPROVED") {
+        throw new AppError("L’accord hiérarchique puis l’accord RH sont requis avant l’approbation finale de l’administrateur.", 400, "LEAVE_RH_APPROVAL_REQUIRED");
+      }
       if (input.decision === "APPROVED") {
         await assertNoOverlap({
           tenant,
@@ -883,14 +913,11 @@ export async function reviewLeaveRequestFinal(
         });
 
         if (requiresBalance(request.leaveType)) {
-          const balance = await getBalanceForRequestOrThrow({
-            tenant,
-            request,
-            session,
-          });
+          const balance = await synchronizeAnnualLeave(tenant, actor, request.agentId, session);
+          const reserved = await reservedAnnualLeave(tenant, request.agentId, session, request._id);
 
           if (
-            calculateAvailableDays(balance) <
+            calculateAvailableDays(balance) - reserved <
             request.requestedDays
           ) {
             throw new AppError(
@@ -900,6 +927,7 @@ export async function reviewLeaveRequestFinal(
             );
           }
 
+          request.balanceCalendarYear = balance.calendarYear;
           balance.consumedDays += request.requestedDays;
           balance.updatedByUserId = actor.userId;
           await balance.save({ session });
@@ -948,15 +976,13 @@ export async function reviewLeaveRequestFinal(
             : "REJECTED",
         summary:
           input.decision === "APPROVED"
-            ? "Demande approuvée par l'administration RH."
-            : "Demande refusée par l'administration RH.",
+            ? "Demande approuvée par l’administrateur."
+            : "Demande refusée par l’administrateur.",
         metadata: { comment: trimOptional(input.comment) },
         session,
       });
-    });
-  } finally {
-    await session.endSession();
-  }
+    await recordLeavePopup(tenant, actor, request, "FINAL_REVIEWED", session);
+  });
 
   return getLeaveRequestById(tenant, actor, requestId);
 }
@@ -967,10 +993,9 @@ export async function cancelLeaveRequest(
   requestId: string,
   input: CancelLeaveRequestInput,
 ): Promise<PublicLeaveRequest> {
-  const session = await mongoose.startSession();
-
-  try {
-    await session.withTransaction(async () => {
+  const target = await getRequestOrThrow(tenant, requestId);
+  assertCanCancelLeaveRequest(target, actor);
+  await withLeaveBalanceTransaction(tenant, target.agentId, async session => {
       const request = await getRequestOrThrow(
         tenant,
         requestId,
@@ -994,18 +1019,20 @@ export async function cancelLeaveRequest(
         request.status === "APPROVED" &&
         requiresBalance(request.leaveType)
       ) {
+        await synchronizeAnnualLeave(tenant, actor, request.agentId, session);
         const balance = await getBalanceForRequestOrThrow({
           tenant,
           request,
           session,
         });
 
-        balance.consumedDays = Math.max(
-          0,
-          balance.consumedDays - request.requestedDays,
-        );
+        if (balance.consumedDays < request.requestedDays) {
+          throw new AppError("Le solde consommé ne correspond pas à cette demande ; une vérification RH est nécessaire.", 409, "LEAVE_BALANCE_INCONSISTENT");
+        }
+        balance.consumedDays -= request.requestedDays;
         balance.updatedByUserId = actor.userId;
         await balance.save({ session });
+        await synchronizeAnnualLeave(tenant, actor, request.agentId, session);
 
         await recordActivity({
           tenant,
@@ -1042,10 +1069,8 @@ export async function cancelLeaveRequest(
         },
         session,
       });
-    });
-  } finally {
-    await session.endSession();
-  }
+    await recordLeavePopup(tenant, actor, request, "CANCELLED", session);
+  });
 
   return getLeaveRequestById(tenant, actor, requestId);
 }
@@ -1176,6 +1201,7 @@ export async function listLeaveCalendar(
           $in: [
             "SUBMITTED",
             "MANAGER_APPROVED",
+            "RH_APPROVED",
             "APPROVED",
           ],
         },
@@ -1209,8 +1235,22 @@ export async function listLeaveBalances(
       : allowedAgentIds
     : undefined;
 
+  const accrualAgents = await AgentModel.find({
+    tenantId: tenant._id,
+    ...(query.agentId && !allowedAgentIds ? { _id: query.agentId } : {}),
+    ...(matchingAgentIds ? { _id: { $in: matchingAgentIds } } : {}),
+  }).select("_id").lean().exec();
+  // Concurrence bornée entre agents ; aucune transaction partagée entre eux.
+  for (let offset = 0; offset < accrualAgents.length; offset += 5) {
+    await Promise.all(accrualAgents.slice(offset, offset + 5).map(agent =>
+      withLeaveBalanceTransaction(tenant, agent._id, session =>
+        synchronizeAnnualLeave(tenant, actor, agent._id, session)),
+    ));
+  }
+
   const balances = await LeaveBalanceModel.find({
     tenantId: tenant._id,
+    $or: [{ leaveType: { $ne: "ANNUAL_LEAVE" } }, { calendarYear: { $lte: getCalendarYear(getConakryDateKey()) } }],
     ...(query.calendarYear
       ? { calendarYear: query.calendarYear }
       : {}),
@@ -1251,6 +1291,36 @@ export async function upsertLeaveBalance(
     tenant,
     input.agentId,
   );
+
+  if (input.leaveType === "ANNUAL_LEAVE") {
+    if (input.calendarYear > getCalendarYear(getConakryDateKey())) {
+      throw new AppError("Les droits futurs ne peuvent pas être crédités à l'avance.", 400, "LEAVE_FUTURE_BALANCE_FORBIDDEN");
+    }
+    return withLeaveBalanceTransaction(tenant, agent.id, async session => {
+      await synchronizeAnnualLeave(tenant, actor, agent.id, session);
+      const balance = await LeaveBalanceModel.findOne({
+        tenantId: tenant._id, agentId: agent.id, calendarYear: input.calendarYear, leaveType: "ANNUAL_LEAVE",
+      }).session(session).exec();
+      if (!balance) throw new AppError("Cet exercice précède le début du suivi automatique de l'Agent.", 400, "LEAVE_BALANCE_YEAR_INVALID");
+      balance.openingDays = input.openingDays;
+      balance.adjustmentDays = input.adjustmentDays;
+      balance.updatedByUserId = actor.userId;
+      await balance.save({ session });
+      const current = await synchronizeAnnualLeave(tenant, actor, agent.id, session);
+      const reserved = await reservedAnnualLeave(tenant, agent.id, session);
+      if (calculateAvailableDays(current) < reserved) {
+        throw new AppError("Cet ajustement rendrait le solde insuffisant pour les congés consommés ou réservés.", 400, "LEAVE_BALANCE_INSUFFICIENT");
+      }
+      await recordActivity({ tenant, actor, agentId: agent.id, leaveBalanceId: balance._id, session,
+        action: "BALANCE_ADJUSTED", summary: "Solde initial ou ajustement RH modifié ; acquisition et report automatiques conservés.",
+        metadata: { calendarYear: balance.calendarYear, openingDays: balance.openingDays, adjustmentDays: balance.adjustmentDays },
+      });
+      // Pour un exercice historique, le report peut avoir changé lors du recalcul.
+      const refreshed = await LeaveBalanceModel.findById(balance._id).session(session).exec();
+      const result = serializeBalance({ balance: refreshed ?? balance, agent });
+      return decorateAnnualBalance(tenant, result, session);
+    });
+  }
 
   const session = await mongoose.startSession();
   let balanceId: Types.ObjectId | undefined;
@@ -1483,4 +1553,24 @@ export async function listLeaveActivities(
     .exec();
 
   return activities.map(serializeActivity);
+}
+
+export async function reviewLeaveRequestByRH(
+  tenant: TenantDocument, actor: LeaveActor, requestId: string, input: ReviewLeaveRequestInput,
+): Promise<PublicLeaveRequest> {
+  const target = await getRequestOrThrow(tenant, requestId);
+  assertCanRHReviewLeaveRequest(target, actor);
+  await withLeaveBalanceTransaction(tenant, target.agentId, async session => {
+    const request = await getRequestOrThrow(tenant, requestId, session);
+    assertCanRHReviewLeaveRequest(request, actor);
+    if (request.status !== "MANAGER_APPROVED") throw new AppError("La validation hiérarchique doit précéder l’examen RH.", 400, "LEAVE_RH_REVIEW_STATUS_INVALID");
+    request.rhReview = { reviewedByUserId: actor.userId, reviewedByName: actor.fullName, decision: input.decision, comment: trimOptional(input.comment), decidedAt: new Date() };
+    request.status = input.decision === "APPROVED" ? "RH_APPROVED" : "REJECTED";
+    request.lastUpdatedByUserId = actor.userId;
+    await request.save({ session });
+    await recordActivity({tenant, actor, agentId: request.agentId, leaveRequestId: request._id, session,
+      action: input.decision === "APPROVED" ? "RH_APPROVED" : "REJECTED", summary: input.decision === "APPROVED" ? "Accord RH ; décision finale de l’administrateur attendue." : "Demande refusée par les RH."});
+    await recordLeavePopup(tenant, actor, request, "RH_REVIEWED", session);
+  });
+  return getLeaveRequestById(tenant, actor, requestId);
 }

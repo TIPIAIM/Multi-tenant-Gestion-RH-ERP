@@ -13,6 +13,7 @@ export const leaveRequestStatuses = [
   "DRAFT",
   "SUBMITTED",
   "MANAGER_APPROVED",
+  "RH_APPROVED",
   "APPROVED",
   "REJECTED",
   "CANCELLED",
@@ -42,6 +43,12 @@ export type LeaveReview = {
 };
 
 export type LeaveBalance = {
+  reservedDays?: number;
+  bookAvailableDays?: number;
+  monthlyAccruals?: { month: string; days: number }[];
+  accrualStartDate?: string;
+  accrualAsOfDate?: string;
+
   id: string;
   agentId: string;
   agent?: LeaveAgent;
@@ -72,6 +79,7 @@ export type LeaveRequest = {
   status: LeaveRequestStatus;
   submittedAt?: string;
   managerReview?: LeaveReview;
+  rhReview?: LeaveReview;
   finalReview?: LeaveReview;
   cancelledAt?: string;
   cancelledByUserId?: string;

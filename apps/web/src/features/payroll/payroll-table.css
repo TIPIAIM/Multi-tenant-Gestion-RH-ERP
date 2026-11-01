@@ -1,4 +1,4 @@
-/* Payroll uses the same design tokens and action positions as the supplied Agents page. */
+/* Registre des bulletins de paie. */
 .payroll-page {
   width: min(1280px, 100%);
   margin-inline: auto;
@@ -599,3 +599,4 @@
     transform: rotate(90deg);
   }
 }
+

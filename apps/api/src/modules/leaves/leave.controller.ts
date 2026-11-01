@@ -1,3 +1,4 @@
+import { listLeavePopups } from "./leave.notification.js";
 import type {
   NextFunction,
   Request,
@@ -30,6 +31,7 @@ import {
   listMyLeaveBalances,
   reviewLeaveRequestByManager,
   reviewLeaveRequestFinal,
+  reviewLeaveRequestByRH,
   submitLeaveRequest,
   updateLeaveRequest,
   upsertLeaveBalance,
@@ -385,4 +387,21 @@ export async function listLeaveActivitiesController(
   } catch (error) {
     next(error);
   }
+}
+
+export async function rhReviewLeaveRequestController(request: Request, response: Response, next: NextFunction): Promise<void> {
+  try {
+    const { tenant, actor } = await getLeaveContext(request);
+    const { id } = leaveRequestIdParamsSchema.parse(request.params);
+    const input = reviewLeaveRequestSchema.parse(request.body);
+    const leaveRequest = await reviewLeaveRequestByRH(tenant, actor, id, input);
+    response.status(200).json({ success: true, data: { leaveRequest } });
+  } catch (error) { next(error); }
+}
+export async function listLeavePopupsController(request: Request, response: Response, next: NextFunction): Promise<void> {
+  try {
+    const { tenant, actor } = await getLeaveContext(request);
+    const data = await listLeavePopups(tenant, actor, request.query.after);
+    response.status(200).json({ success: true, data });
+  } catch (error) { next(error); }
 }

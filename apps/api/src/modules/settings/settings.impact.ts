@@ -56,6 +56,8 @@ const moduleMap: Record<SettingsSectionKey, string[]> = {
   roadmaps: ["Feuilles de route", "Évaluations", "Rapports"],
   evaluations: ["Évaluations", "Rapports"],
   reports: ["Rapports", "Notifications"],
+  training: ["Formations", "Notifications"],
+  recruitment: ["Recrutement", "Notifications"],
   documents: ["Documents RH", "Pièces justificatives"],
   notifications: ["Notifications", "Emails"],
   security: ["Authentification", "Sessions", "Gestion des utilisateurs"],
@@ -83,6 +85,8 @@ export async function computeSettingsImpact(input: {
   if (changedSections.includes("leave")) warnings.push("Vérifiez la cohérence des soldes de congés existants avant publication.");
   if (changedSections.includes("evaluations")) warnings.push("Les critères et pondérations s’appliqueront aux nouvelles évaluations ou aux recalculs futurs.");
   if (changedSections.includes("featureFlags")) warnings.push("La désactivation d’un module masque ses écrans sans supprimer les données existantes.");
+  if (changedSections.includes("training")) warnings.push("Les valeurs par défaut concernent les nouvelles formations. Les formations existantes restent inchangées.");
+  if (changedSections.includes("recruitment")) warnings.push("Les valeurs par défaut concernent les nouvelles offres. L’administrateur conserve la validation finale des embauches.");
   if (changedSections.includes("security")) warnings.push("Une modification de sécurité peut affecter les sessions actives et les règles de connexion.");
 
   return {

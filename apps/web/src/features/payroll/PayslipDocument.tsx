@@ -121,15 +121,17 @@ export default function PayslipDocument({
             type="button"
             onClick={() => void download()}
             disabled={downloading || dirty || saving}
+            aria-busy={downloading || saving}
           >
-            <Download size={17} />
-            {downloading ? "Préparation…" : "PDF / Imprimer"}
+            <Download size={17} aria-hidden="true" />
+            {downloading ? "Préparation…" : "Télécharger le PDF"}
           </button>
           <button
             type="button"
             aria-label="Fermer le bulletin"
             onClick={onClose}
             disabled={saving}
+            aria-busy={saving}
           >
             <X size={18} />
           </button>
@@ -153,7 +155,7 @@ export default function PayslipDocument({
                 (!marks.data.stamp && !includeStamp)
               }
             />
-             
+            <span>Cachet</span>
           </label>
           <label>
             <input
@@ -167,7 +169,7 @@ export default function PayslipDocument({
                 (!marks.data.signature && !includeSignature)
               }
             />
-             
+            <span>Signature</span>
           </label>
           <button
             type="button"

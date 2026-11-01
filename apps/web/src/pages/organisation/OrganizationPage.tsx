@@ -350,7 +350,7 @@ import {
               className="organization-secondary-button"
               type="button"
               onClick={() => void organizationQuery.refetch()}
-              disabled={organizationQuery.isFetching}
+              disabled={organizationQuery.isFetching} aria-busy={organizationQuery.isFetching}
              data-ui-action="compact" aria-label="Actualiser" title="Actualiser">
               <RefreshCw
                 size={18}
@@ -591,7 +591,7 @@ import {
                               className="organization-danger-icon-button"
                               type="button"
                               title="Supprimer cette Direction et son arborescence"
-                              disabled={deleteMutation.isPending}
+                              disabled={deleteMutation.isPending} aria-busy={deleteMutation.isPending}
                               onClick={() => void deleteUnit(direction)}
                              aria-label="Supprimer cette Direction et son arborescence">
                               <Trash2 size={16} />
@@ -705,7 +705,7 @@ import {
                                       className="organization-danger-icon-button"
                                       type="button"
                                       title="Supprimer ce Service"
-                                      disabled={deleteMutation.isPending}
+                                      disabled={deleteMutation.isPending} aria-busy={deleteMutation.isPending}
                                       onClick={() => void deleteUnit(service)}
                                      aria-label="Supprimer ce Service">
                                       <Trash2 size={16} />
@@ -830,7 +830,7 @@ import {
                   type="button"
                   aria-label="Fermer"
                   onClick={closeModal}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting} aria-busy={isSubmitting}
                 >
                   <X size={20} />
                 </button>
@@ -952,7 +952,7 @@ import {
                     className="organization-cancel-button"
                     type="button"
                     onClick={closeModal}
-                    disabled={isSubmitting}
+                    disabled={isSubmitting} aria-busy={isSubmitting}
                   >
                     Annuler
                   </button>

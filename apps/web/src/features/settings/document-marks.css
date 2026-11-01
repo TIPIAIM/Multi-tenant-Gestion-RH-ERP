@@ -170,3 +170,5 @@
   flex: 0 0 16px;
   accent-color: #1765c1;
 }
+
+.document-marks-panel .document-marks-error{color:var(--tenant-text,#0b2536);background:rgba(233,181,33,.1);border-color:rgba(233,181,33,.4)}

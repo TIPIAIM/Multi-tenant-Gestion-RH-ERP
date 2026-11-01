@@ -1,5 +1,7 @@
+import { useLocation } from "react-router-dom";
 import {
   useMemo,
+  useEffect,
   useState,
   type ChangeEvent,
 } from "react";
@@ -124,6 +126,18 @@ export default function RoadmapDetailsDrawer({
   onChanged,
   onRoadmapUpdated,
 }: RoadmapDetailsDrawerProps) {
+  const notificationLocation = useLocation();
+  useEffect(() => {
+    const target = new URLSearchParams(notificationLocation.search).get("item");
+    if (!target || !/^[a-f\d]{24}$/i.test(target)) return;
+    const frame = window.requestAnimationFrame(() => {
+      const element = document.getElementById(`roadmap-objective-${target}`);
+      element?.scrollIntoView({ block: "center", behavior: "auto" });
+      element?.focus({ preventScroll: true });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [roadmap.id, notificationLocation.search, notificationLocation.key]);
+
   const queryClient = useQueryClient();
 
   const [reviewComment, setReviewComment] =
@@ -480,7 +494,7 @@ export default function RoadmapDetailsDrawer({
           </div>
 
           <button
-            className="roadmap-icon-button"
+            className="roadmap-icon-button" autoFocus
             type="button"
             aria-label="Fermer"
             onClick={onClose}
@@ -835,6 +849,8 @@ export default function RoadmapDetailsDrawer({
                           ? "needs-discussion"
                           : ""
                     }`}
+                    id={`roadmap-objective-${item.id}`}
+                    tabIndex={-1}
                     key={
                       item.id
                     }

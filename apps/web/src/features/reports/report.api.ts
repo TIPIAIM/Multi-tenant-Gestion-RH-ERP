@@ -62,7 +62,7 @@ export async function downloadManagementReportsCsv(params: ManagementReportListP
   const url = URL.createObjectURL(response.data);
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = "rapports-fades-rh.csv";
+  anchor.download = "rapports-gestion.csv";
   anchor.click();
   URL.revokeObjectURL(url);
 }

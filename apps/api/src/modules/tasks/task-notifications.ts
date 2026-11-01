@@ -1,4 +1,4 @@
-import { resolveTaskActor } from "./task.access.js";
+import { getTaskScopeFilter, resolveTaskActor } from "./task.access.js";
 import { getTaskById } from "./task.base.service.js";
 import { openTaskNotificationStream, publishTaskNotificationChange } from "./task-notification-events.js";
 import mongoose, {
@@ -20,7 +20,6 @@ import { TaskModel } from "./task.models.js";
 import type { TaskDocument } from "./task.types.js";
 import type { TaskActor } from "./task.access.js";
 
-console.log("[TASKS-DIAGNOSTIC-V2]", import.meta.url);
 /*
  * Mongoose 9 : les opérations réalisées dans le callback
  * transactionnel utilisent automatiquement sa session.
@@ -207,8 +206,8 @@ export async function notifyTaskChange(input: {
       message: `${actor.fullName} vous a attribué la tâche « ${task.title} ».`,
       readAt: null,
       occurredAt: new Date(),
-      ...(recipient ? { recipientUserId: recipient._id } : {}),
-    } }).exec();
+      recipientAgentId: agent._id,
+    }, $unset: { recipientUserId: "" } }).exec();
   }
 
   /*
@@ -319,18 +318,24 @@ async function resolveNotificationScope(
     );
   }
 
-  let agent = user.agentId ? await (AgentModel as any).findOne({
-    _id: user.agentId, tenantId: request.tenant._id, employmentStatus: "ACTIVE",
-  }).select("_id").lean().exec() : null;
-  if (!agent) agent = await (AgentModel as any).findOne({
-    tenantId: request.tenant._id, userId: user._id, employmentStatus: "ACTIVE",
-  }).select("_id").lean().exec();
-  if (!agent && user.email) agent = await (AgentModel as any).findOne({
-    tenantId: request.tenant._id, email: String(user.email).trim().toLowerCase(), employmentStatus: "ACTIVE",
-  }).select("_id").lean().exec();
+  const actor = await resolveTaskActor(request.tenant, request.auth.userId);
+  // Le rôle organisationnel peut omettre agentId dans l'acteur (chef, RH,
+  // administrateur). Le lien personnel explicite sert aussi à recevoir ses avis.
+  const agent = actor.agentId ? { _id: actor.agentId }
+    : await (AgentModel as any).findOne({
+        tenantId: request.tenant._id,
+        employmentStatus: "ACTIVE",
+        ...(user.agentId ? { _id: user.agentId } : { userId: user._id }),
+      }).select("_id").lean().exec();
+  // Les anciens avis ne doivent pas révéler une tâche réattribuée à autrui.
+  const visibleTaskIds = await TaskModel.distinct("_id", {
+    tenantId: request.tenant._id,
+    ...getTaskScopeFilter(actor),
+  }).exec();
 
   const filter = {
     tenantId: request.tenant._id,
+    ...(visibleTaskIds ? { taskId: { $in: visibleTaskIds } } : {}),
     $or: [
       { recipientUserId: user._id },
       ...(agent
@@ -363,6 +368,29 @@ const handle = (
  */
 export const taskNotificationRouter = Router();
 
+// Flux des pop-up, distinct de la pagination du panneau de notifications.
+taskNotificationRouter.get("/popups", handle(async (request, response) => {
+  const { filter, agent, tenantId } = await resolveNotificationScope(request);
+  if (agent) await syncAssignedTaskNotices(tenantId, agent._id);
+  const page = Math.max(1, Math.min(10000, Math.floor(Number(request.query.page)) || 1));
+  const asOf = request.query.asOf ? new Date(String(request.query.asOf)) : new Date();
+  if (!Number.isFinite(asOf.getTime()) || asOf.getTime() > Date.now() + 1000) {
+    throw new AppError("Date de consultation invalide.", 400, "TASK_NOTICE_DATE_INVALID");
+  }
+  const where: QueryFilter<TaskNotice> = { $and: [filter, { readAt: null }, occurredBefore(asOf)] };
+  const [items, total] = await Promise.all([
+    TaskNoticeModel.find(where).sort({ occurredAt: 1, createdAt: 1, _id: 1 })
+      .skip((page - 1) * 100).limit(100).lean().exec(),
+    TaskNoticeModel.countDocuments(where).exec(),
+  ]);
+  response.json({ success: true, data: { page, limit: 100, total, asOf: asOf.toISOString(),
+    items: items.map(item => ({ id: String(item._id), taskId: String(item.taskId),
+      kind: item.kind, title: item.title, message: item.message,
+      createdAt: (item.occurredAt ?? item.createdAt).toISOString(),
+    })),
+  } });
+}));
+
 taskNotificationRouter.get("/events", handle(async (request, response) => {
   const { tenantId } = await resolveNotificationScope(request);
   openTaskNotificationStream(String(tenantId), response);
@@ -379,7 +407,7 @@ taskNotificationRouter.post("/task/:taskId/read", handle(async (request, respons
     throw new AppError("La tâche a été actualisée. Rouvrez-la pour consulter sa dernière version.", 409, "TASK_NOTICE_STALE_VIEW");
   }
   if (agent && task.assignedToAgentId === String(agent._id)) await syncAssignedTaskNotices(tenantId, agent._id);
-  await TaskNoticeModel.updateMany({ ...filter, taskId, readAt: null, $and: [occurredBefore(before)] },
+  await TaskNoticeModel.updateMany({ $and: [filter, { taskId, readAt: null }, occurredBefore(before)] },
     { $set: { readAt: new Date() } }).exec();
   publishTaskNotificationChange(String(tenantId));
   response.json({ success: true, data: { taskId } });

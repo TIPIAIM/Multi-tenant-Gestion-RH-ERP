@@ -1,17 +1,9 @@
-import { AlertTriangle, LoaderCircle, Send, X } from "lucide-react";
-import { useState } from "react";
-import type { SettingsImpact } from "../../features/settings/settings.types";
-
-export default function SettingsPublishModal({ open, impact, isSubmitting, onClose, onPublish }: {
-  open: boolean; impact: SettingsImpact | null; isSubmitting: boolean; onClose: () => void; onPublish: (reason: string) => Promise<void>;
-}) {
-  const [reason, setReason] = useState("");
-  if (!open) return null;
-  return <div className="settings-modal-layer"><button type="button" className="settings-modal-backdrop" aria-label="Fermer la publication" onClick={onClose} /><section className="settings-publish-modal" role="dialog" aria-modal="true" aria-labelledby="settings-publish-title">
-    <header><div><p>PUBLICATION CONTRÔLÉE</p><h3 id="settings-publish-title">Publier la nouvelle configuration</h3></div><button type="button" aria-label="Fermer" onClick={onClose} disabled={isSubmitting}><X size={20} /></button></header>
-    {impact && <div className="settings-impact-summary"><article><span>Modifications</span><strong>{impact.changesCount}</strong></article><article><span>Agents concernés</span><strong>{impact.affectedAgents}</strong></article><article><span>Utilisateurs</span><strong>{impact.affectedUsers}</strong></article><article><span>Modules affectés</span><strong>{impact.affectedModules.length}</strong></article></div>}
-    {impact?.warnings.length ? <div className="settings-impact-warning"><AlertTriangle size={18} /><ul>{impact.warnings.map((warning) => <li key={warning}>{warning}</li>)}</ul></div> : null}
-    <label className="settings-field"><span>Motif de publication</span><textarea rows={4} disabled={isSubmitting} value={reason} onChange={(event) => setReason(event.target.value)} placeholder="Expliquez l’objet, la décision ou la politique à l’origine de cette version..." /></label>
-    <footer><button type="button" className="settings-cancel-button" onClick={onClose} disabled={isSubmitting}>Annuler</button><button type="button" className="settings-primary-button" disabled={isSubmitting || reason.trim().length < 5} onClick={() => void onPublish(reason.trim())}>{isSubmitting ? <LoaderCircle size={18} className="is-spinning" /> : <Send size={18} />} Publier</button></footer>
-  </section></div>;
+import {AlertTriangle,LoaderCircle,Send} from "lucide-react";
+import {useEffect,useState} from "react";
+import type {SettingsImpact} from "../../features/settings/settings.types";
+import {settingsSectionLabels} from "../../features/settings/settings.utils";
+import SettingsDialog from "./SettingsDialog";
+export default function SettingsPublishModal({open,impact,isSubmitting,onClose,onPublish,error}:{open:boolean;impact:SettingsImpact|null;isSubmitting:boolean;onClose:()=>void;onPublish:(reason:string)=>Promise<void>;error?:string|null}){
+ const [reason,setReason]=useState("");useEffect(()=>{if(open)setReason("");},[open]);if(!open)return null;
+ return <SettingsDialog title="Publier les modifications" eyebrow="VÉRIFIER ET PUBLIER" busy={isSubmitting} onClose={onClose} className="settings-publish-modal">{error&&<p className="settings-error" role="alert">{error}</p>}{impact&&<><div className="settings-impact-summary"><article><span>Modifications</span><strong>{impact.changesCount}</strong></article><article><span>Agents dans l’espace</span><strong>{impact.affectedAgents}</strong></article><article><span>Utilisateurs</span><strong>{impact.affectedUsers}</strong></article><article><span>Modules concernés</span><strong>{impact.affectedModules.length}</strong></article></div><div className="settings-changed-sections"><strong>Rubriques modifiées</strong><div>{impact.changedSections.map(s=><span key={s}>{settingsSectionLabels[s]??"Paramètres de l’organisation"}</span>)}</div></div></>}{!!impact?.warnings.length&&<div className="settings-impact-warning"><AlertTriangle size={16}/><ul>{impact.warnings.map(w=><li key={w}>{w}</li>)}</ul></div>}<form onSubmit={e=>{e.preventDefault();void onPublish(reason.trim()).catch(()=>{});}}><label className="settings-field"><span>Pourquoi publiez-vous ces changements ?</span><textarea required minLength={5} maxLength={1000} rows={3} disabled={isSubmitting} value={reason} onChange={e=>setReason(e.target.value)} placeholder="Décrivez simplement l’objet de cette mise à jour."/></label><footer><button className="settings-cancel-button" type="button" disabled={isSubmitting} onClick={onClose}>Annuler</button><button className="settings-primary-button" type="submit" disabled={isSubmitting||reason.trim().length<5}>{isSubmitting?<LoaderCircle size={16} className="is-spinning"/>:<Send size={16}/>}Publier</button></footer></form></SettingsDialog>;
 }

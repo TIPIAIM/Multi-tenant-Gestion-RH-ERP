@@ -123,6 +123,7 @@ const documentsSchema = z.object({
 });
 
 const notificationsSchema = z.object({
+  trainingPopupEnabled: z.boolean().default(true), recruitmentPopupEnabled: z.boolean().default(true),
   enabled: z.boolean(), inAppEnabled: z.boolean(), emailEnabled: z.boolean(), smsEnabled: z.boolean(), whatsappEnabled: z.boolean(),
   taskReminderEnabled: z.boolean(), overdueEscalationEnabled: z.boolean(), leavePendingReminderEnabled: z.boolean(),
   attendanceMissingReminderEnabled: z.boolean(), documentExpiryReminderDays: z.array(z.number().int().min(1).max(3650)).max(20),
@@ -148,7 +149,11 @@ const featureFlagsSchema = z.object({
   evaluations: z.boolean(), reports: z.boolean(), documents: z.boolean(), payroll: z.boolean(), recruitment: z.boolean(), training: z.boolean(),
 });
 
+export const trainingSettingsSchema=z.object({defaultCapacity:z.number().int().min(1).max(10000).default(20),defaultDurationHours:z.number().min(.5).max(2000).multipleOf(.5).default(7),defaultCurrency:z.enum(["GNF","EUR","USD"]).default("GNF"),impactReviewDelayDays:z.number().int().min(1).max(365).default(60)});
+export const recruitmentSettingsSchema=z.object({defaultPositions:z.number().int().min(1).max(1000).default(1),defaultContract:z.enum(["CDI","CDD","INTERNSHIP","CONSULTING"]).default("CDI"),defaultApplicationDeadlineDays:z.number().int().min(1).max(365).default(30),interviewReportRequired:z.boolean().default(false)});
+
 export const settingsSectionSchemas = {
+  training: trainingSettingsSchema, recruitment: recruitmentSettingsSchema,
   institution: institutionSchema,
   branding: brandingSchema,
   organization: organizationSchema,

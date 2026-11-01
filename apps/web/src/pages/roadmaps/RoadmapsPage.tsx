@@ -1,6 +1,8 @@
+import { useLocation } from "react-router-dom";
+import { api } from "../../lib/api";
 import {
   useEffect,
-  useState,
+  useRef, useState,
   type ChangeEvent,
 } from "react";
 import {
@@ -12,6 +14,7 @@ import {
   Filter,
   LoaderCircle,
   Plus,
+  Pencil,
   RefreshCw,
   Route,
   Search,
@@ -55,6 +58,7 @@ import {
 import RoadmapDetailsDrawer from "./RoadmapDetailsDrawer";
 import RoadmapEditorModal from "./RoadmapEditorModal";
 import "./roadmaps-page.css";
+import "./roadmaps-ui.css";
 
 type Filters = {
   search: string;
@@ -71,6 +75,7 @@ const defaultFilters: Filters = {
 };
 
 export default function RoadmapsPage() {
+  const viewTriggerRef = useRef<HTMLButtonElement | null>(null);
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -85,6 +90,23 @@ export default function RoadmapsPage() {
     useState<Roadmap | null>(null);
   const [selectedRoadmap, setSelectedRoadmap] =
     useState<Roadmap | null>(null);
+  const roadmapLocation = useLocation();
+  const linkedRoadmapId = new URLSearchParams(roadmapLocation.search).get("roadmap");
+  const linkedRoadmapQuery = useQuery({
+    queryKey: ["roadmaps", "notification-detail", user?.tenantId, user?.id, linkedRoadmapId, roadmapLocation.key],
+    enabled: Boolean(user && linkedRoadmapId && /^[a-f\d]{24}$/i.test(linkedRoadmapId)),
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    queryFn: async ({ signal }) => {
+      const response = await api.get<{ data: { roadmap: Roadmap } }>(`/roadmaps/${linkedRoadmapId}`, { signal });
+      return response.data.data.roadmap;
+    },
+  });
+  useEffect(() => {
+    if (linkedRoadmapQuery.data) setSelectedRoadmap(linkedRoadmapQuery.data);
+  }, [linkedRoadmapQuery.data]);
+
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -404,6 +426,8 @@ export default function RoadmapsPage() {
       <section className="roadmap-stats-grid">
         <button
           className="roadmap-stat-card total"
+          aria-pressed={filters.status === ""}
+          title="Afficher toutes les feuilles de route"
           type="button"
           onClick={() => applyStatusFilter("")}
         >
@@ -419,6 +443,8 @@ export default function RoadmapsPage() {
 
         <button
           className="roadmap-stat-card draft"
+          aria-pressed={filters.status === "DRAFT"}
+          title="Afficher les feuilles de route en brouillon"
           type="button"
           onClick={() => applyStatusFilter("DRAFT")}
         >
@@ -434,6 +460,8 @@ export default function RoadmapsPage() {
 
         <button
           className="roadmap-stat-card submitted"
+          aria-pressed={filters.status === "SUBMITTED"}
+          title="Afficher les feuilles en attente de validation"
           type="button"
           onClick={() => applyStatusFilter("SUBMITTED")}
         >
@@ -442,13 +470,15 @@ export default function RoadmapsPage() {
           </span>
           <div>
             <span>En validation</span>
-            <strong>{submittedCount || "—"}</strong>
+            <strong>{statsQuery.data ? submittedCount : "—"}</strong>
             <p>À suivre</p>
           </div>
         </button>
 
         <button
           className="roadmap-stat-card approved"
+          aria-pressed={filters.status === "APPROVED"}
+          title="Afficher les feuilles de route approuvées"
           type="button"
           onClick={() => applyStatusFilter("APPROVED")}
         >
@@ -482,8 +512,11 @@ export default function RoadmapsPage() {
 
         <div className="roadmap-filters">
           <label className="roadmap-search-field">
-            <Search size={18} />
+            <span className="roadmap-search-label">Rechercher</span>
+            <Search size={18} aria-hidden="true" />
             <input
+              type="search"
+              autoComplete="off"
               value={filters.search}
               onChange={(event: ChangeEvent<HTMLInputElement>) =>
                 setFilters((current) => ({
@@ -554,6 +587,8 @@ export default function RoadmapsPage() {
 
           <button
             className="roadmaps-clear-button"
+            title="Réinitialiser la recherche et les filtres"
+            aria-label="Réinitialiser la recherche et les filtres"
             type="button"
             onClick={clearFilters}
             disabled={!hasFilters}
@@ -608,90 +643,78 @@ export default function RoadmapsPage() {
             </div>
           )}
 
-        <div className="roadmap-cards-list">
-          {roadmaps.map((roadmap) => {
-            const {
-              canEdit,
-              canSubmit,
-              canApprove,
-              canReturn,
-            } = roadmap.permissions;
-
-            return (
-              <article
-                key={roadmap.id}
-                className={`roadmap-card ${statusClass(roadmap.status)}`}
-              >
-                <div className="roadmap-card-main">
-                  <div className="roadmap-card-topline">
-                    <span
-                      className={`roadmap-status ${statusClass(
-                        roadmap.status,
-                      )}`}
-                    >
-                      {roadmapStatusLabels[roadmap.status]}
-                    </span>
-
-                    <small>
-                      {roadmapRoleLabels[roadmap.ownerRole]}
-                    </small>
-                  </div>
-
-                  <h4>{roadmap.title}</h4>
-
-                  <p>
-                    {roadmap.reference} · {roadmap.calendarYear} ·{" "}
-                    {getApprovalHelp(roadmap.ownerRole)}
-                  </p>
-
-                  <p>
-                    Mise à jour {formatRoadmapDate(roadmap.updatedAt)}
-                  </p>
-                </div>
-
-                <div className="roadmap-card-progress">
-                  <strong>{roadmap.progressPercentage}%</strong>
-
-                  <div>
-                    <span
-                      style={{
-                        width: `${roadmap.progressPercentage}%`,
-                      }}
-                    />
-                  </div>
-
-                  <small>
-                    {roadmap.completedItemCount}/{roadmap.itemCount} ligne(s)
-                    · {getRoadmapProgressLabel(roadmap.progressPercentage)}
-                  </small>
-                </div>
-
+        {!roadmapsQuery.isLoading && roadmaps.length > 0 && (
+          <>
+            <p className="roadmap-register-scroll-hint">Faites défiler le tableau horizontalement pour accéder à toutes les colonnes.</p>
+            <div className="roadmap-register-scroll" role="region" aria-label="Registre des feuilles de route" tabIndex={0}>
+              <table className="roadmap-register-table">
+                <caption className="roadmap-register-caption">Feuilles de route accessibles selon vos droits</caption>
+                <thead><tr>
+                  <th scope="col">Feuille de route</th>
+                  <th scope="col">Année</th>
+                  <th scope="col">Statut</th>
+                  <th scope="col">Progression</th>
+                  <th scope="col">Mise à jour</th>
+                  <th scope="col" className="roadmap-register-actions-heading">Actions</th>
+                </tr></thead>
+                <tbody>
+                  {roadmaps.map((roadmap) => {
+                    const { canEdit, canSubmit, canApprove, canReturn } = roadmap.permissions;
+                    return <tr key={roadmap.id}>
+                      <th scope="row" className="roadmap-register-identity">
+                        <strong>{roadmap.title}</strong>
+                        <span>{roadmap.reference} · {roadmapRoleLabels[roadmap.ownerRole]}</span>
+                        <small>{getApprovalHelp(roadmap.ownerRole)}</small>
+                      </th>
+                      <td className="roadmap-register-year">{roadmap.calendarYear}</td>
+                      <td><span className={`roadmap-status ${statusClass(roadmap.status)}`}>
+                        {roadmapStatusLabels[roadmap.status]}
+                      </span></td>
+                      <td className="roadmap-register-progress">
+                        <div className="roadmap-register-progress-heading"><strong>{roadmap.progressPercentage}%</strong>
+                          <span>{roadmap.completedItemCount}/{roadmap.itemCount} objectifs</span></div>
+                        <div className="roadmap-register-progress-track" role="progressbar"
+                          aria-label={`Progression de ${roadmap.title}`} aria-valuemin={0} aria-valuemax={100}
+                          aria-valuenow={roadmap.progressPercentage}>
+                          <span style={{ width: `${roadmap.progressPercentage}%` }} />
+                        </div>
+                        <small>{getRoadmapProgressLabel(roadmap.progressPercentage)}</small>
+                      </td>
+                      <td className="roadmap-register-date">{formatRoadmapDate(roadmap.updatedAt)}</td>
+                      <td>
                 <div className="roadmap-card-actions">
                   <button
                     type="button"
-                    onClick={() => setSelectedRoadmap(roadmap)}
-                   data-ui-action="compact" aria-label="Voir" title="Voir">
-                    <Eye size={17} />
-                    <span className="ui-action-label">Voir</span>
+                    className="roadmap-view-button"
+                    aria-haspopup="dialog"
+                    onClick={(event) => { viewTriggerRef.current = event.currentTarget; setSelectedRoadmap(roadmap); }}
+                   data-ui-action="compact" data-tooltip="Consulter la feuille" title="Consulter la feuille"
+                   aria-label={`Consulter la feuille : ${roadmap.title}`}>
+                    <Eye size={20} aria-hidden="true" />
                   </button>
 
                   {canEdit && (
                     <button
                       type="button"
+                      data-tooltip="Modifier le brouillon" title="Modifier le brouillon"
+                      aria-label={`Modifier la feuille : ${roadmap.title}`}
                       onClick={() => openEditModal(roadmap)}
                     >
-                      Modifier
+                      <Pencil size={18} aria-hidden="true" />
                     </button>
                   )}
 
                   {canSubmit && (
                     <button
                       type="button"
-                      disabled={submitMutation.isPending}
+                      data-tooltip="Soumettre pour validation" title="Soumettre pour validation"
+                      aria-label={`Soumettre la feuille : ${roadmap.title}`}
+                      disabled={submitMutation.isPending} aria-busy={submitMutation.isPending}
                       onClick={() => submitMutation.mutate(roadmap.id)}
                     >
-                      <Send size={16} />
-                      <span>Soumettre</span>
+                      {submitMutation.isPending && submitMutation.variables === roadmap.id
+                        ? <LoaderCircle size={18} className="is-spinning" aria-hidden="true" />
+                        : <Send size={18} aria-hidden="true" />}
                     </button>
                   )}
 
@@ -699,21 +722,27 @@ export default function RoadmapsPage() {
                     <>
                       <button
                         type="button"
-                        disabled={approveMutation.isPending}
+                        data-tooltip="Approuver la feuille" title="Approuver la feuille"
+                        aria-label={`Approuver la feuille : ${roadmap.title}`}
+                        disabled={approveMutation.isPending} aria-busy={approveMutation.isPending}
                         onClick={() =>
                           approveMutation.mutate({
                             id: roadmap.id,
                           })
                         }
                       >
-                        <ShieldCheck size={16} />
-                        <span>Valider</span>
+                        {approveMutation.isPending && approveMutation.variables?.id === roadmap.id
+                          ? <LoaderCircle size={18} className="is-spinning" aria-hidden="true" />
+                          : <ShieldCheck size={18} aria-hidden="true" />}
+                      
                       </button>
 
                       {canReturn && (
                         <button
                           type="button"
-                          disabled={returnMutation.isPending}
+                          data-tooltip="Demander une reprise" title="Demander une reprise"
+                          aria-label={`Demander une reprise de la feuille : ${roadmap.title}`}
+                          disabled={returnMutation.isPending} aria-busy={returnMutation.isPending}
                           onClick={() =>
                             returnMutation.mutate({
                               id: roadmap.id,
@@ -722,22 +751,30 @@ export default function RoadmapsPage() {
                             })
                           }
                         >
-                          <Undo2 size={16} />
-                          <span>Retourner</span>
+                          {returnMutation.isPending && returnMutation.variables?.id === roadmap.id
+                            ? <LoaderCircle size={18} className="is-spinning" aria-hidden="true" />
+                            : <Undo2 size={18} aria-hidden="true" />}
+                         
                         </button>
                       )}
                     </>
                   )}
                 </div>
-              </article>
-            );
-          })}
-        </div>
+                      </td>
+                    </tr>;
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        )}
 
         {(pagination?.totalPages ?? 1) > 1 && (
           <footer className="roadmap-pagination">
             <button
               type="button"
+              title="Afficher la page précédente"
+              aria-label="Afficher la page précédente"
               disabled={page <= 1}
               onClick={() =>
                 setPage((current) => Math.max(1, current - 1))
@@ -752,6 +789,8 @@ export default function RoadmapsPage() {
 
             <button
               type="button"
+              title="Afficher la page suivante"
+              aria-label="Afficher la page suivante"
               disabled={page >= (pagination?.totalPages ?? 1)}
               onClick={() =>
                 setPage((current) =>
@@ -785,12 +824,22 @@ export default function RoadmapsPage() {
         />
       )}
 
+      {linkedRoadmapQuery.isFetching && !selectedRoadmap && (
+        <p role="status">Ouverture de la feuille de route…</p>
+      )}
+      {linkedRoadmapQuery.isError && (
+        <div role="alert">
+          <p>{getApiErrorMessage(linkedRoadmapQuery.error)}</p>
+          <button type="button" className="roadmap-secondary-action" disabled={linkedRoadmapQuery.isFetching}
+            onClick={() => void linkedRoadmapQuery.refetch()}>Réessayer</button>
+        </div>
+      )}
       {selectedRoadmap && (
         <RoadmapDetailsDrawer
           roadmap={selectedRoadmap}
           role={role}
           currentUserId={user?.id}
-          onClose={() => setSelectedRoadmap(null)}
+          onClose={() => { setSelectedRoadmap(null); window.requestAnimationFrame(() => viewTriggerRef.current?.focus()); }}
           onEdit={(roadmap) => {
             setSelectedRoadmap(null);
             openEditModal(roadmap);

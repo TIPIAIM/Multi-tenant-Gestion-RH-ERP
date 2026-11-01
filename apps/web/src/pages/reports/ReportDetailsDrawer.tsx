@@ -14,6 +14,8 @@ import {
 } from "lucide-react";
 import type { ManagementReport } from "../../features/reports/report.types";
 import "./report-page.css";
+import "./reports-ui.css";
+import { useReportDialog } from "./use-report-dialog";
 type Props = {
   report: ManagementReport;
   isSubmitting: boolean;
@@ -125,9 +127,7 @@ function safeFileName(value: string): string {
  * - supprimer les retours/espaces techniques issus du DOM ;
  * - stabiliser les séparateurs utilisés dans les rapports.
  */
-function normalizeReportText(
-  value?: string | null,
-): string {
+function normalizeReportText(value?: string | null): string {
   return (value ?? "")
     .replace(/\u00a0/g, " ")
     .replace(/[ \t\r\n]+/g, " ")
@@ -138,112 +138,70 @@ function normalizeReportText(
     .trim();
 }
 
-function decorateReportTables(
-  root: HTMLElement,
-): void {
-  root
-    .querySelectorAll<HTMLTableElement>(
-      ".report-table",
-    )
-    .forEach((table) => {
-      table.style.width = "100%";
-      table.style.maxWidth = "100%";
-      table.style.minWidth = "0";
-      table.style.tableLayout = "fixed";
-      table.style.borderCollapse =
-        "collapse";
+function decorateReportTables(root: HTMLElement): void {
+  root.querySelectorAll<HTMLTableElement>(".report-table").forEach((table) => {
+    table.style.width = "100%";
+    table.style.maxWidth = "100%";
+    table.style.minWidth = "0";
+    table.style.tableLayout = "fixed";
+    table.style.borderCollapse = "collapse";
 
-      table
-        .querySelectorAll<HTMLTableCellElement>(
-          "th, td",
-        )
-        .forEach((cell) => {
-          cell.style.whiteSpace =
-            "normal";
-          cell.style.overflowWrap =
-            "anywhere";
-          cell.style.wordBreak =
-            "normal";
-        });
-
-      table
-        .querySelectorAll<HTMLTableRowElement>(
-          "tbody tr",
-        )
-        .forEach((row, index) => {
-          row.style.backgroundColor =
-            index % 2 === 0
-              ? "#ffffff"
-              : "#eef7f1";
-
-          row
-            .querySelectorAll<HTMLTableCellElement>(
-              "td",
-            )
-            .forEach((cell) => {
-              cell.style.borderColor =
-                "#9fbea9";
-              cell.style.borderWidth =
-                "1px";
-              cell.style.borderStyle =
-                "solid";
-            });
-
-          const firstCell =
-            row.querySelector<HTMLTableCellElement>(
-              "td:first-child",
-            );
-
-          if (firstCell) {
-            firstCell.style.backgroundColor =
-              index % 2 === 0
-                ? "#f7fbf8"
-                : "#e5f2e9";
-            firstCell.style.fontWeight =
-              "700";
-          }
-        });
+    table.querySelectorAll<HTMLTableCellElement>("th, td").forEach((cell) => {
+      cell.style.whiteSpace = "normal";
+      cell.style.overflowWrap = "anywhere";
+      cell.style.wordBreak = "normal";
     });
+
+    table
+      .querySelectorAll<HTMLTableRowElement>("tbody tr")
+      .forEach((row, index) => {
+        row.style.backgroundColor = index % 2 === 0 ? "#ffffff" : "#eef7f1";
+
+        row.querySelectorAll<HTMLTableCellElement>("td").forEach((cell) => {
+          cell.style.borderColor = "#9fbea9";
+          cell.style.borderWidth = "1px";
+          cell.style.borderStyle = "solid";
+        });
+
+        const firstCell =
+          row.querySelector<HTMLTableCellElement>("td:first-child");
+
+        if (firstCell) {
+          firstCell.style.backgroundColor =
+            index % 2 === 0 ? "#f7fbf8" : "#e5f2e9";
+          firstCell.style.fontWeight = "700";
+        }
+      });
+  });
 }
 
 function prepareExportClone(): HTMLElement | null {
-  const source =
-    document.querySelector<HTMLElement>(
-      ".report-printable-document",
-    );
+  const source = document.querySelector<HTMLElement>(
+    ".report-printable-document",
+  );
 
   if (!source) {
     return null;
   }
 
-  const clone =
-    source.cloneNode(
-      true,
-    ) as HTMLElement;
+  const clone = source.cloneNode(true) as HTMLElement;
 
   clone
     .querySelectorAll(
       ".report-official-letterhead, .report-document-footer, .report-screen-only",
     )
-    .forEach((element) =>
-      element.remove(),
-    );
+    .forEach((element) => element.remove());
 
-  clone.classList.add(
-    "report-export-clone",
-  );
+  clone.classList.add("report-export-clone");
 
   decorateReportTables(clone);
 
   clone
-    .querySelectorAll<HTMLElement>(
-      ".report-table-wrap",
-    )
+    .querySelectorAll<HTMLElement>(".report-table-wrap")
     .forEach((wrapper) => {
       wrapper.style.width = "100%";
       wrapper.style.maxWidth = "100%";
-      wrapper.style.overflow =
-        "visible";
+      wrapper.style.overflow = "visible";
     });
 
   return clone;
@@ -571,18 +529,14 @@ function exportDocumentCss(): string {
   `;
 }
 
-function buildStandaloneHtml(
-  report: ManagementReport,
-): string | null {
-  const clone =
-    prepareExportClone();
+function buildStandaloneHtml(report: ManagementReport): string | null {
+  const clone = prepareExportClone();
 
   if (!clone) {
     return null;
   }
 
-  const safeTitle =
-    `${report.reference} - Rapport de gestion`;
+  const safeTitle = `${report.reference} - Rapport de gestion`;
 
   return `<!doctype html>
 <html lang="fr">
@@ -602,15 +556,8 @@ function buildStandaloneHtml(
    WORD (.docx)
    ------------------------------------------------------------------ */
 
-function directChildText(
-  element: Element,
-  selector: string,
-): string {
-  return normalizeReportText(
-    element.querySelector(
-      selector,
-    )?.textContent,
-  );
+function directChildText(element: Element, selector: string): string {
+  return normalizeReportText(element.querySelector(selector)?.textContent);
 }
 
 function createDocxTextParagraph(
@@ -629,35 +576,27 @@ function createDocxTextParagraph(
     keepNext?: boolean;
   } = {},
 ): any {
-  const normalized =
-    normalizeReportText(text);
+  const normalized = normalizeReportText(text);
 
   return new docx.Paragraph({
-    alignment:
-      options.align,
-    keepNext:
-      options.keepNext,
+    alignment: options.align,
+    keepNext: options.keepNext,
     spacing: {
-      before:
-        options.before ?? 0,
-      after:
-        options.after ?? 120,
+      before: options.before ?? 0,
+      after: options.after ?? 120,
       line: 276,
     },
     shading: options.shading
       ? {
-          fill:
-            options.shading,
+          fill: options.shading,
         }
       : undefined,
     border: options.borderColor
       ? {
           left: {
-            style:
-              docx.BorderStyle.SINGLE,
+            style: docx.BorderStyle.SINGLE,
             size: 18,
-            color:
-              options.borderColor,
+            color: options.borderColor,
             space: 6,
           },
         }
@@ -665,16 +604,10 @@ function createDocxTextParagraph(
     children: [
       new docx.TextRun({
         text: normalized,
-        bold:
-          options.bold,
-        italics:
-          options.italic,
-        color:
-          options.color ??
-          "173841",
-        size:
-          options.size ??
-          20,
+        bold: options.bold,
+        italics: options.italic,
+        color: options.color ?? "173841",
+        size: options.size ?? 20,
         font: "Aptos",
       }),
     ],
@@ -693,96 +626,54 @@ function createDocxCell(
   const paragraphs: any[] = [];
 
   if (element) {
-    const label =
-      directChildText(
-        element,
-        ":scope > span",
-      );
+    const label = directChildText(element, ":scope > span");
 
-    const value =
-      directChildText(
-        element,
-        ":scope > strong",
-      );
+    const value = directChildText(element, ":scope > strong");
 
-    const details =
-      Array.from(
-        element.querySelectorAll(
-          ":scope > small, :scope > p",
-        ),
-      )
-        .map((node) =>
-          normalizeReportText(
-            node.textContent,
-          ),
-        )
-        .filter(Boolean);
+    const details = Array.from(
+      element.querySelectorAll(":scope > small, :scope > p"),
+    )
+      .map((node) => normalizeReportText(node.textContent))
+      .filter(Boolean);
 
     if (label) {
       paragraphs.push(
-        createDocxTextParagraph(
-          docx,
-          label,
-          {
-            bold: true,
-            color:
-              options.header
-                ? "FFFFFF"
-                : "60777F",
-            size: 15,
-            after: 50,
-          },
-        ),
+        createDocxTextParagraph(docx, label, {
+          bold: true,
+          color: options.header ? "FFFFFF" : "60777F",
+          size: 15,
+          after: 50,
+        }),
       );
     }
 
     if (value) {
       paragraphs.push(
-        createDocxTextParagraph(
-          docx,
-          value,
-          {
-            bold: true,
-            color:
-              options.header
-                ? "FFFFFF"
-                : "173841",
-            size: 19,
-            after: 55,
-          },
-        ),
+        createDocxTextParagraph(docx, value, {
+          bold: true,
+          color: options.header ? "FFFFFF" : "173841",
+          size: 19,
+          after: 55,
+        }),
       );
     }
 
     for (const detail of details) {
       paragraphs.push(
-        createDocxTextParagraph(
-          docx,
-          detail,
-          {
-            color:
-              options.header
-                ? "FFFFFF"
-                : "60777F",
-            size: 15,
-            after: 45,
-          },
-        ),
+        createDocxTextParagraph(docx, detail, {
+          color: options.header ? "FFFFFF" : "60777F",
+          size: 15,
+          after: 45,
+        }),
       );
     }
 
-    const listItems =
-      Array.from(
-        element.querySelectorAll(
-          ":scope > ul > li, :scope > ol > li",
-        ),
-      );
+    const listItems = Array.from(
+      element.querySelectorAll(":scope > ul > li, :scope > ol > li"),
+    );
 
     for (const item of listItems) {
-      const text =
-        normalizeReportText(
-          item.textContent,
-        );
+      const text = normalizeReportText(item.textContent);
 
       if (!text) continue;
 
@@ -821,17 +712,12 @@ function createDocxCell(
 
   return new docx.TableCell({
     width: {
-      size:
-        options.widthPercent,
-      type:
-        docx.WidthType.PERCENTAGE,
+      size: options.widthPercent,
+      type: docx.WidthType.PERCENTAGE,
     },
-    verticalAlign:
-      docx.VerticalAlign.CENTER,
+    verticalAlign: docx.VerticalAlign.CENTER,
     shading: {
-      fill:
-        options.fill ??
-        "FFFFFF",
+      fill: options.fill ?? "FFFFFF",
     },
     margins: {
       top: 90,
@@ -843,50 +729,22 @@ function createDocxCell(
   });
 }
 
-function createDocxCardGrid(
-  docx: any,
-  grid: Element,
-  columns: number,
-): any {
-  const cards =
-    Array.from(grid.children);
+function createDocxCardGrid(docx: any, grid: Element, columns: number): any {
+  const cards = Array.from(grid.children);
 
   const rows: any[] = [];
 
-  for (
-    let index = 0;
-    index < cards.length;
-    index += columns
-  ) {
+  for (let index = 0; index < cards.length; index += columns) {
     const rowCells: any[] = [];
 
-    for (
-      let column = 0;
-      column < columns;
-      column += 1
-    ) {
-      const card =
-        cards[
-          index + column
-        ] ?? null;
+    for (let column = 0; column < columns; column += 1) {
+      const card = cards[index + column] ?? null;
 
       rowCells.push(
-        createDocxCell(
-          docx,
-          card,
-          {
-            widthPercent:
-              100 / columns,
-            fill:
-              Math.floor(
-                index / columns,
-              ) %
-                2 ===
-              0
-                ? "FFFFFF"
-                : "F3F8F5",
-          },
-        ),
+        createDocxCell(docx, card, {
+          widthPercent: 100 / columns,
+          fill: Math.floor(index / columns) % 2 === 0 ? "FFFFFF" : "F3F8F5",
+        }),
       );
     }
 
@@ -901,44 +759,37 @@ function createDocxCardGrid(
   return new docx.Table({
     width: {
       size: 100,
-      type:
-        docx.WidthType.PERCENTAGE,
+      type: docx.WidthType.PERCENTAGE,
     },
     rows,
     borders: {
       top: {
-        style:
-          docx.BorderStyle.SINGLE,
+        style: docx.BorderStyle.SINGLE,
         size: 5,
         color: "C8DDD0",
       },
       bottom: {
-        style:
-          docx.BorderStyle.SINGLE,
+        style: docx.BorderStyle.SINGLE,
         size: 5,
         color: "C8DDD0",
       },
       left: {
-        style:
-          docx.BorderStyle.SINGLE,
+        style: docx.BorderStyle.SINGLE,
         size: 5,
         color: "C8DDD0",
       },
       right: {
-        style:
-          docx.BorderStyle.SINGLE,
+        style: docx.BorderStyle.SINGLE,
         size: 5,
         color: "C8DDD0",
       },
       insideHorizontal: {
-        style:
-          docx.BorderStyle.SINGLE,
+        style: docx.BorderStyle.SINGLE,
         size: 4,
         color: "D8E5DD",
       },
       insideVertical: {
-        style:
-          docx.BorderStyle.SINGLE,
+        style: docx.BorderStyle.SINGLE,
         size: 4,
         color: "D8E5DD",
       },
@@ -946,190 +797,111 @@ function createDocxCardGrid(
   });
 }
 
-function createDocxDataTable(
-  docx: any,
-  htmlTable: HTMLTableElement,
-): any {
-  const htmlRows =
-    Array.from(
-      htmlTable.rows,
-    );
+function createDocxDataTable(docx: any, htmlTable: HTMLTableElement): any {
+  const htmlRows = Array.from(htmlTable.rows);
 
-  const columnCount =
-    Math.max(
-      1,
-      ...htmlRows.map(
-        (row) =>
-          row.cells.length,
-      ),
-    );
+  const columnCount = Math.max(1, ...htmlRows.map((row) => row.cells.length));
 
-  const rows =
-    htmlRows.map(
-      (row, rowIndex) => {
-        const headerRow =
-          row.parentElement
-            ?.tagName ===
-            "THEAD" ||
-          rowIndex === 0 &&
-            htmlTable.tHead?.rows[
-              0
-            ] === row;
+  const rows = htmlRows.map((row, rowIndex) => {
+    const headerRow =
+      row.parentElement?.tagName === "THEAD" ||
+      (rowIndex === 0 && htmlTable.tHead?.rows[0] === row);
 
-        const cells =
-          Array.from(
-            row.cells,
-          ).map(
-            (
-              htmlCell,
-              cellIndex,
-            ) => {
-              const text =
-                normalizeReportText(
-                  htmlCell.textContent,
-                );
+    const cells = Array.from(row.cells).map((htmlCell, cellIndex) => {
+      const text = normalizeReportText(htmlCell.textContent);
 
-              const fill =
-                headerRow
-                  ? "046242"
-                  : rowIndex %
-                        2 ===
-                      0
-                    ? "EEF7F1"
-                    : "FFFFFF";
+      const fill = headerRow
+        ? "046242"
+        : rowIndex % 2 === 0
+          ? "EEF7F1"
+          : "FFFFFF";
 
-              const firstColumnFill =
-                !headerRow &&
-                cellIndex === 0
-                  ? rowIndex %
-                        2 ===
-                      0
-                    ? "E5F2E9"
-                    : "F7FBF8"
-                  : fill;
+      const firstColumnFill =
+        !headerRow && cellIndex === 0
+          ? rowIndex % 2 === 0
+            ? "E5F2E9"
+            : "F7FBF8"
+          : fill;
 
-              return new docx.TableCell({
-                width: {
-                  size:
-                    100 /
-                    columnCount,
-                  type:
-                    docx.WidthType.PERCENTAGE,
-                },
-                verticalAlign:
-                  docx.VerticalAlign.CENTER,
-                shading: {
-                  fill:
-                    firstColumnFill,
-                },
-                margins: {
-                  top: 70,
-                  right: 70,
-                  bottom: 70,
-                  left: 70,
-                },
-                children: [
-                  createDocxTextParagraph(
-                    docx,
-                    text,
-                    {
-                      bold:
-                        headerRow ||
-                        cellIndex ===
-                          0,
-                      color:
-                        headerRow
-                          ? "FFFFFF"
-                          : "173841",
-                      size:
-                        columnCount >
-                        6
-                          ? 13
-                          : 15,
-                      align:
-                        cellIndex ===
-                        0
-                          ? docx
-                              .AlignmentType
-                              .LEFT
-                          : docx
-                              .AlignmentType
-                              .CENTER,
-                      after: 0,
-                    },
-                  ),
-                ],
-              });
-            },
-          );
+      return new docx.TableCell({
+        width: {
+          size: 100 / columnCount,
+          type: docx.WidthType.PERCENTAGE,
+        },
+        verticalAlign: docx.VerticalAlign.CENTER,
+        shading: {
+          fill: firstColumnFill,
+        },
+        margins: {
+          top: 70,
+          right: 70,
+          bottom: 70,
+          left: 70,
+        },
+        children: [
+          createDocxTextParagraph(docx, text, {
+            bold: headerRow || cellIndex === 0,
+            color: headerRow ? "FFFFFF" : "173841",
+            size: columnCount > 6 ? 13 : 15,
+            align:
+              cellIndex === 0
+                ? docx.AlignmentType.LEFT
+                : docx.AlignmentType.CENTER,
+            after: 0,
+          }),
+        ],
+      });
+    });
 
-        while (
-          cells.length <
-          columnCount
-        ) {
-          cells.push(
-            createDocxCell(
-              docx,
-              null,
-              {
-                widthPercent:
-                  100 /
-                  columnCount,
-              },
-            ),
-          );
-        }
+    while (cells.length < columnCount) {
+      cells.push(
+        createDocxCell(docx, null, {
+          widthPercent: 100 / columnCount,
+        }),
+      );
+    }
 
-        return new docx.TableRow({
-          tableHeader:
-            headerRow,
-          cantSplit: true,
-          children: cells,
-        });
-      },
-    );
+    return new docx.TableRow({
+      tableHeader: headerRow,
+      cantSplit: true,
+      children: cells,
+    });
+  });
 
   return new docx.Table({
     width: {
       size: 100,
-      type:
-        docx.WidthType.PERCENTAGE,
+      type: docx.WidthType.PERCENTAGE,
     },
     rows,
     borders: {
       top: {
-        style:
-          docx.BorderStyle.SINGLE,
+        style: docx.BorderStyle.SINGLE,
         size: 6,
         color: "9FBEA9",
       },
       bottom: {
-        style:
-          docx.BorderStyle.SINGLE,
+        style: docx.BorderStyle.SINGLE,
         size: 6,
         color: "9FBEA9",
       },
       left: {
-        style:
-          docx.BorderStyle.SINGLE,
+        style: docx.BorderStyle.SINGLE,
         size: 6,
         color: "9FBEA9",
       },
       right: {
-        style:
-          docx.BorderStyle.SINGLE,
+        style: docx.BorderStyle.SINGLE,
         size: 6,
         color: "9FBEA9",
       },
       insideHorizontal: {
-        style:
-          docx.BorderStyle.SINGLE,
+        style: docx.BorderStyle.SINGLE,
         size: 5,
         color: "AAC8B6",
       },
       insideVertical: {
-        style:
-          docx.BorderStyle.SINGLE,
+        style: docx.BorderStyle.SINGLE,
         size: 5,
         color: "AAC8B6",
       },
@@ -1137,147 +909,87 @@ function createDocxDataTable(
   });
 }
 
-function buildDocxBlocks(
-  docx: any,
-  root: HTMLElement,
-): any[] {
+function buildDocxBlocks(docx: any, root: HTMLElement): any[] {
   const blocks: any[] = [];
 
-  const processElement = (
-    element: Element,
-  ): void => {
-    if (
-      element.classList.contains(
-        "report-document-title",
-      )
-    ) {
-      const kicker =
-        directChildText(
-          element,
-          ".report-document-kicker",
-        );
+  const processElement = (element: Element): void => {
+    if (element.classList.contains("report-document-title")) {
+      const kicker = directChildText(element, ".report-document-kicker");
 
-      const title =
-        directChildText(
-          element,
-          "h1",
-        );
+      const title = directChildText(element, "h1");
 
-      const subtitle =
-        directChildText(
-          element,
-          "p",
-        );
+      const subtitle = directChildText(element, "p");
 
-      const index =
-        directChildText(
-          element,
-          ".report-index-badge",
-        );
+      const index = directChildText(element, ".report-index-badge");
 
       if (kicker) {
         blocks.push(
-          createDocxTextParagraph(
-            docx,
-            kicker,
-            {
-              bold: true,
-              color: "046242",
-              size: 15,
-              after: 70,
-            },
-          ),
+          createDocxTextParagraph(docx, kicker, {
+            bold: true,
+            color: "046242",
+            size: 15,
+            after: 70,
+          }),
         );
       }
 
       if (title) {
         blocks.push(
-          createDocxTextParagraph(
-            docx,
-            title,
-            {
-              bold: true,
-              color: "0B2536",
-              size: 32,
-              after: 90,
-              keepNext: true,
-            },
-          ),
+          createDocxTextParagraph(docx, title, {
+            bold: true,
+            color: "0B2536",
+            size: 32,
+            after: 90,
+            keepNext: true,
+          }),
         );
       }
 
       if (subtitle) {
         blocks.push(
-          createDocxTextParagraph(
-            docx,
-            subtitle,
-            {
-              color: "536D74",
-              size: 17,
-              after: 90,
-            },
-          ),
+          createDocxTextParagraph(docx, subtitle, {
+            color: "536D74",
+            size: 17,
+            after: 90,
+          }),
         );
       }
 
       if (index) {
         blocks.push(
-          createDocxTextParagraph(
-            docx,
-            `Indice de performance : ${index}`,
-            {
-              bold: true,
-              color: "FFFFFF",
-              size: 18,
-              shading: "046242",
-              after: 180,
-            },
-          ),
+          createDocxTextParagraph(docx, `Indice de performance : ${index}`, {
+            bold: true,
+            color: "FFFFFF",
+            size: 18,
+            shading: "046242",
+            after: 180,
+          }),
         );
       }
 
       return;
     }
 
-    if (
-      element.classList.contains(
-        "report-section",
-      )
-    ) {
-      const title =
-        directChildText(
-          element,
-          ":scope > .report-section-title",
-        );
+    if (element.classList.contains("report-section")) {
+      const title = directChildText(element, ":scope > .report-section-title");
 
       if (title) {
         blocks.push(
-          createDocxTextParagraph(
-            docx,
-            title,
-            {
-              bold: true,
-              color: "0B2536",
-              size: 19,
-              shading: "F2F7F4",
-              borderColor:
-                "E9B521",
-              before: 160,
-              after: 100,
-              keepNext: true,
-            },
-          ),
+          createDocxTextParagraph(docx, title, {
+            bold: true,
+            color: "0B2536",
+            size: 19,
+            shading: "F2F7F4",
+            borderColor: "E9B521",
+            before: 160,
+            after: 100,
+            keepNext: true,
+          }),
         );
       }
 
-      Array.from(
-        element.children,
-      ).forEach((child) => {
-        if (
-          child.classList.contains(
-            "report-section-title",
-          )
-        ) {
+      Array.from(element.children).forEach((child) => {
+        if (child.classList.contains("report-section-title")) {
           return;
         }
 
@@ -1287,197 +999,97 @@ function buildDocxBlocks(
       return;
     }
 
-    if (
-      element.classList.contains(
-        "report-meta-grid",
-      )
-    ) {
-      blocks.push(
-        createDocxCardGrid(
-          docx,
-          element,
-          2,
-        ),
-      );
+    if (element.classList.contains("report-meta-grid")) {
+      blocks.push(createDocxCardGrid(docx, element, 2));
+
+      return;
+    }
+
+    if (element.classList.contains("report-kpi-grid")) {
+      blocks.push(createDocxCardGrid(docx, element, 3));
 
       return;
     }
 
     if (
-      element.classList.contains(
-        "report-kpi-grid",
-      )
+      element.classList.contains("report-module-grid") ||
+      element.classList.contains("report-analysis-grid")
     ) {
-      blocks.push(
-        createDocxCardGrid(
-          docx,
-          element,
-          3,
-        ),
-      );
+      blocks.push(createDocxCardGrid(docx, element, 2));
 
       return;
     }
 
-    if (
-      element.classList.contains(
-        "report-module-grid",
-      ) ||
-      element.classList.contains(
-        "report-analysis-grid",
-      )
-    ) {
-      blocks.push(
-        createDocxCardGrid(
-          docx,
-          element,
-          2,
-        ),
-      );
+    if (element.classList.contains("report-comparison-grid")) {
+      blocks.push(createDocxCardGrid(docx, element, 3));
 
       return;
     }
 
-    if (
-      element.classList.contains(
-        "report-comparison-grid",
-      )
-    ) {
-      blocks.push(
-        createDocxCardGrid(
-          docx,
-          element,
-          3,
-        ),
-      );
-
-      return;
-    }
-
-    if (
-      element.classList.contains(
-        "report-table-wrap",
-      )
-    ) {
-      const table =
-        element.querySelector<HTMLTableElement>(
-          ".report-table",
-        );
+    if (element.classList.contains("report-table-wrap")) {
+      const table = element.querySelector<HTMLTableElement>(".report-table");
 
       if (table) {
-        blocks.push(
-          createDocxDataTable(
-            docx,
-            table,
-          ),
-        );
+        blocks.push(createDocxDataTable(docx, table));
       }
 
       return;
     }
 
     if (
-      element.classList.contains(
-        "report-executive-summary",
-      ) ||
-      element.classList.contains(
-        "report-director-note",
-      ) ||
-      element.classList.contains(
-        "report-warning-box",
-      ) ||
-      element.classList.contains(
-        "report-editorial-block",
-      )
+      element.classList.contains("report-executive-summary") ||
+      element.classList.contains("report-director-note") ||
+      element.classList.contains("report-warning-box") ||
+      element.classList.contains("report-editorial-block")
     ) {
-      const heading =
-        directChildText(
-          element,
-          ":scope > h4",
-        );
+      const heading = directChildText(element, ":scope > h4");
 
       if (heading) {
         blocks.push(
-          createDocxTextParagraph(
-            docx,
-            heading,
-            {
-              bold: true,
-              color:
-                element.classList.contains(
-                  "is-confidential",
-                )
-                  ? "86620F"
-                  : "046242",
-              size: 17,
-              after: 55,
-              keepNext: true,
-            },
-          ),
+          createDocxTextParagraph(docx, heading, {
+            bold: true,
+            color: element.classList.contains("is-confidential")
+              ? "86620F"
+              : "046242",
+            size: 17,
+            after: 55,
+            keepNext: true,
+          }),
         );
       }
 
-      const paragraphs =
-        Array.from(
-          element.querySelectorAll(
-            ":scope > p",
-          ),
-        );
+      const paragraphs = Array.from(element.querySelectorAll(":scope > p"));
 
-      if (
-        paragraphs.length
-      ) {
-        for (
-          const paragraph of paragraphs
-        ) {
-          const text =
-            normalizeReportText(
-              paragraph.textContent,
-            );
+      if (paragraphs.length) {
+        for (const paragraph of paragraphs) {
+          const text = normalizeReportText(paragraph.textContent);
 
           if (!text) continue;
 
           blocks.push(
-            createDocxTextParagraph(
-              docx,
-              text,
-              {
-                color: "405E66",
-                size: 18,
-                shading:
-                  element.classList.contains(
-                    "is-confidential",
-                  )
-                    ? "FFFAF0"
-                    : element.classList.contains(
-                          "report-director-note",
-                        )
-                      ? "FFF9E9"
-                      : "F8FBF9",
-                after: 100,
-              },
-            ),
+            createDocxTextParagraph(docx, text, {
+              color: "405E66",
+              size: 18,
+              shading: element.classList.contains("is-confidential")
+                ? "FFFAF0"
+                : element.classList.contains("report-director-note")
+                  ? "FFF9E9"
+                  : "F8FBF9",
+              after: 100,
+            }),
           );
         }
       } else {
-        const text =
-          normalizeReportText(
-            element.textContent,
-          );
+        const text = normalizeReportText(element.textContent);
 
         if (text) {
           blocks.push(
-            createDocxTextParagraph(
-              docx,
-              text,
-              {
-                color: "405E66",
-                size: 18,
-                shading:
-                  "F8FBF9",
-                after: 100,
-              },
-            ),
+            createDocxTextParagraph(docx, text, {
+              color: "405E66",
+              size: 18,
+              shading: "F8FBF9",
+              after: 100,
+            }),
           );
         }
       }
@@ -1486,23 +1098,13 @@ function buildDocxBlocks(
     }
 
     if (
-      element.matches(
-        "ul.report-list, ul.report-source-list, ol.report-list",
-      )
+      element.matches("ul.report-list, ul.report-source-list, ol.report-list")
     ) {
-      const ordered =
-        element.tagName === "OL";
+      const ordered = element.tagName === "OL";
 
-      Array.from(
-        element.querySelectorAll(
-          ":scope > li",
-        ),
-      ).forEach(
+      Array.from(element.querySelectorAll(":scope > li")).forEach(
         (item, index) => {
-          const text =
-            normalizeReportText(
-              item.textContent,
-            );
+          const text = normalizeReportText(item.textContent);
 
           if (!text) return;
 
@@ -1519,9 +1121,7 @@ function buildDocxBlocks(
               },
               children: [
                 new docx.TextRun({
-                  text: ordered
-                    ? `${index + 1}. ${text}`
-                    : text,
+                  text: ordered ? `${index + 1}. ${text}` : text,
                   font: "Aptos",
                   size: 17,
                   color: "405E66",
@@ -1535,166 +1135,108 @@ function buildDocxBlocks(
       return;
     }
 
-    if (
-      element.classList.contains(
-        "report-signatures",
-      )
-    ) {
-      const signatures =
-        Array.from(
-          element.querySelectorAll(
-            ":scope > .report-signature",
-          ),
-        );
+    if (element.classList.contains("report-signatures")) {
+      const signatures = Array.from(
+        element.querySelectorAll(":scope > .report-signature"),
+      );
 
       blocks.push(
-        createDocxCardGrid(
-          docx,
-          element,
-          Math.max(
-            1,
-            signatures.length,
-          ),
-        ),
+        createDocxCardGrid(docx, element, Math.max(1, signatures.length)),
       );
 
       return;
     }
 
-    if (
-      element.matches(
-        "p.report-comparison-reference, p",
-      )
-    ) {
-      const text =
-        normalizeReportText(
-          element.textContent,
-        );
+    if (element.matches("p.report-comparison-reference, p")) {
+      const text = normalizeReportText(element.textContent);
 
       if (text) {
         blocks.push(
-          createDocxTextParagraph(
-            docx,
-            text,
-            {
-              color: "405E66",
-              size: 17,
-              after: 90,
-            },
-          ),
+          createDocxTextParagraph(docx, text, {
+            color: "405E66",
+            size: 17,
+            after: 90,
+          }),
         );
       }
 
       return;
     }
 
-    Array.from(
-      element.children,
-    ).forEach(
-      processElement,
-    );
+    Array.from(element.children).forEach(processElement);
   };
 
-  Array.from(
-    root.children,
-  ).forEach(
-    processElement,
-  );
+  Array.from(root.children).forEach(processElement);
 
   return blocks;
 }
 
-async function downloadWordReport(
-  report: ManagementReport,
-): Promise<void> {
-  const clone =
-    prepareExportClone();
+async function downloadWordReport(report: ManagementReport): Promise<void> {
+  const clone = prepareExportClone();
 
   if (!clone) {
-    throw new Error(
-      "Le contenu du rapport est introuvable.",
-    );
+    throw new Error("Le contenu du rapport est introuvable.");
   }
 
-  const docx =
-    await import("docx");
+  const docx = await import("docx");
 
-  const blocks =
-    buildDocxBlocks(
-      docx,
-      clone,
-    );
+  const blocks = buildDocxBlocks(docx, clone);
 
-  const document =
-    new docx.Document({
-      creator: "RH",
-      title: report.title,
-      subject: report.reference,
-      description:
-        "Rapport de gestion ",
-      styles: {
-        default: {
-          document: {
-            run: {
-              font: "Aptos",
-              size: 20,
-              color: "173841",
-            },
-            paragraph: {
-              spacing: {
-                after: 120,
-                line: 276,
-              },
+  const document = new docx.Document({
+    creator: "RH",
+    title: report.title,
+    subject: report.reference,
+    description: "Rapport de gestion ",
+    styles: {
+      default: {
+        document: {
+          run: {
+            font: "Aptos",
+            size: 20,
+            color: "173841",
+          },
+          paragraph: {
+            spacing: {
+              after: 120,
+              line: 276,
             },
           },
         },
       },
-      sections: [
-        {
-          properties: {
-            page: {
-              size: {
-                width: 11906,
-                height: 16838,
-                orientation:
-                  docx.PageOrientation.PORTRAIT,
-              },
-              margin: {
-                top: 720,
-                right: 650,
-                bottom: 720,
-                left: 650,
-              },
+    },
+    sections: [
+      {
+        properties: {
+          page: {
+            size: {
+              width: 11906,
+              height: 16838,
+              orientation: docx.PageOrientation.PORTRAIT,
+            },
+            margin: {
+              top: 720,
+              right: 650,
+              bottom: 720,
+              left: 650,
             },
           },
-          children: blocks,
         },
-      ],
-    });
+        children: blocks,
+      },
+    ],
+  });
 
-  const blob =
-    await docx.Packer.toBlob(
-      document,
-    );
+  const blob = await docx.Packer.toBlob(document);
 
-  triggerBlobDownload(
-    blob,
-    `${safeFileName(
-      report.reference,
-    )}.docx`,
-  );
+  triggerBlobDownload(blob, `${safeFileName(report.reference)}.docx`);
 }
 
 /* ------------------------------------------------------------------
    PDF - rendu intégral avec découpage contrôlé des pages
    ------------------------------------------------------------------ */
 
-function collectPdfBreakpoints(
-  root: HTMLElement,
-  scale: number,
-): number[] {
-  const rootRect =
-    root.getBoundingClientRect();
+function collectPdfBreakpoints(root: HTMLElement, scale: number): number[] {
+  const rootRect = root.getBoundingClientRect();
 
   const selectors = [
     ".report-section",
@@ -1708,32 +1250,19 @@ function collectPdfBreakpoints(
     ".report-signatures",
   ];
 
-  const points =
-    new Set<number>([0]);
+  const points = new Set<number>([0]);
 
-  root
-    .querySelectorAll<HTMLElement>(
-      selectors.join(","),
-    )
-    .forEach((element) => {
-      const rect =
-        element.getBoundingClientRect();
+  root.querySelectorAll<HTMLElement>(selectors.join(",")).forEach((element) => {
+    const rect = element.getBoundingClientRect();
 
-      const bottom =
-        Math.round(
-          (rect.bottom -
-            rootRect.top) *
-            scale,
-        );
+    const bottom = Math.round((rect.bottom - rootRect.top) * scale);
 
-      if (bottom > 0) {
-        points.add(bottom);
-      }
-    });
+    if (bottom > 0) {
+      points.add(bottom);
+    }
+  });
 
-  return Array.from(points).sort(
-    (a, b) => a - b,
-  );
+  return Array.from(points).sort((a, b) => a - b);
 }
 
 function choosePdfSliceEnd(
@@ -1746,233 +1275,135 @@ function choosePdfSliceEnd(
     return total;
   }
 
-  const desiredHeight =
-    target - start;
+  const desiredHeight = target - start;
 
-  const minUsefulHeight =
-    start +
-    desiredHeight * 0.58;
+  const minUsefulHeight = start + desiredHeight * 0.58;
 
-  const safeCandidates =
-    breakpoints.filter(
-      (point) =>
-        point > minUsefulHeight &&
-        point <= target - 8,
-    );
+  const safeCandidates = breakpoints.filter(
+    (point) => point > minUsefulHeight && point <= target - 8,
+  );
 
   if (safeCandidates.length) {
-    return safeCandidates[
-      safeCandidates.length - 1
-    ];
+    return safeCandidates[safeCandidates.length - 1];
   }
 
-  return Math.min(
-    target,
-    total,
-  );
+  return Math.min(target, total);
 }
 
-async function downloadPdfReport(
-  report: ManagementReport,
-): Promise<void> {
-  const clone =
-    prepareExportClone();
+async function downloadPdfReport(report: ManagementReport): Promise<void> {
+  const clone = prepareExportClone();
 
   if (!clone) {
-    throw new Error(
-      "Le contenu du rapport est introuvable.",
-    );
+    throw new Error("Le contenu du rapport est introuvable.");
   }
 
-  const html2canvasModule =
-    await import("html2canvas");
+  const html2canvasModule = await import("html2canvas");
 
-  const html2canvas =
-    html2canvasModule.default;
+  const html2canvas = html2canvasModule.default;
 
-  const { jsPDF } =
-    await import("jspdf");
+  const { jsPDF } = await import("jspdf");
 
-  const host =
-    document.createElement("div");
+  const host = document.createElement("div");
 
-  host.className =
-    "report-export-host";
+  host.className = "report-export-host";
 
-  host.setAttribute(
-    "aria-hidden",
-    "true",
-  );
+  host.setAttribute("aria-hidden", "true");
 
   host.appendChild(clone);
   document.body.appendChild(host);
 
   try {
-    await new Promise<void>(
-      (resolve) =>
-        requestAnimationFrame(
-          () =>
-            requestAnimationFrame(
-              () => resolve(),
-            ),
-        ),
+    await new Promise<void>((resolve) =>
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
     );
 
     const exportWidthPx = 794;
 
-    clone.style.width =
-      `${exportWidthPx}px`;
-    clone.style.maxWidth =
-      `${exportWidthPx}px`;
+    clone.style.width = `${exportWidthPx}px`;
+    clone.style.maxWidth = `${exportWidthPx}px`;
 
-    const contentHeight =
-      Math.max(
-        clone.scrollHeight,
-        clone.offsetHeight,
-      );
+    const contentHeight = Math.max(clone.scrollHeight, clone.offsetHeight);
 
     /**
      * Le scale est ajusté pour conserver de la qualité sans dépasser
      * les limites habituelles de hauteur de canvas des navigateurs.
      */
-    const renderScale =
-      Math.max(
-        1,
-        Math.min(
-          1.75,
-          30000 /
-            Math.max(
-              contentHeight,
-              1,
-            ),
-        ),
-      );
+    const renderScale = Math.max(
+      1,
+      Math.min(1.75, 30000 / Math.max(contentHeight, 1)),
+    );
 
-    const canvas =
-      await html2canvas(
-        clone,
-        {
-          backgroundColor:
-            "#ffffff",
-          scale: renderScale,
-          useCORS: true,
-          logging: false,
-          width: exportWidthPx,
-          windowWidth:
-            exportWidthPx,
-          height:
-            contentHeight,
-          windowHeight:
-            contentHeight,
-          scrollX: 0,
-          scrollY: 0,
-        },
-      );
+    const canvas = await html2canvas(clone, {
+      backgroundColor: "#ffffff",
+      scale: renderScale,
+      useCORS: true,
+      logging: false,
+      width: exportWidthPx,
+      windowWidth: exportWidthPx,
+      height: contentHeight,
+      windowHeight: contentHeight,
+      scrollX: 0,
+      scrollY: 0,
+    });
 
-    const pdf =
-      new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-        compress: true,
-        putOnlyUsedFonts: true,
-      });
+    const pdf = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
+      compress: true,
+      putOnlyUsedFonts: true,
+    });
 
     pdf.setProperties({
       title: report.title,
       subject: `${report.reference} — Rapport de gestion `,
-      author:
-        report.preparedByName,
+      author: report.preparedByName,
       creator: "RH",
     });
 
     const marginLeftMm = 12;
     const marginTopMm = 12;
     const marginBottomMm = 13;
-    const contentWidthMm =
-      210 -
-      marginLeftMm -
-      12;
+    const contentWidthMm = 210 - marginLeftMm - 12;
 
-    const contentHeightMm =
-      297 -
-      marginTopMm -
-      marginBottomMm;
+    const contentHeightMm = 297 - marginTopMm - marginBottomMm;
 
-    const maxSliceHeightPx =
-      Math.floor(
-        canvas.width *
-          (contentHeightMm /
-            contentWidthMm),
-      );
+    const maxSliceHeightPx = Math.floor(
+      canvas.width * (contentHeightMm / contentWidthMm),
+    );
 
-    const scaleFromDomToCanvas =
-      canvas.width /
-      exportWidthPx;
+    const scaleFromDomToCanvas = canvas.width / exportWidthPx;
 
-    const breakpoints =
-      collectPdfBreakpoints(
-        clone,
-        scaleFromDomToCanvas,
-      );
+    const breakpoints = collectPdfBreakpoints(clone, scaleFromDomToCanvas);
 
     let startY = 0;
     let pageIndex = 0;
 
-    while (
-      startY <
-      canvas.height
-    ) {
-      const targetY =
-        Math.min(
-          canvas.height,
-          startY +
-            maxSliceHeightPx,
-        );
+    while (startY < canvas.height) {
+      const targetY = Math.min(canvas.height, startY + maxSliceHeightPx);
 
-      const endY =
-        choosePdfSliceEnd(
-          startY,
-          targetY,
-          canvas.height,
-          breakpoints,
-        );
+      const endY = choosePdfSliceEnd(
+        startY,
+        targetY,
+        canvas.height,
+        breakpoints,
+      );
 
-      const sliceHeight =
-        Math.max(
-          1,
-          endY - startY,
-        );
+      const sliceHeight = Math.max(1, endY - startY);
 
-      const pageCanvas =
-        document.createElement(
-          "canvas",
-        );
+      const pageCanvas = document.createElement("canvas");
 
-      pageCanvas.width =
-        canvas.width;
-      pageCanvas.height =
-        sliceHeight;
+      pageCanvas.width = canvas.width;
+      pageCanvas.height = sliceHeight;
 
-      const context =
-        pageCanvas.getContext(
-          "2d",
-        );
+      const context = pageCanvas.getContext("2d");
 
       if (!context) {
-        throw new Error(
-          "Impossible de préparer une page PDF.",
-        );
+        throw new Error("Impossible de préparer une page PDF.");
       }
 
-      context.fillStyle =
-        "#ffffff";
-      context.fillRect(
-        0,
-        0,
-        pageCanvas.width,
-        pageCanvas.height,
-      );
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
 
       context.drawImage(
         canvas,
@@ -1987,22 +1418,13 @@ async function downloadPdfReport(
       );
 
       if (pageIndex > 0) {
-        pdf.addPage(
-          "a4",
-          "portrait",
-        );
+        pdf.addPage("a4", "portrait");
       }
 
-      const imageHeightMm =
-        (sliceHeight /
-          canvas.width) *
-        contentWidthMm;
+      const imageHeightMm = (sliceHeight / canvas.width) * contentWidthMm;
 
       pdf.addImage(
-        pageCanvas.toDataURL(
-          "image/jpeg",
-          0.97,
-        ),
+        pageCanvas.toDataURL("image/jpeg", 0.97),
         "JPEG",
         marginLeftMm,
         marginTopMm,
@@ -2016,25 +1438,16 @@ async function downloadPdfReport(
       pageIndex += 1;
     }
 
-    pdf.save(
-      `${safeFileName(
-        report.reference,
-      )}.pdf`,
-    );
+    pdf.save(`${safeFileName(report.reference)}.pdf`);
   } finally {
     host.remove();
   }
 }
 
-function triggerBlobDownload(
-  blob: Blob,
-  fileName: string,
-): void {
-  const url =
-    URL.createObjectURL(blob);
+function triggerBlobDownload(blob: Blob, fileName: string): void {
+  const url = URL.createObjectURL(blob);
 
-  const anchor =
-    document.createElement("a");
+  const anchor = document.createElement("a");
 
   anchor.href = url;
   anchor.download = fileName;
@@ -2044,35 +1457,20 @@ function triggerBlobDownload(
   anchor.click();
   anchor.remove();
 
-  window.setTimeout(
-    () =>
-      URL.revokeObjectURL(url),
-    1_500,
-  );
+  window.setTimeout(() => URL.revokeObjectURL(url), 1_500);
 }
 
-async function printReport(
-  report: ManagementReport,
-): Promise<void> {
-  const html =
-    buildStandaloneHtml(report);
+async function printReport(report: ManagementReport): Promise<void> {
+  const html = buildStandaloneHtml(report);
 
   if (!html) {
-    throw new Error(
-      "Le contenu du rapport est introuvable.",
-    );
+    throw new Error("Le contenu du rapport est introuvable.");
   }
 
-  const popup = window.open(
-    "",
-    "_blank",
-    "width=1120,height=900",
-  );
+  const popup = window.open("", "_blank", "width=1120,height=900");
 
   if (!popup) {
-    throw new Error(
-      "La fenêtre d'impression a été bloquée par le navigateur.",
-    );
+    throw new Error("La fenêtre d'impression a été bloquée par le navigateur.");
   }
 
   popup.document.open();
@@ -2098,12 +1496,24 @@ export default function ReportDetailsDrawer({
 }: Props) {
   const [validationOpen, setValidationOpen] = useState(false);
   const [validationComment, setValidationComment] = useState(
-    report.validationComment ?? ""
+    report.validationComment ?? "",
   );
-  const [exporting, setExporting] = useState<
-    "PDF" | "WORD" | "PRINT" | null
-  >(null);
+  const [exporting, setExporting] = useState<"PDF" | "WORD" | "PRINT" | null>(
+    null,
+  );
   const [exportError, setExportError] = useState<string | null>(null);
+
+  useReportDialog(
+    isSubmitting || Boolean(exporting),
+    onClose,
+    ".report-drawer",
+  );
+  useReportDialog(
+    isSubmitting,
+    () => setValidationOpen(false),
+    ".report-validation-modal",
+    validationOpen,
+  );
 
   const {
     isOwner,
@@ -2114,9 +1524,7 @@ export default function ReportDetailsDrawer({
     canDownload,
   } = report.permissions;
 
-  async function runExport(
-    kind: "PDF" | "WORD" | "PRINT",
-  ): Promise<void> {
+  async function runExport(kind: "PDF" | "WORD" | "PRINT"): Promise<void> {
     setExportError(null);
     setExporting(kind);
 
@@ -2150,18 +1558,27 @@ export default function ReportDetailsDrawer({
       <button
         className="report-drawer-backdrop"
         type="button"
+        disabled={isSubmitting || Boolean(exporting)}
         onClick={onClose}
         aria-label="Fermer"
       />
-      <aside className="report-drawer" role="dialog" aria-modal="true">
+      <aside
+        className="report-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="report-drawer-title"
+      >
         <header className="report-drawer-header report-screen-only">
           <div>
             <p>RAPPORT DE PILOTAGE</p>
-            <h3>{report.reference}</h3>
+            <h3 id="report-drawer-title">{report.reference}</h3>
           </div>
           <button
             type="button"
             className="report-icon-button"
+            autoFocus
+            aria-label="Fermer les détails"
+            disabled={isSubmitting || Boolean(exporting)}
             onClick={onClose}
           >
             <X size={20} />
@@ -2176,7 +1593,8 @@ export default function ReportDetailsDrawer({
                 disabled={Boolean(exporting)}
                 onClick={() => void runExport("PDF")}
                 title="Télécharger ce rapport en PDF sans en-tête ni pied de page"
-               aria-label="Télécharger ce rapport en PDF sans en-tête ni pied de page">
+                aria-label="Télécharger ce rapport en PDF sans en-tête ni pied de page"
+              >
                 {exporting === "PDF" ? (
                   <LoaderCircle size={17} className="is-spinning" />
                 ) : (
@@ -2191,7 +1609,8 @@ export default function ReportDetailsDrawer({
                 disabled={Boolean(exporting)}
                 onClick={() => void runExport("WORD")}
                 title="Télécharger un véritable document Microsoft Word (.docx)"
-               aria-label="Télécharger un véritable document Microsoft Word (.docx)">
+                aria-label="Télécharger un véritable document Microsoft Word (.docx)"
+              >
                 {exporting === "WORD" ? (
                   <LoaderCircle size={17} className="is-spinning" />
                 ) : (
@@ -2229,6 +1648,7 @@ export default function ReportDetailsDrawer({
               type="button"
               className="report-secondary-button"
               disabled={isSubmitting}
+              aria-busy={isSubmitting}
               onClick={() => void onRecompute()}
             >
               {isSubmitting ? (
@@ -2246,6 +1666,7 @@ export default function ReportDetailsDrawer({
               type="button"
               className="report-primary-button"
               disabled={isSubmitting}
+              aria-busy={isSubmitting}
               onClick={() => setValidationOpen(true)}
             >
               <BadgeCheck size={17} /> Valider
@@ -2256,6 +1677,7 @@ export default function ReportDetailsDrawer({
               type="button"
               className="report-secondary-button"
               disabled={isSubmitting}
+              aria-busy={isSubmitting}
               onClick={() => void onArchive()}
             >
               <Archive size={17} /> Archiver
@@ -2273,11 +1695,7 @@ export default function ReportDetailsDrawer({
             isOwner ? "is-owner" : "is-readonly"
           }`}
         >
-          {isOwner ? (
-            <FilePenLine size={18} />
-          ) : (
-            <LockKeyhole size={18} />
-          )}
+          {isOwner ? <FilePenLine size={18} /> : <LockKeyhole size={18} />}
 
           <div>
             <strong>
@@ -2447,11 +1865,11 @@ export default function ReportDetailsDrawer({
                   <span>Indice global</span>
                   <strong
                     className={deltaClass(
-                      report.snapshot.comparison.performanceIndexDelta
+                      report.snapshot.comparison.performanceIndexDelta,
                     )}
                   >
                     {formatDelta(
-                      report.snapshot.comparison.performanceIndexDelta
+                      report.snapshot.comparison.performanceIndexDelta,
                     )}
                   </strong>
                 </article>
@@ -2459,11 +1877,11 @@ export default function ReportDetailsDrawer({
                   <span>Clôture des tâches</span>
                   <strong
                     className={deltaClass(
-                      report.snapshot.comparison.taskCompletionRateDelta
+                      report.snapshot.comparison.taskCompletionRateDelta,
                     )}
                   >
                     {formatDelta(
-                      report.snapshot.comparison.taskCompletionRateDelta
+                      report.snapshot.comparison.taskCompletionRateDelta,
                     )}
                   </strong>
                 </article>
@@ -2471,11 +1889,11 @@ export default function ReportDetailsDrawer({
                   <span>Présence</span>
                   <strong
                     className={deltaClass(
-                      report.snapshot.comparison.attendancePresenceRateDelta
+                      report.snapshot.comparison.attendancePresenceRateDelta,
                     )}
                   >
                     {formatDelta(
-                      report.snapshot.comparison.attendancePresenceRateDelta
+                      report.snapshot.comparison.attendancePresenceRateDelta,
                     )}
                   </strong>
                 </article>
@@ -2483,11 +1901,11 @@ export default function ReportDetailsDrawer({
                   <span>Couverture pointage</span>
                   <strong
                     className={deltaClass(
-                      report.snapshot.comparison.attendanceCoverageRateDelta
+                      report.snapshot.comparison.attendanceCoverageRateDelta,
                     )}
                   >
                     {formatDelta(
-                      report.snapshot.comparison.attendanceCoverageRateDelta
+                      report.snapshot.comparison.attendanceCoverageRateDelta,
                     )}
                   </strong>
                 </article>
@@ -2495,11 +1913,11 @@ export default function ReportDetailsDrawer({
                   <span>Feuille de route</span>
                   <strong
                     className={deltaClass(
-                      report.snapshot.comparison.roadmapProgressDelta
+                      report.snapshot.comparison.roadmapProgressDelta,
                     )}
                   >
                     {formatDelta(
-                      report.snapshot.comparison.roadmapProgressDelta
+                      report.snapshot.comparison.roadmapProgressDelta,
                     )}
                   </strong>
                 </article>
@@ -2507,11 +1925,11 @@ export default function ReportDetailsDrawer({
                   <span>Score évaluations</span>
                   <strong
                     className={deltaClass(
-                      report.snapshot.comparison.evaluationScoreDelta
+                      report.snapshot.comparison.evaluationScoreDelta,
                     )}
                   >
                     {formatDelta(
-                      report.snapshot.comparison.evaluationScoreDelta
+                      report.snapshot.comparison.evaluationScoreDelta,
                     )}
                   </strong>
                 </article>
@@ -2597,7 +2015,6 @@ export default function ReportDetailsDrawer({
               {report.intelligence.directorGeneralNote}
             </div>
           </section>
-
 
           <section className="report-section">
             <h2 className="report-section-title">
@@ -2978,8 +2395,6 @@ export default function ReportDetailsDrawer({
               <span>Décision, date, cachet et signature</span>
             </div>
           </div>
-
-          
         </article>
 
         {validationOpen && (
@@ -2988,36 +2403,42 @@ export default function ReportDetailsDrawer({
               type="button"
               className="report-validation-backdrop"
               aria-label="Fermer"
+              disabled={isSubmitting}
               onClick={() => setValidationOpen(false)}
             />
             <section
               className="report-validation-modal"
+              aria-labelledby="report-validation-title"
               role="dialog"
               aria-modal="true"
             >
               <header>
                 <div>
                   <p>VALIDATION </p>
-                  <h3>Valider le rapport {report.reference}</h3>
+                  <h3 id="report-validation-title">
+                    Valider le rapport {report.reference}
+                  </h3>
                 </div>
                 <button
                   type="button"
                   className="report-icon-button"
+                  aria-label="Fermer la validation"
+                  disabled={isSubmitting}
                   onClick={() => setValidationOpen(false)}
                 >
                   <X size={18} />
                 </button>
               </header>
               <p>
-                La validation fige le document pour diffusion. Toute
-                modification ultérieure exigera une réouverture et un nouveau
-                calcul.
+                La validation fige cette version pour diffusion. Vérifiez le
+                contenu avant de confirmer.
               </p>
               <label className="report-field">
                 <span>Observation de validation — facultative</span>
                 <textarea
                   rows={5}
                   value={validationComment}
+                  disabled={isSubmitting}
                   onChange={(event) => setValidationComment(event.target.value)}
                   placeholder="Décision, réserves, instructions ou échéances arrêtées..."
                 />
@@ -3028,6 +2449,7 @@ export default function ReportDetailsDrawer({
                   className="report-cancel-button"
                   onClick={() => setValidationOpen(false)}
                   disabled={isSubmitting}
+                  aria-busy={isSubmitting}
                 >
                   Annuler
                 </button>
@@ -3035,6 +2457,7 @@ export default function ReportDetailsDrawer({
                   type="button"
                   className="report-primary-button"
                   disabled={isSubmitting}
+                  aria-busy={isSubmitting}
                   onClick={async () => {
                     await onValidate(validationComment.trim() || undefined);
                     setValidationOpen(false);

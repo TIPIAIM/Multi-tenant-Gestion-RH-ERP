@@ -1,3 +1,4 @@
+import {normalizeTenantSettings} from "./settings.normalize.js";
 import { Types } from "mongoose";
 import { TenantSettingsModel } from "./settings.model.js";
 import type { TenantSettingsPayload } from "./settings.types.js";
@@ -9,7 +10,7 @@ export async function resolveTenantSettings(input: {
     .select("active")
     .lean()
     .exec();
-  return (record?.active as TenantSettingsPayload | undefined) ?? null;
+  return record?.active ? normalizeTenantSettings(record.active as TenantSettingsPayload) : null;
 }
 
 export async function isTenantFeatureEnabled(input: {

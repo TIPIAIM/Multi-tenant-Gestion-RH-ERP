@@ -35,7 +35,7 @@ export default function UserPasswordResetModal({
       <button
         className="users-modal-backdrop"
         type="button"
-        aria-label="Fermer"
+        aria-label="Fermer" title="Fermer cette fenêtre"
         onClick={onClose}
       />
 
@@ -46,7 +46,7 @@ export default function UserPasswordResetModal({
             <h3>Réinitialiser le mot de passe</h3>
           </div>
 
-          <button type="button" onClick={onClose} aria-label="Fermer">
+          <button type="button" onClick={onClose} aria-label="Fermer" title="Fermer cette fenêtre">
             <X size={20} />
           </button>
         </header>
@@ -73,10 +73,10 @@ export default function UserPasswordResetModal({
         </div>
 
         <footer className="users-modal-actions">
-          <button type="button" onClick={onClose}>
+          <button type="button" onClick={onClose} title="Fermer sans enregistrer">
             Annuler
           </button>
-          <button type="button" disabled={isSubmitting} onClick={() => void submit()}>
+          <button type="button" disabled={isSubmitting} aria-busy={isSubmitting} title="Confirmer la réinitialisation du mot de passe" onClick={() => void submit()}>
             {isSubmitting && <LoaderCircle className="is-spinning" size={16} />}
             Réinitialiser
           </button>

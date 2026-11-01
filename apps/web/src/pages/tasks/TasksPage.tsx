@@ -17,6 +17,8 @@ import {
   Building2,
   CalendarClock,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   CircleAlert,
   Columns3,
   Filter,
@@ -187,11 +189,13 @@ export default function TasksPage() {
   const canReadAgents =
     canReadOrganization;
 
-  /**
-   * RH_MANAGER est volontairement absent :
-   * il peut consulter toutes les tâches et leurs KPI,
-   * mais ne doit pas créer, modifier ou valider.
-   */
+  // Les RH peuvent créer ; leurs autres droits de gestion restent inchangés.
+  const canCreateTasks =
+    role === "TENANT_ADMIN" ||
+    role === "RH_MANAGER" ||
+    role === "DIRECTION" ||
+    role === "SERVICE_MANAGER";
+
   const canManageTasks =
     role === "TENANT_ADMIN" ||
     role === "DIRECTION" ||
@@ -224,6 +228,9 @@ export default function TasksPage() {
   useEffect(() => () => { editRequest.current += 1; }, []);
   const [editingTask, setEditingTask] =
     useState<Task | null>(null);
+  const taskViewTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const [expandedColumns, setExpandedColumns] = useState<Partial<Record<TaskStatus, boolean>>>({});
+
   const [selectedTaskId, setSelectedTaskId] =
     useState<string | null>(null);
   const taskLocation = useLocation();
@@ -637,7 +644,7 @@ export default function TasksPage() {
       !currentAgentServiceId);
 
   const canOpenCreateModal =
-    canManageTasks &&
+    canCreateTasks &&
     taskScopeQuery.isSuccess &&
     scopeReady &&
     scopedDirections.length > 0 &&
@@ -822,14 +829,15 @@ export default function TasksPage() {
   ]);
 
   const openTask = useCallback(
-    (taskId: string): void => {
+    (taskId: string, trigger?: HTMLButtonElement): void => {
+      taskViewTriggerRef.current = trigger ?? null;
       setSelectedTaskId(taskId);
     },
     [],
   );
 
   const openCreateModal = useCallback((): void => {
-    if (!canManageTasks) return;
+    if (!canCreateTasks) return;
 
     createMutation.reset();
     updateMutation.reset();
@@ -839,7 +847,7 @@ export default function TasksPage() {
     setSaveMessage("");
     setIsFormOpen(true);
   }, [
-    canManageTasks,
+    canCreateTasks,
     createMutation,
     updateMutation,
   ]);
@@ -948,8 +956,34 @@ export default function TasksPage() {
       taskScopeQuery,
     ]);
 
-  const boardColumns: TaskBoardResult["columns"] | undefined =
-    boardQuery.data?.columns;
+  useEffect(() => {
+    setExpandedColumns({});
+  }, [debouncedSearch, filters.priority, filters.status, filters.directionId,
+    filters.serviceId, filters.assignedToAgentId, filters.due, role,
+    currentAgentDirectionId, currentAgentServiceId]);
+
+  const boardColumns = useMemo<TaskBoardResult["columns"] | undefined>(() => {
+    if (!boardQuery.data?.columns) return undefined;
+    const columns = { ...boardQuery.data.columns };
+    for (const status of taskStatusOrder) {
+      columns[status] = [...(columns[status] ?? [])].sort((first, second) => {
+        // Une tâche récemment terminée remonte à sa date de fin.
+        // Dans les autres colonnes, priorité à la dernière actualisation.
+        const firstDate = Date.parse(
+          (status === "COMPLETED" ? first.completedAt : undefined)
+            ?? first.updatedAt ?? first.createdAt ?? "",
+        );
+        const secondDate = Date.parse(
+          (status === "COMPLETED" ? second.completedAt : undefined)
+            ?? second.updatedAt ?? second.createdAt ?? "",
+        );
+        const delta = (Number.isFinite(secondDate) ? secondDate : 0)
+          - (Number.isFinite(firstDate) ? firstDate : 0);
+        return delta || second.id.localeCompare(first.id);
+      });
+    }
+    return columns;
+  }, [boardQuery.data?.columns]);
 
   const listTasks: Task[] =
     listQuery.data?.items ?? [];
@@ -980,7 +1014,19 @@ export default function TasksPage() {
     <section className="tasks-page">
       <p className="task-ux-feedback" role="status" aria-live="polite">{isPreparingEdit ? "Chargement de la dernière version de la tâche…" : saveMessage}</p>
       {editError && <p className="task-ux-error" role="alert">{editError}</p>}
-      {selectedTaskQuery.isError && <p role="alert">{getApiErrorMessage(selectedTaskQuery.error)}</p>}
+      <div className="task-view-status" role="status" aria-live="polite">
+        {selectedTaskId && selectedTaskQuery.isPending ? "Ouverture de la tâche…" : ""}
+      </div>
+      {selectedTaskId && selectedTaskQuery.isPending && (
+        <button className="task-cancel-button" type="button" onClick={() => { setSelectedTaskId(null); window.requestAnimationFrame(() => taskViewTriggerRef.current?.focus()); }}>Annuler l’ouverture</button>
+      )}
+      {selectedTaskId && selectedTaskQuery.isError && !selectedTaskQuery.data && (
+        <div className="task-view-error" role="alert">
+          <p>Impossible d’ouvrir la tâche : {getApiErrorMessage(selectedTaskQuery.error)}</p>
+          <button className="task-secondary-button" type="button" disabled={selectedTaskQuery.isFetching} aria-busy={selectedTaskQuery.isFetching} onClick={() => void selectedTaskQuery.refetch()}>{selectedTaskQuery.isFetching ? "Chargement…" : "Réessayer"}</button>
+          <button className="task-cancel-button" type="button" onClick={() => { setSelectedTaskId(null); window.requestAnimationFrame(() => taskViewTriggerRef.current?.focus()); }}>Fermer</button>
+        </div>
+      )}
       <header className="tasks-hero">
         <div className="tasks-hero-copy">
           <p className="tasks-eyebrow">
@@ -1018,7 +1064,7 @@ export default function TasksPage() {
             </span>
           </button>
 
-          {canManageTasks && (
+          {canCreateTasks && (
             <button
               className="tasks-primary-button"
               type="button"
@@ -1041,13 +1087,13 @@ export default function TasksPage() {
           <CircleAlert size={20} />
           <div>
             <strong>
-              Consultation RH en lecture seule.
+              Création et consultation RH.
             </strong>
             <p>
-              Vous pouvez consulter toutes les tâches,
-              leur avancement, les KPI et télécharger
-              les pièces justificatives disponibles,
-              sans modifier ni valider les activités.
+              Vous pouvez créer des tâches pour tous les agents de votre entreprise,
+              consulter leur avancement, les KPI et télécharger les pièces justificatives.
+              La modification et la validation des activités existantes restent réservées
+              aux rôles habilités.
             </p>
           </div>
         </div>
@@ -1476,6 +1522,9 @@ export default function TasksPage() {
                     boardColumns?.[
                       status
                     ] ?? [];
+                  const isExpanded = expandedColumns[status] === true;
+                  const displayedTasks = isExpanded ? tasks : tasks.slice(0, 4);
+                  const remainingCount = tasks.length - displayedTasks.length;
 
                   return (
                     <article
@@ -1499,7 +1548,7 @@ export default function TasksPage() {
                         </div>
                       </header>
 
-                      <div className="tasks-kanban-list">
+                      <div className="tasks-kanban-list" id={`tasks-column-${status}`}>
                         {tasks.length === 0 && (
                           <p className="tasks-kanban-empty">
                             Aucune tâche dans
@@ -1507,7 +1556,7 @@ export default function TasksPage() {
                           </p>
                         )}
 
-                        {tasks.map(
+                        {displayedTasks.map(
                           (task: Task) => {
                             const kpi =
                               getKpiSummary(
@@ -1539,11 +1588,10 @@ export default function TasksPage() {
                                     : ""
                                 }`}
                                 type="button"
-                                onClick={() =>
-                                  openTask(
-                                    task.id,
-                                  )
-                                }
+                                aria-haspopup="dialog"
+                                disabled={Boolean(selectedTaskId && selectedTaskQuery.isPending)}
+                                aria-busy={selectedTaskId === task.id && selectedTaskQuery.isPending}
+                                onClick={(event) => openTask(task.id, event.currentTarget)}
                               >
                                 <div className="task-card-top">
                                   <div className="task-card-reference">
@@ -1657,6 +1705,25 @@ export default function TasksPage() {
                           },
                         )}
                       </div>
+                      {tasks.length > 4 && (
+                        <footer className="tasks-kanban-more">
+                          <p role="status" aria-live="polite">
+                            {displayedTasks.length} sur {tasks.length} tâches affichées
+                          </p>
+                          <button type="button" className="task-secondary-button tasks-kanban-expand-icon"
+                            title={isExpanded ? "Réduire à quatre tâches" : `Afficher les ${remainingCount} autres tâches`}
+                            aria-controls={`tasks-column-${status}`}
+                            aria-expanded={isExpanded}
+                            aria-label={isExpanded
+                              ? `Réduire la colonne ${statusLabels[status]} à quatre tâches`
+                              : `Afficher les ${remainingCount} autres tâches de la colonne ${statusLabels[status]}`}
+                            onClick={() => setExpandedColumns((current) => ({
+                              ...current, [status]: !current[status],
+                            }))}>
+                            {isExpanded ? <ChevronUp size={20} aria-hidden="true" /> : <ChevronDown size={20} aria-hidden="true" />}
+                          </button>
+                        </footer>
+                      )}
                     </article>
                   );
                 },
@@ -1765,9 +1832,10 @@ export default function TasksPage() {
                             : ""
                         }`}
                         type="button"
-                        onClick={() =>
-                          openTask(task.id)
-                        }
+                        aria-haspopup="dialog"
+                        disabled={Boolean(selectedTaskId && selectedTaskQuery.isPending)}
+                        aria-busy={selectedTaskId === task.id && selectedTaskQuery.isPending}
+                        onClick={(event) => openTask(task.id, event.currentTarget)}
                       >
                         <div className="task-list-cell task-list-task-cell">
                           <div className="task-list-reference-line">
@@ -1961,7 +2029,7 @@ export default function TasksPage() {
         </section>
       )}
 
-      {isFormOpen && canManageTasks && (
+      {isFormOpen && (editingTask ? canManageTasks : canCreateTasks) && (
         <TaskFormModal
           key={`${editingTask?.id ?? "new-task"}-${editingTask?.updatedAt ?? "new"}-${currentAgentDirectionId ?? "no-direction"}-${currentAgentServiceId ?? "no-service"}`}
           task={editingTask}
@@ -2039,6 +2107,7 @@ export default function TasksPage() {
               setIsPreparingEdit(false);
               setEditError(null);
               setSelectedTaskId(null);
+              window.requestAnimationFrame(() => taskViewTriggerRef.current?.focus());
             }}
             onEdit={(task) => {
               void openEditModal(task);

@@ -499,7 +499,7 @@ export default function PieceTransfersPage() {
     <main className="piece-transfers-page piece-transfers-page-v5">
       <header className="piece-transfer-appbar">
         <div>
-          <span>Espace d’échange</span>
+           
           <h1>Communications</h1>
         </div>
 

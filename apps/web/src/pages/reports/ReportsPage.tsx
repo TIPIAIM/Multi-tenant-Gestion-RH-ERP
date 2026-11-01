@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Archive,
   BadgeCheck,
@@ -44,6 +44,8 @@ import type {
 import ReportDetailsDrawer from "./ReportDetailsDrawer";
 import ReportFormModal from "./ReportFormModal";
 import "./report-page.css";
+import "./reports-ui.css";
+import { useReportDialog } from "./use-report-dialog";
 
 type Filters = {
   search: string;
@@ -85,6 +87,7 @@ function currentYear(): string {
 }
 
 export default function ReportsPage() {
+  const viewTriggerRef = useRef<HTMLButtonElement | null>(null);
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const role = user?.role ?? "";
@@ -106,7 +109,7 @@ export default function ReportsPage() {
   const [page, setPage] = useState(1);
   const [formMode, setFormMode] = useState<"CREATE" | "EDIT" | null>(null);
   const [editingReport, setEditingReport] = useState<ManagementReport | null>(
-    null
+    null,
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [toDelete, setToDelete] = useState<ManagementReport | null>(null);
@@ -114,7 +117,7 @@ export default function ReportsPage() {
   useEffect(() => {
     const timer = window.setTimeout(
       () => setDebouncedSearch(filters.search.trim()),
-      350
+      350,
     );
     return () => window.clearTimeout(timer);
   }, [filters.search]);
@@ -127,7 +130,7 @@ export default function ReportsPage() {
       filters.reportYear,
       filters.directionId,
       filters.serviceId,
-    ]
+    ],
   );
 
   const organizationQuery = useQuery({
@@ -246,7 +249,7 @@ export default function ReportsPage() {
     ? directions
     : directions.filter((item) => item.id === accessScope?.directionId);
   const selectedDirection = visibleDirections.find(
-    (item) => item.id === filters.directionId
+    (item) => item.id === filters.directionId,
   );
   const services =
     selectedDirection?.services.filter((item) => item.status === "ACTIVE") ??
@@ -276,39 +279,39 @@ export default function ReportsPage() {
     () =>
       Boolean(
         filters.search ||
-          filters.reportType ||
-          filters.status ||
-          filters.directionId ||
-          filters.serviceId ||
-          filters.reportYear !== currentYear()
+        filters.reportType ||
+        filters.status ||
+        filters.directionId ||
+        filters.serviceId ||
+        filters.reportYear !== currentYear(),
       ),
-    [filters]
+    [filters],
   );
 
   const queryError = reportsQuery.isError
     ? getApiErrorMessage(reportsQuery.error)
     : statsQuery.isError
-    ? getApiErrorMessage(statsQuery.error)
-    : organizationQuery.isError
-    ? getApiErrorMessage(organizationQuery.error)
-    : scopeQuery.isError
-    ? getApiErrorMessage(scopeQuery.error)
-    : null;
+      ? getApiErrorMessage(statsQuery.error)
+      : organizationQuery.isError
+        ? getApiErrorMessage(organizationQuery.error)
+        : scopeQuery.isError
+          ? getApiErrorMessage(scopeQuery.error)
+          : null;
   const actionError = createMutation.isError
     ? getApiErrorMessage(createMutation.error)
     : updateMutation.isError
-    ? getApiErrorMessage(updateMutation.error)
-    : recomputeMutation.isError
-    ? getApiErrorMessage(recomputeMutation.error)
-    : validateMutation.isError
-    ? getApiErrorMessage(validateMutation.error)
-    : archiveMutation.isError
-    ? getApiErrorMessage(archiveMutation.error)
-    : deleteMutation.isError
-    ? getApiErrorMessage(deleteMutation.error)
-    : exportMutation.isError
-    ? getApiErrorMessage(exportMutation.error)
-    : null;
+      ? getApiErrorMessage(updateMutation.error)
+      : recomputeMutation.isError
+        ? getApiErrorMessage(recomputeMutation.error)
+        : validateMutation.isError
+          ? getApiErrorMessage(validateMutation.error)
+          : archiveMutation.isError
+            ? getApiErrorMessage(archiveMutation.error)
+            : deleteMutation.isError
+              ? getApiErrorMessage(deleteMutation.error)
+              : exportMutation.isError
+                ? getApiErrorMessage(exportMutation.error)
+                : null;
   const isActionPending =
     createMutation.isPending ||
     updateMutation.isPending ||
@@ -317,7 +320,7 @@ export default function ReportsPage() {
     archiveMutation.isPending;
 
   async function save(
-    input: GenerateManagementReportInput | UpdateManagementReportInput
+    input: GenerateManagementReportInput | UpdateManagementReportInput,
   ): Promise<void> {
     if (formMode === "EDIT" && editingReport) {
       await updateMutation.mutateAsync({
@@ -329,39 +332,51 @@ export default function ReportsPage() {
     await createMutation.mutateAsync(input as GenerateManagementReportInput);
   }
 
+  useReportDialog(
+    deleteMutation.isPending,
+    () => setToDelete(null),
+    ".report-delete-modal",
+    Boolean(toDelete),
+  );
+
   return (
     <section className="reports-page">
       <header className="reports-hero">
         <div>
-          <p className="reports-eyebrow">
-            CONSOLIDATION · PILOTAGE · REDDITION
-          </p>
+          <p className="reports-eyebrow">SUIVI ET RAPPORTS D’ACTIVITÉ</p>
           <h2>
-            Rapports <span>décisionnels.</span>
+            Rapports <span>de gestion</span>
           </h2>
-           
         </div>
         <div className="reports-hero-actions">
           <button
             className="report-secondary-button"
             type="button"
             onClick={() => void refreshAll()}
-           data-ui-action="compact" aria-label="Actualiser" title="Actualiser">
-            <RefreshCw size={18} /><span className="ui-action-label"> Actualiser
-          </span></button>
+            data-ui-action="compact"
+            aria-label="Actualiser"
+            title="Actualiser"
+          >
+            <RefreshCw size={18} />
+            <span className="ui-action-label"> Actualiser</span>
+          </button>
           <button
             className="report-secondary-button"
             type="button"
             disabled={exportMutation.isPending}
+            aria-busy={exportMutation.isPending}
             onClick={() => exportMutation.mutate()}
-           data-ui-action="compact" aria-label="Export Excel" title="Export Excel">
+            data-ui-action="compact"
+            aria-label="Exporter la liste"
+            title="Exporter la liste"
+          >
             {exportMutation.isPending ? (
               <LoaderCircle size={18} className="is-spinning" />
             ) : (
               <Download size={18} />
-            )}{" "}<span className="ui-action-label">
-            Export Excel
-          </span></button>
+            )}{" "}
+            <span className="ui-action-label">Exporter la liste</span>
+          </button>
           {canCreate && (
             <button
               className="report-primary-button"
@@ -370,9 +385,13 @@ export default function ReportsPage() {
                 setEditingReport(null);
                 setFormMode("CREATE");
               }}
-             data-ui-action="compact" aria-label="Nouveau rapport" title="Nouveau rapport">
-              <FilePlus2 size={18} /><span className="ui-action-label"> Nouveau rapport
-            </span></button>
+              data-ui-action="compact"
+              aria-label="Nouveau rapport"
+              title="Nouveau rapport"
+            >
+              <FilePlus2 size={18} />
+              <span className="ui-action-label"> Nouveau rapport</span>
+            </button>
           )}
         </div>
       </header>
@@ -466,6 +485,7 @@ export default function ReportsPage() {
             <input
               value={filters.search}
               onChange={(e) => setFilter("search", e.target.value)}
+              aria-label="Rechercher un rapport"
               placeholder="Référence, titre, Direction ou Service..."
             />
           </label>
@@ -581,8 +601,8 @@ export default function ReportsPage() {
                   {typeLabels[report.reportType]} ·{" "}
                   {report.scopeType === "INSTITUTION"
                     ? "Organisation"
-                    : report.scopeSnapshot.serviceName ??
-                      report.scopeSnapshot.directionName}
+                    : (report.scopeSnapshot.serviceName ??
+                      report.scopeSnapshot.directionName)}
                 </p>
                 <small>
                   {formatDate(report.periodStartDate)} —{" "}
@@ -602,21 +622,43 @@ export default function ReportsPage() {
                 <span>{statusLabels[report.status]}</span>
                 <small>
                   {riskLabels[report.intelligence.riskLevel]} · Données{" "}
-                  {report.intelligence.dataConfidence.toLowerCase()}
+                  {
+                    { LOW: "limitées", MEDIUM: "suffisantes", HIGH: "fiables" }[
+                      report.intelligence.dataConfidence
+                    ]
+                  }
                 </small>
                 <small>
                   {report.snapshot.tasks.completed}/
-                  {report.snapshot.tasks.total} tâche(s) · Roadmap{" "}
+                  {report.snapshot.tasks.total} tâche(s) · Feuilles de route{" "}
                   {report.snapshot.roadmaps.averageProgress}%
                 </small>
               </div>
               <div className="report-card-actions">
                 <button
                   type="button"
-                  onClick={() => setSelectedId(report.id)}
+                  className="report-view-button"
+                  onClick={(event) => {
+                    viewTriggerRef.current = event.currentTarget;
+                    setSelectedId(report.id);
+                  }}
+                  disabled={Boolean(selectedId && selectedQuery.isPending)}
+                  aria-busy={
+                    selectedId === report.id && selectedQuery.isPending
+                  }
+                  aria-haspopup="dialog"
                   title="Consulter"
-                 aria-label="Consulter">
-                  <Eye size={17} />
+                  aria-label="Consulter"
+                >
+                  {selectedId === report.id && selectedQuery.isPending ? (
+                    <LoaderCircle
+                      size={20}
+                      className="module-button-spinner"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <Eye size={20} aria-hidden="true" />
+                  )}
                 </button>
                 {report.permissions.canEdit && (
                   <button
@@ -626,7 +668,8 @@ export default function ReportsPage() {
                       setFormMode("EDIT");
                     }}
                     title="Compléter"
-                   aria-label="Compléter">
+                    aria-label="Compléter"
+                  >
                     <Pencil size={17} />
                   </button>
                 )}
@@ -636,7 +679,8 @@ export default function ReportsPage() {
                     className="is-danger"
                     onClick={() => setToDelete(report)}
                     title="Supprimer"
-                   aria-label="Supprimer">
+                    aria-label="Supprimer"
+                  >
                     <Trash2 size={17} />
                   </button>
                 )}
@@ -688,12 +732,58 @@ export default function ReportsPage() {
           onSubmit={save}
         />
       )}
-      {selectedQuery.data && (
+      <div className="module-view-status" role="status" aria-live="polite">
+        {selectedId && selectedQuery.isPending ? "Ouverture du rapport…" : ""}
+      </div>
+      {selectedId && selectedQuery.isPending && (
+        <button
+          className="report-cancel-button"
+          type="button"
+          onClick={() => {
+            setSelectedId(null);
+            window.requestAnimationFrame(() => viewTriggerRef.current?.focus());
+          }}
+        >
+          Annuler l’ouverture
+        </button>
+      )}
+      {selectedId && selectedQuery.isError && !selectedQuery.data && (
+        <div className="module-view-error" role="alert">
+          <p>
+            Impossible d’ouvrir le rapport :{" "}
+            {getApiErrorMessage(selectedQuery.error)}
+          </p>
+          <button
+            className="report-secondary-button"
+            type="button"
+            disabled={selectedQuery.isFetching}
+            onClick={() => void selectedQuery.refetch()}
+          >
+            {selectedQuery.isFetching ? "Chargement…" : "Réessayer"}
+          </button>
+          <button
+            className="report-cancel-button"
+            type="button"
+            onClick={() => {
+              setSelectedId(null);
+              window.requestAnimationFrame(() =>
+                viewTriggerRef.current?.focus(),
+              );
+            }}
+          >
+            Fermer
+          </button>
+        </div>
+      )}
+      {selectedId && selectedQuery.data && (
         <ReportDetailsDrawer
           report={selectedQuery.data}
           isSubmitting={isActionPending}
           errorMessage={actionError}
-          onClose={() => setSelectedId(null)}
+          onClose={() => {
+            setSelectedId(null);
+            window.requestAnimationFrame(() => viewTriggerRef.current?.focus());
+          }}
           onEdit={() => {
             setEditingReport(selectedQuery.data);
             setFormMode("EDIT");
@@ -717,19 +807,27 @@ export default function ReportsPage() {
         <div className="report-delete-layer">
           <button
             className="report-delete-backdrop"
+            disabled={deleteMutation.isPending}
+            aria-label="Fermer la confirmation"
             type="button"
             onClick={() => setToDelete(null)}
           />
-          <section className="report-delete-modal">
-            <h3>Supprimer ce rapport ?</h3>
+          <section
+            className="report-delete-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="report-delete-title"
+          >
+            <h3 id="report-delete-title">Supprimer ce rapport ?</h3>
             <p>
-              Le document <strong>{toDelete.reference}</strong> et son snapshot
-              historique seront supprimés définitivement.
+              Le document <strong>{toDelete.reference}</strong> et ses données
+              historiques seront supprimés définitivement.
             </p>
             <footer>
               <button
                 type="button"
                 className="report-cancel-button"
+                disabled={deleteMutation.isPending}
                 onClick={() => setToDelete(null)}
               >
                 Annuler
@@ -738,15 +836,19 @@ export default function ReportsPage() {
                 type="button"
                 className="report-danger-button"
                 disabled={deleteMutation.isPending}
+                aria-busy={deleteMutation.isPending}
                 onClick={() => deleteMutation.mutate(toDelete.id)}
-               data-ui-action="compact" aria-label="Supprimer" title="Supprimer">
+                data-ui-action="compact"
+                aria-label="Supprimer"
+                title="Supprimer"
+              >
                 {deleteMutation.isPending ? (
                   <LoaderCircle size={17} className="is-spinning" />
                 ) : (
                   <Trash2 size={17} />
-                )}{" "}<span className="ui-action-label">
-                Supprimer
-              </span></button>
+                )}{" "}
+                <span className="ui-action-label">Supprimer</span>
+              </button>
             </footer>
           </section>
         </div>

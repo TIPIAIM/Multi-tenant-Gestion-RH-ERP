@@ -1,82 +1,8 @@
-import { LoaderCircle, RotateCcw, X } from "lucide-react";
-import type { SettingsRevision } from "../../features/settings/settings.types";
-
-function formatDate(value: string): string {
-  return new Intl.DateTimeFormat("fr-FR", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-}
-
-export default function SettingsHistoryDrawer({
-  open,
-  revisions,
-  isLoading,
-  canRestore,
-  isRestoring,
-  onClose,
-  onRestore,
-}: {
-  open: boolean;
-  revisions: SettingsRevision[];
-  isLoading: boolean;
-  canRestore: boolean;
-  isRestoring: boolean;
-  onClose: () => void;
-  onRestore: (version: number) => void;
-}) {
-  if (!open) return null;
-
-  return (
-    <div className="settings-drawer-layer">
-      <button
-        type="button"
-        className="settings-drawer-backdrop"
-        onClick={onClose}
-        aria-label="Fermer l'historique"
-      />
-
-      <aside className="settings-history-drawer">
-        <header>
-          <div>
-            <p>VERSIONNEMENT</p>
-            <h3>Historique de configuration</h3>
-          </div>
-          <button type="button" onClick={onClose} aria-label="Fermer">
-            <X size={20} />
-          </button>
-        </header>
-
-        {isLoading ? (
-          <div className="settings-empty">
-            <LoaderCircle className="is-spinning" /> Chargement...
-          </div>
-        ) : (
-          <div className="settings-history-list">
-            {revisions.map((revision) => (
-              <article key={revision.id}>
-                <div className="settings-version-badge">v{revision.version}</div>
-                <div>
-                  <strong>{revision.reason}</strong>
-                  <span>
-                    {revision.publishedByName} · {formatDate(revision.publishedAt)}
-                  </span>
-                  <p>{revision.changedSections.join(" · ")}</p>
-                </div>
-                {canRestore && (
-                  <button
-                    type="button"
-                    disabled={isRestoring}
-                    onClick={() => onRestore(revision.version)}
-                  >
-                    <RotateCcw size={16} /> Restaurer
-                  </button>
-                )}
-              </article>
-            ))}
-          </div>
-        )}
-      </aside>
-    </div>
-  );
+import {ChevronLeft,ChevronRight,LoaderCircle,RotateCcw} from "lucide-react";
+import type {SettingsRevision,SettingsRevisionList} from "../../features/settings/settings.types";
+import {settingsSectionLabels} from "../../features/settings/settings.utils";
+import SettingsDialog from "./SettingsDialog";
+export default function SettingsHistoryDrawer({open,revisions,isLoading,canRestore,isRestoring,onClose,onRestore,pagination,onPage,error}:{open:boolean;revisions:SettingsRevision[];isLoading:boolean;canRestore:boolean;isRestoring:boolean;onClose:()=>void;onRestore:(version:number)=>void;pagination?:SettingsRevisionList["pagination"];onPage:(page:number)=>void;error?:string|null}){
+ if(!open)return null;
+ return <SettingsDialog title="Historique des paramètres" eyebrow="VERSIONS PUBLIÉES" busy={isRestoring} onClose={onClose} className="settings-history-dialog">{error&&<p role="alert" className="settings-error">{error}</p>}{isLoading?<p className="settings-empty" role="status"><LoaderCircle className="is-spinning" size={16}/>Chargement…</p>:<div className="settings-history-list">{!revisions.length&&!error&&<p>Aucune version publiée dans l’historique.</p>}{revisions.map(r=><article key={r.id}><div className="settings-version-badge">{r.version}</div><div><strong>{r.reason}</strong><span>{r.publishedByName} · {new Intl.DateTimeFormat("fr-FR",{dateStyle:"medium",timeStyle:"short",timeZone:"Africa/Conakry"}).format(new Date(r.publishedAt))}</span><p>{r.changedSections.map(s=>settingsSectionLabels[s]??"Paramètres de l’organisation").join(" · ")}</p></div>{canRestore&&<button type="button" className="settings-secondary-button" title={`Restaurer la version ${r.version}`} disabled={isRestoring} onClick={()=>onRestore(r.version)}><RotateCcw size={16}/>Restaurer</button>}</article>)}</div>}{pagination&&<footer className="settings-history-pagination"><span>{pagination.total} version(s) · {pagination.page}/{pagination.totalPages}</span><div><button type="button" className="settings-icon-button" title="Page précédente" aria-label="Page précédente" disabled={isLoading||pagination.page<=1} onClick={()=>onPage(pagination.page-1)}><ChevronLeft size={16}/></button><button type="button" className="settings-icon-button" title="Page suivante" aria-label="Page suivante" disabled={isLoading||pagination.page>=pagination.totalPages} onClick={()=>onPage(pagination.page+1)}><ChevronRight size={16}/></button></div></footer>}</SettingsDialog>;
 }

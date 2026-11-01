@@ -17,6 +17,7 @@ const acceptedRoles: SettingsActorRole[] = [
 ];
 
 const hrManagedSections = new Set<SettingsSectionKey>([
+  "training", "recruitment",
   "attendance",
   "leave",
   "tasks",

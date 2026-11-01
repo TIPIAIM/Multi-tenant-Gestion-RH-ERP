@@ -75,7 +75,7 @@ export async function listPayroll(
   ).data.data;
   if (options && result.listVersion !== "payroll-table-1")
     throw new Error(
-      "La route de liste Paie doit être mise à jour côté serveur. Consultez la notice d’intégration du tableau.",
+      "Le service de paie nécessite une mise à jour. Contactez le support de la plateforme.",
     );
   return result;
 }

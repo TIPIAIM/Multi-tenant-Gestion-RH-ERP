@@ -1,3 +1,4 @@
+import { roadmapNotificationRouter } from "./roadmap-notifications.js";
 import { requireTenantFeature } from "../../middlewares/feature.middleware.js";
 import { Router } from "express";
 import { requireAuth } from "../../middlewares/auth.middleware.js";
@@ -31,6 +32,8 @@ roadmapRouter.use(requireTenantFeature("roadmaps"));
  * Routes fixes AVANT les routes dynamiques /:id.
  * Sinon /scope est interprété comme un id MongoDB et provoque une erreur 400.
  */
+roadmapRouter.use("/notifications", roadmapNotificationRouter);
+
 roadmapRouter.get("/scope", getRoadmapScopeController);
 roadmapRouter.get("/stats", getRoadmapStatsController);
 roadmapRouter.get("/", listRoadmapsController);

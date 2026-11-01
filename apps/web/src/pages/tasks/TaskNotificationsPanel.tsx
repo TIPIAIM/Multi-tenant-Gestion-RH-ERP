@@ -1,3 +1,4 @@
+import { useTaskNotificationEvents } from "../../features/tasks/use-task-notification-events";
 import {
   useEffect,
   useState,
@@ -42,6 +43,7 @@ type TaskNotificationsResponse = {
 
 export default function TaskNotificationsPanel() {
   const { user } = useAuth();
+  useTaskNotificationEvents(Boolean(user));
   const location = useLocation();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -173,7 +175,7 @@ export default function TaskNotificationsPanel() {
               onClick={() =>
                 readMutation.mutate(null)
               }
-            >
+             aria-busy={readMutation.isPending}>
               <CheckCheck size={17} />
               Tout marquer comme lu
             </button>
@@ -245,7 +247,7 @@ export default function TaskNotificationsPanel() {
                         notification,
                       )
                     }
-                  >
+                   aria-busy={readMutation.isPending}>
                     <strong>
                       {notification.kind ===
                       "COMPLETED"

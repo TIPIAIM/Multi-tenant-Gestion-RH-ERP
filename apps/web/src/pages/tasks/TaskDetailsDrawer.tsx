@@ -488,7 +488,7 @@ export default function TaskDetailsDrawer({
           </div>
 
           <button
-            className="task-icon-button"
+            className="task-icon-button" autoFocus
             type="button"
             aria-label="Fermer"
             onClick={onClose}
@@ -666,7 +666,7 @@ export default function TaskDetailsDrawer({
                   disabled={
                     progressMutation.isPending
                   }
-                >
+                 aria-busy={progressMutation.isPending}>
                   {progressMutation.isPending ? (
                     <LoaderCircle
                       size={16}
@@ -924,7 +924,7 @@ export default function TaskDetailsDrawer({
                                       },
                                     )
                                   }
-                                >
+                                 aria-busy={downloadKpiMutation.isPending}>
                                   <Download
                                     size={15}
                                   />

@@ -8,7 +8,9 @@ export const routeFeatures: Record<string, keyof FeatureFlagSettings> = {
   evaluations: "evaluations",
   reports: "reports",
   payroll: "payroll",
+  trainings: "training",
+  recruitment: "recruitment",
 };
 export function featureForPath(path: string) {
-  return routeFeatures[path.split("/").filter(Boolean)[0] ?? ""];
+  return routeFeatures[path.split(/[?#]/)[0]!.split("/").filter(Boolean)[0] ?? ""];
 }

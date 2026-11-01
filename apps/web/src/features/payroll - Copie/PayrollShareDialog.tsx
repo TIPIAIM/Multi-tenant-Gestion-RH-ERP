@@ -98,7 +98,7 @@ export default function PayrollShareDialog({
             aria-label="Fermer le partage"
             disabled={mutation.isPending}
             onClick={onClose}
-          >
+           aria-busy={mutation.isPending}>
             <X size={18} />
           </button>
         </div>
@@ -205,7 +205,7 @@ export default function PayrollShareDialog({
                 type="button"
                 disabled={mutation.isPending}
                 onClick={onClose}
-              >
+               aria-busy={mutation.isPending}>
                 Fermer
               </button>
               <button

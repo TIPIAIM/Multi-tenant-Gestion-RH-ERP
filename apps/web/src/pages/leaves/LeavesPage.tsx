@@ -1,7 +1,5 @@
-import {
-  useMemo,
-  useState,
-} from "react";
+import { useLocation } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   AlertTriangle,
@@ -24,11 +22,7 @@ import {
   WalletCards,
   X,
 } from "lucide-react";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "../../features/auth/auth.context";
 import { getApiErrorMessage } from "../../features/auth/auth.api";
 import { getAgents } from "../../features/agents/agent.api";
@@ -44,6 +38,7 @@ import {
   getLeaveRequests,
   reviewLeaveByManager,
   reviewLeaveFinal,
+  reviewLeaveByRH,
   submitLeaveRequest,
   updateLeaveRequest,
   upsertLeaveBalance,
@@ -70,13 +65,11 @@ import {
   leaveTypeLabels,
 } from "../../features/leaves/leave.utils";
 import "./leaves-page.css";
+import "./leaves-ui.css";
+import { useLeaveDialog } from "./use-leave-dialog";
 
 type UserRole =
-  | "TENANT_ADMIN"
-  | "DIRECTION"
-  | "RH_MANAGER"
-  | "SERVICE_MANAGER"
-  | "AGENT";
+  "TENANT_ADMIN" | "DIRECTION" | "RH_MANAGER" | "SERVICE_MANAGER" | "AGENT";
 
 type RequestFilters = {
   search: string;
@@ -86,7 +79,7 @@ type RequestFilters = {
 };
 
 type ReviewAction = {
-  mode: "manager" | "final" | "cancel";
+  mode: "manager" | "rh" | "final" | "cancel";
   request: LeaveRequest;
 };
 
@@ -112,31 +105,19 @@ function LeaveRequestModal({
   onClose,
   onSave,
 }: RequestModalProps) {
+  useLeaveDialog(isSubmitting, onClose, ".leave-modal");
   const isEditing = Boolean(request);
 
-  const [agentId, setAgentId] = useState(
-    request?.agentId ?? "",
-  );
+  const [agentId, setAgentId] = useState(request?.agentId ?? "");
   const [leaveType, setLeaveType] = useState<LeaveType>(
     request?.leaveType ?? "ANNUAL_LEAVE",
   );
-  const [startDate, setStartDate] = useState(
-    request?.startDate ?? "",
-  );
-  const [endDate, setEndDate] = useState(
-    request?.endDate ?? "",
-  );
-  const [reason, setReason] = useState(
-    request?.reason ?? "",
-  );
-  const [clientError, setClientError] = useState<
-    string | null
-  >(null);
+  const [startDate, setStartDate] = useState(request?.startDate ?? "");
+  const [endDate, setEndDate] = useState(request?.endDate ?? "");
+  const [reason, setReason] = useState(request?.reason ?? "");
+  const [clientError, setClientError] = useState<string | null>(null);
 
-  const requestedDays = calculateWorkingDaysPreview(
-    startDate,
-    endDate,
-  );
+  const requestedDays = calculateWorkingDaysPreview(startDate, endDate);
 
   async function save(submitNow: boolean): Promise<void> {
     setClientError(null);
@@ -147,16 +128,12 @@ function LeaveRequestModal({
     }
 
     if (!startDate || !endDate || endDate < startDate) {
-      setClientError(
-        "Renseignez une période de congé valide.",
-      );
+      setClientError("Renseignez une période de congé valide.");
       return;
     }
 
     if (!reason.trim() || reason.trim().length < 3) {
-      setClientError(
-        "Renseignez un motif d'au moins trois caractères.",
-      );
+      setClientError("Renseignez un motif d'au moins trois caractères.");
       return;
     }
 
@@ -185,6 +162,7 @@ function LeaveRequestModal({
         className="leave-modal-backdrop"
         type="button"
         aria-label="Fermer"
+        disabled={isSubmitting}
         onClick={onClose}
       />
 
@@ -192,15 +170,12 @@ function LeaveRequestModal({
         className="leave-modal"
         role="dialog"
         aria-modal="true"
+        aria-labelledby="leave-request-title"
       >
         <header className="leave-modal-header">
           <div>
-            <p>
-              {isEditing
-                ? "MISE À JOUR DU BROUILLON"
-                : "NOUVELLE DEMANDE"}
-            </p>
-            <h3>
+            <p>{isEditing ? "MISE À JOUR DU BROUILLON" : "NOUVELLE DEMANDE"}</p>
+            <h3 id="leave-request-title">
               {isEditing
                 ? "Modifier la demande"
                 : "Demande de congé ou d'absence"}
@@ -212,6 +187,7 @@ function LeaveRequestModal({
             type="button"
             aria-label="Fermer"
             disabled={isSubmitting}
+            aria-busy={isSubmitting}
             onClick={onClose}
           >
             <X size={20} />
@@ -219,7 +195,7 @@ function LeaveRequestModal({
         </header>
 
         {(clientError || errorMessage) && (
-          <div className="leave-inline-error">
+          <div className="leave-inline-error" role="alert">
             <CircleAlert size={17} />
             <span>{clientError ?? errorMessage}</span>
           </div>
@@ -253,13 +229,11 @@ function LeaveRequestModal({
                 setLeaveType(event.target.value as LeaveType)
               }
             >
-              {Object.entries(leaveTypeLabels).map(
-                ([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ),
-              )}
+              {Object.entries(leaveTypeLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
             </select>
           </label>
 
@@ -267,8 +241,8 @@ function LeaveRequestModal({
             <span>Jours ouvrés estimés</span>
             <strong>{formatDays(requestedDays)}</strong>
             <small>
-              Hors samedi et dimanche. Le calcul officiel est
-              effectué par le serveur.
+              Hors samedi et dimanche. Le nombre définitif est calculé lors de
+              l’enregistrement.
             </small>
           </article>
 
@@ -310,6 +284,7 @@ function LeaveRequestModal({
             className="leave-cancel-button"
             type="button"
             disabled={isSubmitting}
+            aria-busy={isSubmitting}
             onClick={onClose}
           >
             Annuler
@@ -319,6 +294,7 @@ function LeaveRequestModal({
             className="leave-secondary-action"
             type="button"
             disabled={isSubmitting}
+            aria-busy={isSubmitting}
             onClick={() => void save(false)}
           >
             {isSubmitting ? (
@@ -333,6 +309,7 @@ function LeaveRequestModal({
             className="leave-primary-button"
             type="button"
             disabled={isSubmitting}
+            aria-busy={isSubmitting}
             onClick={() => void save(true)}
           >
             {isSubmitting ? (
@@ -366,19 +343,19 @@ function LeaveDecisionModal({
   onClose,
   onSubmit,
 }: DecisionModalProps) {
-  const [decision, setDecision] =
-    useState<LeaveReviewDecision>("APPROVED");
+  useLeaveDialog(isSubmitting, onClose, ".leave-modal");
+  const [decision, setDecision] = useState<LeaveReviewDecision>("APPROVED");
   const [comment, setComment] = useState("");
-  const [clientError, setClientError] = useState<string | null>(
-    null,
-  );
+  const [clientError, setClientError] = useState<string | null>(null);
 
   const isCancellation = action.mode === "cancel";
   const title = isCancellation
     ? "Annuler la demande"
     : action.mode === "manager"
       ? "Validation hiérarchique"
-      : "Décision finale RH";
+      : action.mode === "rh"
+        ? "Validation RH"
+        : "Décision finale de l’administrateur";
 
   async function submit(): Promise<void> {
     setClientError(null);
@@ -395,10 +372,7 @@ function LeaveDecisionModal({
       return;
     }
 
-    await onSubmit(
-      isCancellation ? null : decision,
-      comment.trim(),
-    );
+    await onSubmit(isCancellation ? null : decision, comment.trim());
   }
 
   return (
@@ -407,18 +381,20 @@ function LeaveDecisionModal({
         className="leave-modal-backdrop"
         type="button"
         aria-label="Fermer"
+        disabled={isSubmitting}
         onClick={onClose}
       />
 
       <section
         className="leave-modal leave-decision-modal"
         role="dialog"
+        aria-labelledby="leave-decision-title"
         aria-modal="true"
       >
         <header className="leave-modal-header">
           <div>
             <p>ACTION DE VALIDATION</p>
-            <h3>{title}</h3>
+            <h3 id="leave-decision-title">{title}</h3>
           </div>
 
           <button
@@ -426,6 +402,7 @@ function LeaveDecisionModal({
             type="button"
             aria-label="Fermer"
             disabled={isSubmitting}
+            aria-busy={isSubmitting}
             onClick={onClose}
           >
             <X size={20} />
@@ -433,9 +410,7 @@ function LeaveDecisionModal({
         </header>
 
         <div className="leave-decision-summary">
-          <strong>
-            {action.request.agent?.fullName ?? "Agent"}
-          </strong>
+          <strong>{action.request.agent?.fullName ?? "Agent"}</strong>
           <span>
             {leaveTypeLabels[action.request.leaveType]} ·{" "}
             {formatLeaveDate(action.request.startDate)} au{" "}
@@ -444,7 +419,7 @@ function LeaveDecisionModal({
         </div>
 
         {(clientError || errorMessage) && (
-          <div className="leave-inline-error">
+          <div className="leave-inline-error" role="alert">
             <CircleAlert size={17} />
             <span>{clientError ?? errorMessage}</span>
           </div>
@@ -453,10 +428,10 @@ function LeaveDecisionModal({
         {!isCancellation && (
           <div className="leave-decision-options">
             <button
-              className={
-                decision === "APPROVED" ? "is-selected approve" : ""
-              }
+              className={decision === "APPROVED" ? "is-selected approve" : ""}
               type="button"
+              disabled={isSubmitting}
+              aria-pressed={decision === "APPROVED"}
               onClick={() => setDecision("APPROVED")}
             >
               <CheckCircle2 size={18} />
@@ -464,10 +439,10 @@ function LeaveDecisionModal({
             </button>
 
             <button
-              className={
-                decision === "REJECTED" ? "is-selected reject" : ""
-              }
+              className={decision === "REJECTED" ? "is-selected reject" : ""}
               type="button"
+              disabled={isSubmitting}
+              aria-pressed={decision === "REJECTED"}
               onClick={() => setDecision("REJECTED")}
             >
               <ShieldX size={18} />
@@ -503,6 +478,7 @@ function LeaveDecisionModal({
             className="leave-cancel-button"
             type="button"
             disabled={isSubmitting}
+            aria-busy={isSubmitting}
             onClick={onClose}
           >
             Annuler
@@ -516,6 +492,7 @@ function LeaveDecisionModal({
             }
             type="button"
             disabled={isSubmitting}
+            aria-busy={isSubmitting}
             onClick={() => void submit()}
           >
             {isSubmitting ? (
@@ -558,37 +535,63 @@ function LeaveBalanceModal({
   onClose,
   onSubmit,
 }: BalanceModalProps) {
-  const [agentId, setAgentId] = useState(
-    balance?.agentId ?? "",
-  );
+  useLeaveDialog(isSubmitting, onClose, ".leave-modal");
+  const [agentId, setAgentId] = useState(balance?.agentId ?? "");
   const [calendarYear, setCalendarYear] = useState(
     balance?.calendarYear ?? getCurrentYear(),
   );
   const [leaveType, setLeaveType] = useState<LeaveType>(
     balance?.leaveType ?? "ANNUAL_LEAVE",
   );
-  const [openingDays, setOpeningDays] = useState(
-    balance?.openingDays ?? 0,
-  );
-  const [entitledDays, setEntitledDays] = useState(
-    balance?.entitledDays ?? 0,
-  );
+  const [openingDays, setOpeningDays] = useState(balance?.openingDays ?? 0);
+  const [entitledDays, setEntitledDays] = useState(balance?.entitledDays ?? 0);
   const [carriedOverDays, setCarriedOverDays] = useState(
     balance?.carriedOverDays ?? 0,
   );
   const [adjustmentDays, setAdjustmentDays] = useState(
     balance?.adjustmentDays ?? 0,
   );
-  const [clientError, setClientError] = useState<string | null>(
-    null,
-  );
+  const [clientError, setClientError] = useState<string | null>(null);
 
+  const automaticAnnual = leaveType === "ANNUAL_LEAVE";
+  const previewQuery = useQuery({
+    queryKey: ["leaves", "balance-preview", agentId, calendarYear],
+    queryFn: () =>
+      getLeaveBalances({ agentId, calendarYear: Number(calendarYear) }),
+    enabled: automaticAnnual && Boolean(agentId),
+    refetchOnWindowFocus: false,
+    staleTime: 0,
+  });
+  const annualBalance =
+    previewQuery.data?.find((item) => item.leaveType === "ANNUAL_LEAVE") ??
+    balance;
+  useEffect(() => {
+    if (balance || !automaticAnnual) return;
+    const existing = previewQuery.data?.find(
+      (item) => item.leaveType === "ANNUAL_LEAVE",
+    );
+    if (existing) {
+      setOpeningDays(existing.openingDays);
+      setAdjustmentDays(existing.adjustmentDays);
+    }
+  }, [balance, automaticAnnual, previewQuery.data]);
+  const displayedEntitled = automaticAnnual
+    ? (annualBalance?.entitledDays ?? 0)
+    : entitledDays;
+  const displayedCarry = automaticAnnual
+    ? (annualBalance?.carriedOverDays ?? 0)
+    : carriedOverDays;
+  const consumed = automaticAnnual
+    ? (annualBalance?.consumedDays ?? 0)
+    : (balance?.consumedDays ?? 0);
+  const reserved = automaticAnnual ? (annualBalance?.reservedDays ?? 0) : 0;
   const available =
     Number(openingDays) +
-    Number(entitledDays) +
-    Number(carriedOverDays) +
+    Number(displayedEntitled) +
+    Number(displayedCarry) +
     Number(adjustmentDays) -
-    (balance?.consumedDays ?? 0);
+    consumed -
+    reserved;
 
   async function submit(): Promise<void> {
     setClientError(null);
@@ -597,14 +600,22 @@ function LeaveBalanceModal({
       setClientError("Sélectionnez un Agent.");
       return;
     }
+    if (automaticAnnual && (previewQuery.isFetching || previewQuery.isError)) {
+      setClientError(
+        previewQuery.isError
+          ? "Impossible de charger le solde automatique. Réessayez avant d’enregistrer."
+          : "Le solde automatique est en cours de calcul.",
+      );
+      return;
+    }
 
     await onSubmit({
       agentId,
       calendarYear: Number(calendarYear),
       leaveType,
       openingDays: Number(openingDays),
-      entitledDays: Number(entitledDays),
-      carriedOverDays: Number(carriedOverDays),
+      entitledDays: Number(displayedEntitled),
+      carriedOverDays: Number(displayedCarry),
       adjustmentDays: Number(adjustmentDays),
     });
   }
@@ -615,14 +626,20 @@ function LeaveBalanceModal({
         className="leave-modal-backdrop"
         type="button"
         aria-label="Fermer"
+        disabled={isSubmitting}
         onClick={onClose}
       />
 
-      <section className="leave-modal" role="dialog" aria-modal="true">
+      <section
+        className="leave-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="leave-balance-title"
+      >
         <header className="leave-modal-header">
           <div>
             <p>ADMINISTRATION RH</p>
-            <h3>Configurer un solde de congé</h3>
+            <h3 id="leave-balance-title">Configurer un solde de congé</h3>
           </div>
 
           <button
@@ -630,6 +647,7 @@ function LeaveBalanceModal({
             type="button"
             aria-label="Fermer"
             disabled={isSubmitting}
+            aria-busy={isSubmitting}
             onClick={onClose}
           >
             <X size={20} />
@@ -637,7 +655,7 @@ function LeaveBalanceModal({
         </header>
 
         {(clientError || errorMessage) && (
-          <div className="leave-inline-error">
+          <div className="leave-inline-error" role="alert">
             <CircleAlert size={17} />
             <span>{clientError ?? errorMessage}</span>
           </div>
@@ -668,9 +686,7 @@ function LeaveBalanceModal({
               max="2200"
               value={calendarYear}
               disabled={isSubmitting || Boolean(balance)}
-              onChange={(event) =>
-                setCalendarYear(Number(event.target.value))
-              }
+              onChange={(event) => setCalendarYear(Number(event.target.value))}
             />
           </label>
 
@@ -683,13 +699,11 @@ function LeaveBalanceModal({
                 setLeaveType(event.target.value as LeaveType)
               }
             >
-              {Object.entries(leaveTypeLabels).map(
-                ([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ),
-              )}
+              {Object.entries(leaveTypeLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
             </select>
           </label>
 
@@ -700,31 +714,47 @@ function LeaveBalanceModal({
               step="0.5"
               value={openingDays}
               disabled={isSubmitting}
-              onChange={(event) =>
-                setOpeningDays(Number(event.target.value))
-              }
+              onChange={(event) => setOpeningDays(Number(event.target.value))}
             />
           </label>
 
           <label className="leave-form-field">
-            <span>Droits acquis</span>
+            <span>
+              {automaticAnnual
+                ? "Droits acquis · calcul automatique"
+                : "Droits acquis"}
+            </span>
             <input
               type="number"
               step="0.5"
-              value={entitledDays}
+              value={displayedEntitled}
+              readOnly={automaticAnnual}
+              title={
+                automaticAnnual
+                  ? "2,5 jours après chaque mois complet de service. Le montant est calculé automatiquement."
+                  : undefined
+              }
               disabled={isSubmitting}
-              onChange={(event) =>
-                setEntitledDays(Number(event.target.value))
-              }
+              onChange={(event) => setEntitledDays(Number(event.target.value))}
             />
           </label>
 
           <label className="leave-form-field">
-            <span>Report antérieur</span>
+            <span>
+              {automaticAnnual
+                ? "Report antérieur · automatique"
+                : "Report antérieur"}
+            </span>
             <input
               type="number"
               step="0.5"
-              value={carriedOverDays}
+              value={displayedCarry}
+              readOnly={automaticAnnual}
+              title={
+                automaticAnnual
+                  ? "Reliquat non utilisé des exercices précédents, sans expiration."
+                  : undefined
+              }
               disabled={isSubmitting}
               onChange={(event) =>
                 setCarriedOverDays(Number(event.target.value))
@@ -750,7 +780,8 @@ function LeaveBalanceModal({
           <span>Solde disponible après paramétrage</span>
           <strong>{formatDays(available)}</strong>
           <small>
-            Déjà consommé : {formatDays(balance?.consumedDays ?? 0)}
+            Déjà consommé : {formatDays(consumed)}
+            {automaticAnnual && ` · Réservé : ${formatDays(reserved)}`}
           </small>
         </div>
 
@@ -759,6 +790,7 @@ function LeaveBalanceModal({
             className="leave-cancel-button"
             type="button"
             disabled={isSubmitting}
+            aria-busy={isSubmitting}
             onClick={onClose}
           >
             Annuler
@@ -768,6 +800,7 @@ function LeaveBalanceModal({
             className="leave-primary-button"
             type="button"
             disabled={isSubmitting}
+            aria-busy={isSubmitting}
             onClick={() => void submit()}
           >
             {isSubmitting ? (
@@ -798,6 +831,7 @@ function LeaveDetailsDrawer({
   onEdit,
   onReview,
 }: LeaveDrawerProps) {
+  useLeaveDialog(false, onClose, ".leave-drawer");
   const activitiesQuery = useQuery({
     queryKey: ["leaves", "activities", request.id],
     queryFn: () => getLeaveActivities(request.id),
@@ -808,14 +842,14 @@ function LeaveDetailsDrawer({
     ["DIRECTION", "SERVICE_MANAGER"].includes(role) &&
     request.status === "SUBMITTED";
 
+  const canReviewRH =
+    role === "RH_MANAGER" && request.status === "MANAGER_APPROVED";
   const canReviewFinal =
-    ["TENANT_ADMIN", "RH_MANAGER"].includes(role) &&
-    ["SUBMITTED", "MANAGER_APPROVED"].includes(request.status);
+    role === "TENANT_ADMIN" && request.status === "RH_APPROVED";
 
   const canEdit = request.status === "DRAFT";
 
-  const canCancel =
-    !["REJECTED", "CANCELLED"].includes(request.status);
+  const canCancel = !["REJECTED", "CANCELLED"].includes(request.status);
 
   return (
     <div className="leave-drawer-layer">
@@ -835,9 +869,7 @@ function LeaveDetailsDrawer({
         <header className="leave-drawer-header">
           <div>
             <p>DEMANDE D'ABSENCE</p>
-            <h3>
-              {request.agent?.fullName ?? "Demande de congé"}
-            </h3>
+            <h3>{request.agent?.fullName ?? "Demande de congé"}</h3>
           </div>
 
           <button
@@ -905,7 +937,23 @@ function LeaveDetailsDrawer({
             </article>
 
             <article>
-              <span>Décision finale RH</span>
+              <span>Avis RH</span>
+              <strong>
+                {request.rhReview
+                  ? request.rhReview.decision === "APPROVED"
+                    ? "Accord RH"
+                    : "Refus RH"
+                  : "En attente"}
+              </strong>
+              <small>
+                {request.rhReview
+                  ? `${request.rhReview.reviewedByName} · ${formatLeaveDateTime(request.rhReview.decidedAt)}`
+                  : "Aucun avis RH enregistré"}
+              </small>
+              {request.rhReview?.comment && <p>{request.rhReview.comment}</p>}
+            </article>
+            <article>
+              <span>Décision finale administrateur</span>
               <strong>
                 {request.finalReview
                   ? request.finalReview.decision === "APPROVED"
@@ -927,7 +975,11 @@ function LeaveDetailsDrawer({
           </div>
         </section>
 
-        {(canEdit || canReviewManager || canReviewFinal || canCancel) && (
+        {(canEdit ||
+          canReviewManager ||
+          canReviewRH ||
+          canReviewFinal ||
+          canCancel) && (
           <section className="leave-drawer-section">
             <div className="leave-drawer-heading">
               <Activity size={18} />
@@ -936,33 +988,44 @@ function LeaveDetailsDrawer({
 
             <div className="leave-drawer-actions">
               {canEdit && (
-                <button type="button" onClick={() => onEdit(request)} data-ui-action="compact" aria-label="Modifier le brouillon" title="Modifier le brouillon">
-                  <Edit3 size={16} /><span className="ui-action-label">
-                  Modifier le brouillon
-                </span></button>
+                <button
+                  type="button"
+                  onClick={() => onEdit(request)}
+                  data-ui-action="compact"
+                  aria-label="Modifier le brouillon"
+                  title="Modifier le brouillon"
+                >
+                  <Edit3 size={16} />
+                  <span className="ui-action-label">Modifier le brouillon</span>
+                </button>
               )}
 
               {canReviewManager && (
                 <button
                   type="button"
-                  onClick={() =>
-                    onReview({ mode: "manager", request })
-                  }
+                  onClick={() => onReview({ mode: "manager", request })}
                 >
                   <ClipboardCheck size={16} />
                   Valider hiérarchiquement
                 </button>
               )}
 
+              {canReviewRH && (
+                <button
+                  type="button"
+                  onClick={() => onReview({ mode: "rh", request })}
+                >
+                  <ClipboardCheck size={16} />
+                  Rendre l’avis RH
+                </button>
+              )}
               {canReviewFinal && (
                 <button
                   type="button"
-                  onClick={() =>
-                    onReview({ mode: "final", request })
-                  }
+                  onClick={() => onReview({ mode: "final", request })}
                 >
                   <BadgeCheck size={16} />
-                  Rendre la décision RH
+                  Décision administrateur
                 </button>
               )}
 
@@ -970,9 +1033,7 @@ function LeaveDetailsDrawer({
                 <button
                   className="is-danger"
                   type="button"
-                  onClick={() =>
-                    onReview({ mode: "cancel", request })
-                  }
+                  onClick={() => onReview({ mode: "cancel", request })}
                 >
                   <ShieldX size={16} />
                   Annuler la demande
@@ -996,7 +1057,7 @@ function LeaveDetailsDrawer({
           )}
 
           {activitiesQuery.isError && (
-            <div className="leave-inline-error">
+            <div className="leave-inline-error" role="alert">
               {getApiErrorMessage(activitiesQuery.error)}
             </div>
           )}
@@ -1007,8 +1068,7 @@ function LeaveDetailsDrawer({
                 <span />
                 <div>
                   <strong>
-                    {leaveActivityLabels[activity.action] ??
-                      activity.action}
+                    {leaveActivityLabels[activity.action] ?? activity.action}
                   </strong>
                   <p>{activity.summary}</p>
                   <small>
@@ -1030,6 +1090,7 @@ export default function LeavesPage() {
   const queryClient = useQueryClient();
 
   const role = user?.role as UserRole;
+  const location = useLocation();
   const currentYear = getCurrentYear();
 
   const [filters, setFilters] = useState<RequestFilters>({
@@ -1040,21 +1101,27 @@ export default function LeavesPage() {
   });
   const [page, setPage] = useState(1);
   const [requestModal, setRequestModal] = useState(false);
-  const [editingRequest, setEditingRequest] =
-    useState<LeaveRequest | null>(null);
-  const [selectedRequestId, setSelectedRequestId] =
-    useState<string | null>(null);
-  const [decisionAction, setDecisionAction] =
-    useState<ReviewAction | null>(null);
-  const [balanceModal, setBalanceModal] =
-    useState<LeaveBalance | null | "new">(null);
+  const [editingRequest, setEditingRequest] = useState<LeaveRequest | null>(
+    null,
+  );
+  const [selectedRequestId, setSelectedRequestId] = useState<string | null>(
+    null,
+  );
+  useEffect(() => {
+    const id = new URLSearchParams(location.search).get("request");
+    if (id && /^[a-f\d]{24}$/i.test(id)) setSelectedRequestId(id);
+  }, [location.search]);
 
-  const canManageBalances = [
-    "TENANT_ADMIN",
-    "RH_MANAGER",
-  ].includes(role);
+  const [decisionAction, setDecisionAction] = useState<ReviewAction | null>(
+    null,
+  );
+  const [balanceModal, setBalanceModal] = useState<LeaveBalance | null | "new">(
+    null,
+  );
 
-  const canChooseAgent = role !== "AGENT";
+  const canManageBalances = ["TENANT_ADMIN", "RH_MANAGER"].includes(role);
+
+  const canChooseAgent = Boolean(user) && role !== "AGENT";
 
   const agentsQuery = useQuery({
     queryKey: ["agents", "leaves"],
@@ -1076,9 +1143,10 @@ export default function LeavesPage() {
 
   const balancesQuery = useQuery({
     queryKey: ["leaves", "balances", currentYear],
-    queryFn: () =>
-      getLeaveBalances({ calendarYear: currentYear }),
+    queryFn: () => getLeaveBalances({ calendarYear: currentYear }),
     staleTime: 15_000,
+    refetchInterval: 300_000,
+    refetchOnWindowFocus: "always",
   });
 
   const calendarQuery = useQuery({
@@ -1143,6 +1211,17 @@ export default function LeavesPage() {
     }) => reviewLeaveByManager(id, { decision, comment }),
   });
 
+  const reviewRHMutation = useMutation({
+    mutationFn: ({
+      id,
+      decision,
+      comment,
+    }: {
+      id: string;
+      decision: LeaveReviewDecision;
+      comment: string;
+    }) => reviewLeaveByRH(id, { decision, comment }),
+  });
   const reviewFinalMutation = useMutation({
     mutationFn: ({
       id,
@@ -1156,13 +1235,8 @@ export default function LeavesPage() {
   });
 
   const cancelMutation = useMutation({
-    mutationFn: ({
-      id,
-      reason,
-    }: {
-      id: string;
-      reason: string;
-    }) => cancelLeaveRequest(id, reason),
+    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+      cancelLeaveRequest(id, reason),
   });
 
   const balanceMutation = useMutation({
@@ -1174,20 +1248,20 @@ export default function LeavesPage() {
   const pagination = requestsQuery.data?.pagination;
   const dashboard = dashboardQuery.data;
 
-  const selectedError =
-    selectedRequestQuery.isError
-      ? getApiErrorMessage(selectedRequestQuery.error)
-      : null;
+  const selectedError = selectedRequestQuery.isError
+    ? getApiErrorMessage(selectedRequestQuery.error)
+    : null;
 
-  const currentError =
-    createMutation.isError
-      ? getApiErrorMessage(createMutation.error)
-      : updateMutation.isError
-        ? getApiErrorMessage(updateMutation.error)
-        : submitMutation.isError
-          ? getApiErrorMessage(submitMutation.error)
-          : reviewManagerMutation.isError
-            ? getApiErrorMessage(reviewManagerMutation.error)
+  const currentError = createMutation.isError
+    ? getApiErrorMessage(createMutation.error)
+    : updateMutation.isError
+      ? getApiErrorMessage(updateMutation.error)
+      : submitMutation.isError
+        ? getApiErrorMessage(submitMutation.error)
+        : reviewManagerMutation.isError
+          ? getApiErrorMessage(reviewManagerMutation.error)
+          : reviewRHMutation.isError
+            ? getApiErrorMessage(reviewRHMutation.error)
             : reviewFinalMutation.isError
               ? getApiErrorMessage(reviewFinalMutation.error)
               : cancelMutation.isError
@@ -1202,6 +1276,7 @@ export default function LeavesPage() {
     submitMutation.isPending ||
     reviewManagerMutation.isPending ||
     reviewFinalMutation.isPending ||
+    reviewRHMutation.isPending ||
     cancelMutation.isPending ||
     balanceMutation.isPending;
 
@@ -1210,10 +1285,7 @@ export default function LeavesPage() {
     [balancesQuery.data],
   );
 
-  function updateFilter(
-    key: keyof RequestFilters,
-    value: string,
-  ): void {
+  function updateFilter(key: keyof RequestFilters, value: string): void {
     setPage(1);
     setFilters((current) => ({
       ...current,
@@ -1265,6 +1337,9 @@ export default function LeavesPage() {
       });
     }
 
+    if (mode === "rh" && decision) {
+      await reviewRHMutation.mutateAsync({ id: request.id, decision, comment });
+    }
     if (mode === "final" && decision) {
       await reviewFinalMutation.mutateAsync({
         id: request.id,
@@ -1285,9 +1360,7 @@ export default function LeavesPage() {
     setSelectedRequestId(null);
   }
 
-  async function saveBalance(
-    input: UpsertLeaveBalanceInput,
-  ): Promise<void> {
+  async function saveBalance(input: UpsertLeaveBalanceInput): Promise<void> {
     await balanceMutation.mutateAsync(input);
     await refreshLeaves();
     setBalanceModal(null);
@@ -1297,13 +1370,10 @@ export default function LeavesPage() {
     <section className="leaves-page">
       <header className="leaves-hero">
         <div>
-          <p className="leaves-eyebrow">
-            CONGÉS, ABSENCES ET VALIDATIONS
-          </p>
+          <p className="leaves-eyebrow">CONGÉS, ABSENCES ET VALIDATIONS</p>
           <h2>
-            Absences <span>maîtrisées.</span>
+            Congés <span>et absences</span>
           </h2>
- 
         </div>
 
         <div className="leaves-hero-actions">
@@ -1311,10 +1381,13 @@ export default function LeavesPage() {
             className="leave-secondary-action"
             type="button"
             onClick={() => void refreshLeaves()}
-           data-ui-action="compact" aria-label="Actualiser" title="Actualiser">
-            <RefreshCw size={18} /><span className="ui-action-label">
-            Actualiser
-          </span></button>
+            data-ui-action="compact"
+            aria-label="Actualiser"
+            title="Actualiser"
+          >
+            <RefreshCw size={18} />
+            <span className="ui-action-label">Actualiser</span>
+          </button>
 
           {canManageBalances && (
             <button
@@ -1339,10 +1412,13 @@ export default function LeavesPage() {
               setEditingRequest(null);
               setRequestModal(true);
             }}
-           data-ui-action="compact" aria-label="Nouvelle demande" title="Nouvelle demande">
-            <Plus size={18} /><span className="ui-action-label">
-            Nouvelle demande
-          </span></button>
+            data-ui-action="compact"
+            aria-label="Nouvelle demande"
+            title="Nouvelle demande"
+          >
+            <Plus size={18} />
+            <span className="ui-action-label">Nouvelle demande</span>
+          </button>
         </div>
       </header>
 
@@ -1385,9 +1461,7 @@ export default function LeavesPage() {
                 ? dashboard.submitted + dashboard.managerApproved
                 : "—"}
             </strong>
-            <small>
-              Hiérarchie et décision RH
-            </small>
+            <small>Hiérarchie et décision RH</small>
           </div>
         </article>
 
@@ -1409,9 +1483,7 @@ export default function LeavesPage() {
           <div>
             <span>Refusées / annulées</span>
             <strong>
-              {dashboard
-                ? dashboard.rejected + dashboard.cancelled
-                : "—"}
+              {dashboard ? dashboard.rejected + dashboard.cancelled : "—"}
             </strong>
             <small>Décisions clôturées</small>
           </div>
@@ -1449,8 +1521,19 @@ export default function LeavesPage() {
                   <strong>{formatDays(balance.availableDays)}</strong>
                 </div>
 
-                <small>
+                <small
+                  title={balance.monthlyAccruals
+                    ?.map(
+                      (entry) => `${entry.month} : ${formatDays(entry.days)}`,
+                    )
+                    .join(" · ")}
+                >
                   Consommé : {formatDays(balance.consumedDays)}
+                  {balance.leaveType === "ANNUAL_LEAVE" && (
+                    <>
+                      {` · Acquis : ${formatDays(balance.entitledDays)} · Report : ${formatDays(balance.carriedOverDays)} · Réservé : ${formatDays(balance.reservedDays ?? 0)}`}
+                    </>
+                  )}
                 </small>
 
                 {canManageBalances && (
@@ -1497,6 +1580,16 @@ export default function LeavesPage() {
             {calendarQuery.data?.slice(0, 5).map((request) => (
               <article
                 key={request.id}
+                role="button"
+                tabIndex={0}
+                aria-haspopup="dialog"
+                aria-label={`Consulter la demande de ${request.agent?.fullName ?? "l’agent"}`}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setSelectedRequestId(request.id);
+                  }
+                }}
                 onClick={() => setSelectedRequestId(request.id)}
               >
                 <span
@@ -1505,9 +1598,7 @@ export default function LeavesPage() {
                   )}`}
                 />
                 <div>
-                  <strong>
-                    {request.agent?.fullName ?? "Agent"}
-                  </strong>
+                  <strong>{request.agent?.fullName ?? "Agent"}</strong>
                   <p>
                     {formatLeaveDate(request.startDate)} ·{" "}
                     {formatDays(request.requestedDays)}
@@ -1536,51 +1627,43 @@ export default function LeavesPage() {
             <Search size={17} />
             <input
               value={filters.search}
+              aria-label="Rechercher une demande"
               placeholder="Motif, nom ou matricule..."
-              onChange={(event) =>
-                updateFilter("search", event.target.value)
-              }
+              onChange={(event) => updateFilter("search", event.target.value)}
             />
           </label>
 
           <select
+            aria-label="Filtrer par statut"
             value={filters.status}
-            onChange={(event) =>
-              updateFilter("status", event.target.value)
-            }
+            onChange={(event) => updateFilter("status", event.target.value)}
           >
             <option value="">Tous les statuts</option>
-            {Object.entries(leaveStatusLabels).map(
-              ([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ),
-            )}
+            {Object.entries(leaveStatusLabels).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
           </select>
 
           <select
+            aria-label="Filtrer par type d’absence"
             value={filters.leaveType}
-            onChange={(event) =>
-              updateFilter("leaveType", event.target.value)
-            }
+            onChange={(event) => updateFilter("leaveType", event.target.value)}
           >
             <option value="">Tous les types</option>
-            {Object.entries(leaveTypeLabels).map(
-              ([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ),
-            )}
+            {Object.entries(leaveTypeLabels).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
           </select>
 
           {canChooseAgent && (
             <select
+              aria-label="Filtrer par agent"
               value={filters.agentId}
-              onChange={(event) =>
-                updateFilter("agentId", event.target.value)
-              }
+              onChange={(event) => updateFilter("agentId", event.target.value)}
             >
               <option value="">Tous les Agents</option>
               {agents.map((agent) => (
@@ -1599,22 +1682,29 @@ export default function LeavesPage() {
           </div>
         )}
 
-        {!requestsQuery.isLoading &&
-          requests.length === 0 && (
-            <div className="leave-list-empty">
-              <FileClock size={26} />
-              <strong>Aucune demande trouvée.</strong>
-              <span>
-                Créez une nouvelle demande ou modifiez les filtres.
-              </span>
-            </div>
-          )}
+        {!requestsQuery.isLoading && requests.length === 0 && (
+          <div className="leave-list-empty">
+            <FileClock size={26} />
+            <strong>Aucune demande trouvée.</strong>
+            <span>Créez une nouvelle demande ou modifiez les filtres.</span>
+          </div>
+        )}
 
         <div className="leave-request-list">
           {requests.map((request) => (
             <article
               key={request.id}
               className="leave-request-row"
+              role="button"
+              tabIndex={0}
+              aria-haspopup="dialog"
+              aria-label={`Consulter la demande de ${request.agent?.fullName ?? "l’agent"}`}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
+                  setSelectedRequestId(request.id);
+                }
+              }}
               onClick={() => setSelectedRequestId(request.id)}
             >
               <div className="leave-request-person">
@@ -1626,22 +1716,14 @@ export default function LeavesPage() {
                     .join("")}
                 </span>
                 <div>
-                  <strong>
-                    {request.agent?.fullName ?? "Agent"}
-                  </strong>
-                  <small>
-                    {request.agent?.jobTitle ?? "—"}
-                  </small>
+                  <strong>{request.agent?.fullName ?? "Agent"}</strong>
+                  <small>{request.agent?.jobTitle ?? "—"}</small>
                 </div>
               </div>
 
               <div className="leave-request-period">
-                <strong>
-                  {formatLeaveDate(request.startDate)}
-                </strong>
-                <span>
-                  au {formatLeaveDate(request.endDate)}
-                </span>
+                <strong>{formatLeaveDate(request.startDate)}</strong>
+                <span>au {formatLeaveDate(request.endDate)}</span>
               </div>
 
               <div className="leave-request-type">
@@ -1675,18 +1757,14 @@ export default function LeavesPage() {
               Précédent
             </button>
             <span>
-              Page {pagination?.page ?? 1} /{" "}
-              {pagination?.totalPages ?? 1}
+              Page {pagination?.page ?? 1} / {pagination?.totalPages ?? 1}
             </span>
             <button
               type="button"
               disabled={page >= (pagination?.totalPages ?? 1)}
               onClick={() =>
                 setPage((value) =>
-                  Math.min(
-                    pagination?.totalPages ?? 1,
-                    value + 1,
-                  ),
+                  Math.min(pagination?.totalPages ?? 1, value + 1),
                 )
               }
             >
@@ -1737,12 +1815,14 @@ export default function LeavesPage() {
           action={decisionAction}
           isSubmitting={
             reviewManagerMutation.isPending ||
+            reviewRHMutation.isPending ||
             reviewFinalMutation.isPending ||
             cancelMutation.isPending
           }
           errorMessage={currentError}
           onClose={() => {
             reviewManagerMutation.reset();
+            reviewRHMutation.reset();
             reviewFinalMutation.reset();
             cancelMutation.reset();
             setDecisionAction(null);
@@ -1759,9 +1839,7 @@ export default function LeavesPage() {
       )}
 
       {selectedError && (
-        <div className="leave-drawer-loading is-error">
-          {selectedError}
-        </div>
+        <div className="leave-drawer-loading is-error">{selectedError}</div>
       )}
 
       {selectedRequestQuery.data && (

@@ -121,6 +121,7 @@ export default function PayslipDocument({
             type="button"
             onClick={() => void download()}
             disabled={downloading || dirty || saving}
+            aria-busy={downloading || saving}
           >
             <Download size={17} />
             {downloading ? "Préparation…" : "PDF / Imprimer"}
@@ -130,7 +131,7 @@ export default function PayslipDocument({
             aria-label="Fermer le bulletin"
             onClick={onClose}
             disabled={saving}
-          >
+           aria-busy={saving}>
             <X size={18} />
           </button>
         </div>

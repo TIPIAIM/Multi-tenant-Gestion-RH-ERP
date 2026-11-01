@@ -229,27 +229,24 @@ export default function UsersPage() {
       <header className="users-hero">
         <div>
           <p>ADMINISTRATION</p>
-          <h2>Utilisateurs & accès</h2>
-          <span>
-            Gestion des comptes, rôles, sessions et liaison Agent RH réutilisable.
-          </span>
+          <h2>Utilisateurs <span>& accès.</span></h2>
         </div>
 
         <div className="users-hero-actions">
-          <button type="button" onClick={() => void refresh()} data-ui-action="compact" aria-label="Actualiser" title="Actualiser">
-            <RefreshCw size={18} /><span className="ui-action-label">
-            Actualiser
-          </span></button>
+          <button type="button" onClick={() => void refresh()} className="users-header-icon-button" aria-label="Actualiser les utilisateurs" title="Actualiser les utilisateurs">
+            <RefreshCw size={20} aria-hidden="true" /></button>
 
           <button
             type="button"
+            className="users-header-icon-button"
+            aria-label="Nouvel utilisateur"
+            title="Nouvel utilisateur"
             onClick={() => {
               setEditingUser(null);
               setIsFormOpen(true);
             }}
           >
-            <Plus size={18} />
-            Nouvel utilisateur
+            <Plus size={20} aria-hidden="true" />
           </button>
         </div>
       </header>
@@ -299,8 +296,9 @@ export default function UsersPage() {
 
       <section className="users-filters-panel">
         <label className="users-search-field">
-          <Search size={18} />
-          <input
+          <span className="users-search-label">Rechercher</span>
+          <Search size={18} aria-hidden="true" />
+          <input type="search" autoComplete="off"
             value={filters.search}
             onChange={(event) =>
               setFilters((current) => ({
@@ -312,7 +310,9 @@ export default function UsersPage() {
           />
         </label>
 
-        <select
+        <label className="users-filter-field">
+          <span>Rôle</span>
+          <select
           value={filters.role}
           onChange={(event) =>
             setFilters((current) => ({
@@ -328,8 +328,11 @@ export default function UsersPage() {
             </option>
           ))}
         </select>
+        </label>
 
-        <select
+        <label className="users-filter-field">
+          <span>Statut</span>
+          <select
           value={filters.status}
           onChange={(event) =>
             setFilters((current) => ({
@@ -342,8 +345,11 @@ export default function UsersPage() {
           <option value="ACTIVE">Actifs</option>
           <option value="INACTIVE">Inactifs</option>
         </select>
+        </label>
 
-        <select
+        <label className="users-filter-field">
+          <span>Dossier agent</span>
+          <select
           value={filters.linked}
           onChange={(event) =>
             setFilters((current) => ({
@@ -356,6 +362,7 @@ export default function UsersPage() {
           <option value="LINKED">Avec Agent lié</option>
           <option value="UNLINKED">Sans Agent lié</option>
         </select>
+        </label>
       </section>
 
       <section className="users-table-card">
@@ -381,126 +388,130 @@ export default function UsersPage() {
         ) : users.length === 0 ? (
           <div className="users-empty">Aucun utilisateur trouvé.</div>
         ) : (
-          <div className="users-table-wrap">
-            <table className="users-table">
-              <thead>
-                <tr>
-                  <th>Utilisateur</th>
-                  <th>Rôle</th>
-                  <th>Agent lié au Compte "RH"</th>
-                  <th>Statut</th>
-                  <th>Dernière connexion</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
+          <>
+            <p className="users-table-scroll-hint">Faites défiler le tableau horizontalement pour accéder à toutes les colonnes.</p>
+            <div className="users-table-wrap" role="region" aria-label="Registre des utilisateurs" tabIndex={0}>
+              <table className="users-table">
+                <caption className="users-table-caption">Comptes utilisateurs et accès</caption>
+                <thead>
+                  <tr>
+                    <th scope="col">Utilisateur</th>
+                    <th scope="col">Rôle</th>
+                    <th scope="col">Dossier agent associé</th>
+                    <th scope="col">Statut</th>
+                    <th scope="col">Dernière connexion</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
 
-              <tbody>
-                {users.map((managedUser) => (
-                  <tr key={managedUser.id}>
-                    <td data-label="Utilisateur">
-                      <strong>{managedUser.fullName}</strong>
-                      <span>{managedUser.email}</span>
-                    </td>
+                <tbody>
+                  {users.map((managedUser) => (
+                    <tr key={managedUser.id}>
+                      <td data-label="Utilisateur">
+                        <strong>{managedUser.fullName}</strong>
+                        <span>{managedUser.email}</span>
+                      </td>
 
-                    <td data-label="Rôle">
-                      <span className="users-role-badge">
-                        {roleLabels[managedUser.role] ?? managedUser.role}
-                      </span>
-                    </td>
-
-                    <td data-label="Agent RH lié">
-                      {managedUser.linkedAgent ? (
-                        <span className="users-agent-badge">
-                          {managedUser.linkedAgent.fullName}
+                      <td data-label="Rôle">
+                        <span className="users-role-badge">
+                          {roleLabels[managedUser.role] ?? managedUser.role}
                         </span>
-                      ) : (
-                        <span className="users-muted">Aucun</span>
-                      )}
-                    </td>
+                      </td>
 
-                    <td data-label="Statut">
-                      <span
-                        className={`users-status ${
-                          managedUser.isActive ? "is-active" : "is-inactive"
-                        }`}
-                      >
-                        {managedUser.isActive ? "Actif" : "Inactif"}
-                      </span>
-                    </td>
+                      <td data-label="Agent RH lié">
+                        {managedUser.linkedAgent ? (
+                          <span className="users-agent-badge">
+                            {managedUser.linkedAgent.fullName}
+                          </span>
+                        ) : (
+                          <span className="users-muted">Aucun</span>
+                        )}
+                      </td>
 
-                    <td data-label="Dernière connexion">
-                      {formatDate(managedUser.lastLoginAt)}
-                    </td>
+                      <td data-label="Statut">
+                        <span
+                          className={`users-status ${
+                            managedUser.isActive ? "is-active" : "is-inactive"
+                          }`}
+                        >
+                          {managedUser.isActive ? "Actif" : "Inactif"}
+                        </span>
+                      </td>
 
-                    <td data-label="Actions">
-                      <div className="users-actions">
-                        <button
-                          type="button"
-                          title="Voir"
-                          onClick={() => setSelectedUser(managedUser)}
-                         aria-label="Voir">
-                          <Eye size={16} />
-                        </button>
+                      <td data-label="Dernière connexion">
+                        {formatDate(managedUser.lastLoginAt)}
+                      </td>
 
-                        <button
-                          type="button"
-                          title="Modifier"
-                          onClick={() => {
-                            setEditingUser(managedUser);
-                            setIsFormOpen(true);
-                          }}
-                         aria-label="Modifier">
-                          <Edit3 size={16} />
-                        </button>
-
-                        {!managedUser.emailVerifiedAt && (
+                      <td data-label="Actions">
+                        <div className="users-actions">
                           <button
                             type="button"
-                            title="Vérifier l’email"
-                            disabled={verifyMutation.isPending}
-                            onClick={() => verifyMutation.mutate(managedUser.id)}
-                           aria-label="Vérifier l’email">
-                            <CheckCircle2 size={16} />
+                            className="users-view-button" title="Consulter le compte"
+                            onClick={() => setSelectedUser(managedUser)}
+                           aria-label={`Consulter le compte de ${managedUser.fullName}`}>
+                            <Eye size={20} aria-hidden="true" />
                           </button>
-                        )}
 
-                        <button
-                          type="button"
-                          title="Réinitialiser mot de passe"
-                          onClick={() => setPasswordUser(managedUser)}
-                         aria-label="Réinitialiser mot de passe">
-                          <KeyRound size={16} />
-                        </button>
+                          <button
+                            type="button"
+                            title="Modifier"
+                            onClick={() => {
+                              setEditingUser(managedUser);
+                              setIsFormOpen(true);
+                            }}
+                           aria-label={`Modifier le compte de ${managedUser.fullName}`}>
+                            <Edit3 size={16} />
+                          </button>
 
-                        <button
-                          type="button"
-                          title="Forcer déconnexion"
-                          disabled={logoutMutation.isPending}
-                          onClick={() => logoutMutation.mutate(managedUser.id)}
-                         aria-label="Forcer déconnexion">
-                          <LogOut size={16} />
-                        </button>
+                          {!managedUser.emailVerifiedAt && (
+                            <button
+                              type="button"
+                              title="Vérifier l’email"
+                              disabled={verifyMutation.isPending}
+                              onClick={() => verifyMutation.mutate(managedUser.id)}
+                             aria-label="Vérifier l’email">
+                              <CheckCircle2 size={16} />
+                            </button>
+                          )}
 
-                        <button
-                          type="button"
-                          title={managedUser.isActive ? "Désactiver" : "Activer"}
-                          disabled={statusMutation.isPending}
-                          onClick={() =>
-                            statusMutation.mutate({
-                              id: managedUser.id,
-                              isActive: !managedUser.isActive,
-                            })
-                          }
-                         aria-label={managedUser.isActive ? "Désactiver" : "Activer"}>
-                          <Power size={16} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                          <button
+                            type="button"
+                            title="Réinitialiser mot de passe"
+                            onClick={() => setPasswordUser(managedUser)}
+                           aria-label={`Réinitialiser le mot de passe de ${managedUser.fullName}`}>
+                            <KeyRound size={16} />
+                          </button>
+
+                          <button
+                            type="button"
+                            title="Forcer déconnexion"
+                            disabled={logoutMutation.isPending}
+                            onClick={() => logoutMutation.mutate(managedUser.id)}
+                           aria-label={`Déconnecter les sessions de ${managedUser.fullName}`}>
+                            <LogOut size={16} />
+                          </button>
+
+                          <button
+                            type="button"
+                            title={managedUser.isActive ? "Désactiver" : "Activer"}
+                            disabled={statusMutation.isPending}
+                            onClick={() =>
+                              statusMutation.mutate({
+                                id: managedUser.id,
+                                isActive: !managedUser.isActive,
+                              })
+                            }
+                           aria-label={managedUser.isActive ? "Désactiver" : "Activer"}>
+                            <Power size={16} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </>
         )}
 
         {(pagination?.totalPages ?? 1) > 1 && (

@@ -1,3 +1,5 @@
+export type TrainingSettings={defaultCapacity:number;defaultDurationHours:number;defaultCurrency:"GNF"|"EUR"|"USD";impactReviewDelayDays:number};
+export type RecruitmentSettings={defaultPositions:number;defaultContract:"CDI"|"CDD"|"INTERNSHIP"|"CONSULTING";defaultApplicationDeadlineDays:number;interviewReportRequired:boolean};
 export type SettingsSectionKey =
   | "institution"
   | "branding"
@@ -8,6 +10,8 @@ export type SettingsSectionKey =
   | "roadmaps"
   | "evaluations"
   | "reports"
+  | "training"
+  | "recruitment"
   | "documents"
   | "notifications"
   | "security"
@@ -101,6 +105,7 @@ export type DocumentSettings = {
 };
 
 export type NotificationSettings = {
+  trainingPopupEnabled: boolean; recruitmentPopupEnabled: boolean;
   enabled: boolean; inAppEnabled: boolean; emailEnabled: boolean; smsEnabled: boolean;
   whatsappEnabled: boolean; taskReminderEnabled: boolean; overdueEscalationEnabled: boolean;
   leavePendingReminderEnabled: boolean; attendanceMissingReminderEnabled: boolean;
@@ -126,6 +131,7 @@ export type FeatureFlagSettings = {
 };
 
 export type TenantSettingsPayload = {
+  training: TrainingSettings; recruitment: RecruitmentSettings;
   institution: InstitutionSettings; branding: BrandingSettings; organization: OrganizationSettings;
   attendance: AttendanceSettings; leave: LeaveSettings; tasks: TaskSettings; roadmaps: RoadmapSettings;
   evaluations: EvaluationSettings; reports: ReportSettings; documents: DocumentSettings;
@@ -165,6 +171,8 @@ export type SettingsRevisionList = {
 };
 
 export type PublicTenantSettings = {
+  training: TrainingSettings; recruitment: RecruitmentSettings;
+  notifications: Pick<NotificationSettings,"enabled"|"inAppEnabled"|"trainingPopupEnabled"|"recruitmentPopupEnabled">;
   institution: InstitutionSettings;
   branding: BrandingSettings;
   featureFlags: FeatureFlagSettings;

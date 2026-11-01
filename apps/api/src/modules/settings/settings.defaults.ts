@@ -156,6 +156,8 @@ export function buildDefaultTenantSettings(input?: {
       defaultRecipients: ["Direction générale", "Responsable RH"],
       signatories: ["Rédacteur / Responsable du rapport", "Responsable RH / Direction", "Direction générale"],
     },
+    training: {defaultCapacity:20,defaultDurationHours:7,defaultCurrency:"GNF",impactReviewDelayDays:60},
+    recruitment: {defaultPositions:1,defaultContract:"CDI",defaultApplicationDeadlineDays:30,interviewReportRequired:false},
     documents: {
       maximumFileSizeMb: 10,
       allowedMimeTypes: [
@@ -173,6 +175,7 @@ export function buildDefaultTenantSettings(input?: {
       footerText: `${acronym}-RH · Système intégré de gestion des ressources humaines`,
     },
     notifications: {
+      trainingPopupEnabled: true, recruitmentPopupEnabled: true,
       enabled: true,
       inAppEnabled: true,
       emailEnabled: true,
@@ -216,8 +219,8 @@ export function buildDefaultTenantSettings(input?: {
       reports: true,
       documents: true,
       payroll: false,
-      recruitment: false,
-      training: false,
+      recruitment: true,
+      training: true,
     },
   };
 }

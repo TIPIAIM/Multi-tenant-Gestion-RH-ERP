@@ -1,3 +1,5 @@
+import SettingsDialog from "./SettingsDialog";
+import {GraduationCap,BriefcaseBusiness} from "lucide-react";
 import TenantDocumentMarksPanel from "../../features/settings/DocumentMarks";
 import {
   resolveAppearance,
@@ -80,6 +82,8 @@ const sectionIcons: Record<SettingsSectionKey, typeof Building2> = {
   roadmaps: Flag,
   evaluations: ClipboardCheck,
   reports: FileText,
+  training: GraduationCap,
+  recruitment: BriefcaseBusiness,
   documents: FileCog,
   notifications: BellRing,
   security: ShieldCheck,
@@ -97,11 +101,13 @@ const sectionDescriptions: Record<SettingsSectionKey, string> = {
   roadmaps: "Planification annuelle et KPI",
   evaluations: "Critères, pondérations et workflow",
   reports: "Fréquences, validation et destinataires",
+  training: "Offres externes, inscriptions et suivi",
+  recruitment: "Offres, candidatures et décision finale",
   documents: "Formats, conservation et confidentialité",
   notifications: "Canaux, rappels et escalades",
   security: "Sessions, accès et mots de passe",
   numbering: "Références et séquences documentaires",
-  featureFlags: "Modules actifs selon l’offre commerciale",
+  featureFlags: "Accès aux modules de votre organisation",
 };
 
 const allSections = Object.keys(settingsSectionLabels) as SettingsSectionKey[];
@@ -127,6 +133,7 @@ export default function SettingsPage() {
   const [activeSection, setActiveSection] =
     useState<SettingsSectionKey>("institution");
   const [search, setSearch] = useState("");
+  const [notice,setNotice]=useState("");
   const [workingSettings, setWorkingSettings] =
     useState<TenantSettingsPayload | null>(null);
   const [baselineSettings, setBaselineSettings] =
@@ -134,6 +141,8 @@ export default function SettingsPage() {
   const baselineRef = useRef<TenantSettingsPayload | null>(null);
   const [appearanceBusy, setAppearanceBusy] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [historyPage,setHistoryPage]=useState(1);
+  const [discardOpen,setDiscardOpen]=useState(false);
   const [publishOpen, setPublishOpen] = useState(false);
   const [restoreVersion, setRestoreVersion] = useState<number | null>(null);
   const [impact, setImpact] = useState<SettingsImpact | null>(null);
@@ -148,6 +157,8 @@ export default function SettingsPage() {
     "roadmaps",
     "evaluations",
     "reports",
+    "training",
+    "recruitment",
     "documents",
     "notifications",
     "numbering",
@@ -172,12 +183,12 @@ export default function SettingsPage() {
   const historyQuery = useQuery({
     queryKey: [
       "tenant-settings",
-      "history",
+      "history", historyPage,
       user?.tenantId,
       user?.id,
       user?.role,
     ],
-    queryFn: () => getTenantSettingsHistory(1, 50),
+    queryFn: () => getTenantSettingsHistory(historyPage, 20),
     enabled: historyOpen,
     staleTime: 30_000,
   });
@@ -209,6 +220,7 @@ export default function SettingsPage() {
       ),
     [workingSettings, baselineSettings],
   );
+  useEffect(()=>{if(!anyLocalDirty)return;const warn=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue="";};window.addEventListener("beforeunload",warn);return()=>window.removeEventListener("beforeunload",warn);},[anyLocalDirty]);
   function acceptBrandingRecord(data: SettingsRecordResponse) {
     setWorkingSettings((current) =>
       current
@@ -255,6 +267,7 @@ export default function SettingsPage() {
       );
     },
     onSuccess: (data) => {
+      setNotice("Brouillon enregistré. Publiez pour appliquer les modifications.");
       setWorkingSettings((current) =>
         current
           ? {
@@ -279,6 +292,7 @@ export default function SettingsPage() {
     mutationFn: (reason: string) =>
       publishTenantSettings(reason, settingsQuery.data?.editRevision),
     onSuccess: async () => {
+      setNotice("Les nouveaux paramètres sont publiés.");
       setPublishOpen(false);
       setImpact(null);
       await refreshAll();
@@ -289,6 +303,7 @@ export default function SettingsPage() {
     mutationFn: () =>
       discardTenantSettingsDraft(settingsQuery.data?.editRevision),
     onSuccess: async (data) => {
+      setDiscardOpen(false);
       baselineRef.current = cloneSettings(data.effective);
       setWorkingSettings(cloneSettings(data.effective));
       setBaselineSettings(cloneSettings(data.effective));
@@ -341,6 +356,7 @@ export default function SettingsPage() {
       )
     : false;
   const operationBusy =
+    validateMutation.isPending ||
     appearanceBusy ||
     saveMutation.isPending ||
     publishMutation.isPending ||
@@ -365,7 +381,7 @@ export default function SettingsPage() {
     return (
       <div className="settings-page-loader">
         <LoaderCircle className="is-spinning" />
-        <strong>Chargement du Centre d’administration…</strong>
+        <strong>Chargement des paramètres…</strong>
       </div>
     );
   }
@@ -380,25 +396,26 @@ export default function SettingsPage() {
     <section className="settings-page">
       <header className="settings-hero">
         <div>
-          <p>CENTRE D’ADMINISTRATION · MULTI-TENANT · GOUVERNANCE</p>
+          <p>PARAMÈTRES DE L’ORGANISATION</p>
           <h2>
-            Configuration <span>premium.</span>
+            Paramètres <span>& préférences.</span>
           </h2>
           <div className="settings-hero-description">
             Pilotez l’identité, les règles RH, les documents, la sécurité et les
-            fonctionnalités commerciales de votre espace.
+            modules de votre organisation.
           </div>
         </div>
         <div className="settings-hero-actions">
           <button
             className="settings-hero-button"
             type="button"
+            disabled={operationBusy || settingsQuery.isFetching}
             onClick={() => void refreshAll()}
             data-ui-action="compact"
             aria-label="Actualiser"
             title="Actualiser"
           >
-            <RefreshCw size={17} />
+            <RefreshCw size={16} />
             <span className="ui-action-label"> Actualiser</span>
           </button>
           <button
@@ -410,25 +427,26 @@ export default function SettingsPage() {
             aria-label="Exporter"
             title="Exporter"
           >
-            <Download size={17} />
+            <Download size={16} />
             <span className="ui-action-label"> Exporter</span>
           </button>
           <button
             className="settings-hero-button"
             type="button"
-            onClick={() => setHistoryOpen(true)}
+            onClick={() => {setHistoryPage(1);setHistoryOpen(true);}}
             data-ui-action="compact"
             aria-label="Historique"
             title="Historique"
           >
-            <History size={17} />
+            <History size={16} />
             <span className="ui-action-label"> Historique</span>
           </button>
         </div>
       </header>
 
+      {notice&&<p className="settings-feedback" role="status">{notice}</p>}
       {errorMessage && (
-        <div className="settings-error">
+        <div className="settings-error" role="alert">
           <Activity size={19} />
           <div>
             <strong>Une opération est indisponible.</strong>
@@ -484,11 +502,11 @@ export default function SettingsPage() {
         <article className="settings-overview-card">
           <BadgeCheck />
           <div>
-            <span>Fonctionnalités</span>
+            <span>{record?.hasDraft||anyLocalDirty?"Modules préparés":"Modules actifs"}</span>
             <strong>
               {activeModules}/{totalModules} actives
             </strong>
-            <p>Selon l’offre du tenant</p>
+            <p>{record?.hasDraft||anyLocalDirty?"Appliqués après publication":"Modules disponibles dans votre espace"}</p>
           </div>
         </article>
       </section>
@@ -496,11 +514,11 @@ export default function SettingsPage() {
       {record?.maturity.issues.length ? (
         <section className="settings-recommendations">
           <header>
-            <Sparkles size={18} />
+            <Sparkles size={16} />
             <div>
               <strong>Recommandations de mise en production</strong>
               <span>
-                Actions proposées pour améliorer la qualité du tenant.
+                Actions proposées pour améliorer la configuration de votre organisation.
               </span>
             </div>
           </header>
@@ -531,14 +549,15 @@ export default function SettingsPage() {
       <div className="settings-workspace">
         <aside className="settings-sidebar">
           <div className="settings-search">
-            <Search size={17} />
+            <Search size={16} />
             <input
               value={search}
               onChange={(event) => setSearch(event.target.value)}
+              aria-label="Rechercher une rubrique de paramètres"
               placeholder="Rechercher un paramètre…"
             />
           </div>
-          <nav>
+          <nav aria-label="Rubriques des paramètres">
             {filteredSections.map((section) => {
               const Icon = sectionIcons[section];
               const isDirty = !isSameSettingsValue(
@@ -550,10 +569,11 @@ export default function SettingsPage() {
                   key={section}
                   type="button"
                   className={activeSection === section ? "is-active" : ""}
+                  aria-current={activeSection===section?"page":undefined}
                   disabled={operationBusy}
                   onClick={() => setActiveSection(section)}
                 >
-                  <Icon size={18} />
+                  <Icon size={16} />
                   <span>
                     <strong>{settingsSectionLabels[section]}</strong>
                     <small>{sectionDescriptions[section]}</small>
@@ -570,7 +590,7 @@ export default function SettingsPage() {
         >
           {!canManageCurrent && (
             <div className="settings-read-only">
-              <ShieldCheck size={18} />
+              <ShieldCheck size={16} />
               <span>
                 Consultation uniquement pour votre rôle sur cette section.
               </span>
@@ -619,7 +639,7 @@ export default function SettingsPage() {
                 }
                 disabled={operationBusy}
               >
-                <RotateCcw size={17} /> Annuler
+                <RotateCcw size={16} /> Annuler
               </button>
             )}
             {canManageCurrent && currentSectionDirty && (
@@ -633,9 +653,9 @@ export default function SettingsPage() {
                 }
               >
                 {saveMutation.isPending ? (
-                  <LoaderCircle size={17} className="is-spinning" />
+                  <LoaderCircle size={16} className="is-spinning" />
                 ) : (
-                  <Save size={17} />
+                  <Save size={16} />
                 )}{" "}
                 Enregistrer le brouillon
               </button>
@@ -648,9 +668,9 @@ export default function SettingsPage() {
                 disabled={operationBusy || validateMutation.isPending}
               >
                 {validateMutation.isPending ? (
-                  <LoaderCircle size={17} className="is-spinning" />
+                  <LoaderCircle size={16} className="is-spinning" />
                 ) : (
-                  <Send size={17} />
+                  <Send size={16} />
                 )}{" "}
                 Contrôler et publier
               </button>
@@ -659,7 +679,7 @@ export default function SettingsPage() {
               <button
                 className="settings-danger-link"
                 type="button"
-                onClick={() => discardMutation.mutate()}
+                onClick={() => setDiscardOpen(true)}
                 disabled={operationBusy}
               >
                 Abandonner le brouillon
@@ -675,12 +695,16 @@ export default function SettingsPage() {
         isLoading={historyQuery.isLoading}
         canRestore={canPublish}
         isRestoring={restoreMutation.isPending}
+        pagination={historyQuery.data?.pagination}
+        onPage={setHistoryPage}
+        error={historyQuery.isError?getApiErrorMessage(historyQuery.error):null}
         onClose={() => setHistoryOpen(false)}
         onRestore={(version) => setRestoreVersion(version)}
       />
 
       <SettingsPublishModal
         open={publishOpen}
+        error={publishMutation.isError?getApiErrorMessage(publishMutation.error):null}
         impact={impact}
         isSubmitting={publishMutation.isPending}
         onClose={() => setPublishOpen(false)}
@@ -689,54 +713,13 @@ export default function SettingsPage() {
         }}
       />
 
-      {restoreVersion !== null && (
-        <div className="settings-modal-layer">
-          <button
-            type="button"
-            className="settings-modal-backdrop"
-            onClick={() => setRestoreVersion(null)}
-          />
-          <section className="settings-restore-modal">
-            <header>
-              <div>
-                <p>RESTAURATION CONTRÔLÉE</p>
-                <h3>Restaurer la version {restoreVersion}</h3>
-              </div>
-            </header>
-            <p>
-              La restauration crée une nouvelle version publiée. Elle ne
-              supprime pas l’historique existant. Les anciens fichiers de logo
-              déjà supprimés ne sont pas recréés : le logo actuel est conservé.
-            </p>
-            <footer>
-              <button
-                className="settings-cancel-button"
-                type="button"
-                onClick={() => setRestoreVersion(null)}
-              >
-                Annuler
-              </button>
-              <button
-                className="settings-primary-button"
-                type="button"
-                onClick={() =>
-                  restoreMutation.mutate({
-                    version: restoreVersion,
-                    reason: `Restauration administrative de la version ${restoreVersion}`,
-                  })
-                }
-              >
-                {restoreMutation.isPending ? (
-                  <LoaderCircle size={17} className="is-spinning" />
-                ) : (
-                  <RotateCcw size={17} />
-                )}{" "}
-                Restaurer
-              </button>
-            </footer>
-          </section>
-        </div>
-      )}
+      {restoreVersion!==null&&<SettingsDialog title={`Restaurer la version ${restoreVersion}`} eyebrow="RESTAURATION" busy={restoreMutation.isPending} onClose={()=>setRestoreVersion(null)}>
+       <p>Cette action publie une nouvelle version et conserve l’historique. Les anciens logos supprimés ne sont pas recréés ; le logo actuel est conservé.</p>
+       {restoreMutation.isError&&<p className="settings-error" role="alert">{getApiErrorMessage(restoreMutation.error)}</p>}
+       <footer><button type="button" className="settings-cancel-button" disabled={restoreMutation.isPending} onClick={()=>setRestoreVersion(null)}>Annuler</button><button type="button" className="settings-primary-button" disabled={restoreMutation.isPending} onClick={()=>restoreMutation.mutate({version:restoreVersion,reason:`Restauration de la version ${restoreVersion}`})}>{restoreMutation.isPending?<LoaderCircle size={16} className="is-spinning"/>:<RotateCcw size={16}/>}Restaurer</button></footer>
+      </SettingsDialog>}
+      {discardOpen&&<SettingsDialog title="Abandonner le brouillon ?" busy={discardMutation.isPending} onClose={()=>setDiscardOpen(false)}><p>Les modifications enregistrées dans ce brouillon seront retirées. La configuration publiée restera en place.</p>{discardMutation.isError&&<p className="settings-error" role="alert">{getApiErrorMessage(discardMutation.error)}</p>}<footer><button type="button" className="settings-cancel-button" disabled={discardMutation.isPending} onClick={()=>setDiscardOpen(false)}>Conserver le brouillon</button><button type="button" className="settings-secondary-button" disabled={discardMutation.isPending} onClick={()=>discardMutation.mutate()}>Abandonner le brouillon</button></footer></SettingsDialog>}
+
     </section>
   );
 }

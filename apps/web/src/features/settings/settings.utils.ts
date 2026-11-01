@@ -14,11 +14,13 @@ export const settingsSectionLabels: Record<SettingsSectionKey, string> = {
   roadmaps: "Feuilles de route",
   evaluations: "Évaluations",
   reports: "Rapports",
+  training: "Formations",
+  recruitment: "Recrutement",
   documents: "Documents",
   notifications: "Notifications",
   security: "Sécurité",
   numbering: "Numérotation",
-  featureFlags: "Fonctionnalités",
+  featureFlags: "Modules disponibles",
 };
 
 export function cloneSettings<T>(value: T): T {

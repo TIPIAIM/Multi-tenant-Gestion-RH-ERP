@@ -23,6 +23,10 @@ const leaveReviewSchema = new Schema<LeaveReview>(
 
 const leaveBalanceSchema = new Schema<LeaveBalance>(
   {
+    accrualVersion: { type: Number },
+    accrualAsOfDate: { type: String },
+    accrualStartDate: { type: String },
+    legacySnapshot: { type: Schema.Types.Mixed },
     tenantId: { type: Schema.Types.ObjectId, ref: "Tenant", required: true },
     agentId: { type: Schema.Types.ObjectId, ref: "Agent", required: true },
     calendarYear: { type: Number, required: true, min: 2020, max: 2200 },
@@ -45,6 +49,7 @@ leaveBalanceSchema.index({ tenantId: 1, calendarYear: 1, agentId: 1 });
 
 const leaveRequestSchema = new Schema<LeaveRequest>(
   {
+    balanceCalendarYear: { type: Number },
     tenantId: { type: Schema.Types.ObjectId, ref: "Tenant", required: true },
     agentId: { type: Schema.Types.ObjectId, ref: "Agent", required: true },
     directionId: { type: Schema.Types.ObjectId, ref: "OrganizationUnit", required: true },
@@ -57,6 +62,7 @@ const leaveRequestSchema = new Schema<LeaveRequest>(
     status: { type: String, required: true, enum: [...leaveRequestStatuses], default: "DRAFT" },
     submittedAt: { type: Date },
     managerReview: { type: leaveReviewSchema },
+    rhReview: { type: leaveReviewSchema },
     finalReview: { type: leaveReviewSchema },
     cancelledAt: { type: Date },
     cancelledByUserId: { type: Schema.Types.ObjectId, ref: "User" },
@@ -100,3 +106,12 @@ export const LeaveRequestModel: Model<LeaveRequest> =
 export const LeaveActivityModel: Model<LeaveActivity> =
   (mongoose.models.LeaveActivity as Model<LeaveActivity> | undefined) ??
   mongoose.model<LeaveActivity>("LeaveActivity", leaveActivitySchema);
+
+// Une écriture commune par agent sérialise soldes, réservations et décisions.
+const leaveBalanceLockSchema = new Schema<{ _id: string; revision: number }>({
+  _id: { type: String, required: true },
+  revision: { type: Number, default: 0 },
+}, { versionKey: false });
+export const LeaveBalanceLockModel =
+  (mongoose.models.LeaveBalanceLock as Model<{ _id: string; revision: number }> | undefined) ??
+  mongoose.model<{ _id: string; revision: number }>("LeaveBalanceLock", leaveBalanceLockSchema);

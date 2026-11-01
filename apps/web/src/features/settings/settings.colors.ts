@@ -16,7 +16,7 @@ export function assertBrandingContrast(value: {
   mutedTextColor: string; topbarBackgroundColor: string; topbarTextColor: string;
 }): Array<{ key: string; message: string }> {
   const pairs: Array<[string, string, string, string]> = [
-    ["sidebarTextColor", value.sidebarTextColor, value.sidebarBackgroundColor, "sidebar"],
+    ["sidebarTextColor", value.sidebarTextColor, value.sidebarBackgroundColor, "menu latéral"],
     ["textColor", value.textColor, value.surfaceColor, "cartes"],
     ["textColor", value.textColor, value.pageBackgroundColor, "fond général"],
     ["mutedTextColor", value.mutedTextColor, value.surfaceColor, "textes secondaires"],

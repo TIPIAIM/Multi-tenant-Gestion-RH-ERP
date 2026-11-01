@@ -129,7 +129,7 @@ export default function UserFormModal({
       <button
         className="users-modal-backdrop"
         type="button"
-        aria-label="Fermer"
+        aria-label="Fermer" title="Fermer cette fenêtre"
         onClick={onClose}
       />
 
@@ -140,7 +140,7 @@ export default function UserFormModal({
             <h3>{isEdition ? "Modifier l’utilisateur" : "Créer un utilisateur"}</h3>
           </div>
 
-          <button type="button" onClick={onClose} aria-label="Fermer">
+          <button type="button" onClick={onClose} aria-label="Fermer" title="Fermer cette fenêtre">
             <X size={20} />
           </button>
         </header>
@@ -257,10 +257,10 @@ export default function UserFormModal({
         )}
 
         <footer className="users-modal-actions">
-          <button type="button" onClick={onClose}>
+          <button type="button" onClick={onClose} title="Fermer sans enregistrer">
             Annuler
           </button>
-          <button type="button" disabled={isSubmitting} onClick={() => void submit()}>
+          <button type="button" disabled={isSubmitting} aria-busy={isSubmitting} title={isEdition ? "Enregistrer les modifications" : "Créer le compte utilisateur"} onClick={() => void submit()}>
             {isSubmitting && <LoaderCircle className="is-spinning" size={16} />}
             {isEdition ? "Enregistrer" : "Créer le compte"}
           </button>

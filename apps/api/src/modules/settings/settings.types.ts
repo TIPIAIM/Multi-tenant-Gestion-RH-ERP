@@ -1,3 +1,5 @@
+export type TrainingSettings={defaultCapacity:number;defaultDurationHours:number;defaultCurrency:"GNF"|"EUR"|"USD";impactReviewDelayDays:number};
+export type RecruitmentSettings={defaultPositions:number;defaultContract:"CDI"|"CDD"|"INTERNSHIP"|"CONSULTING";defaultApplicationDeadlineDays:number;interviewReportRequired:boolean};
 import type { HydratedDocument, Types } from "mongoose";
 
 export const settingsSectionKeys = [
@@ -10,6 +12,8 @@ export const settingsSectionKeys = [
   "roadmaps",
   "evaluations",
   "reports",
+  "training",
+  "recruitment",
   "documents",
   "notifications",
   "security",
@@ -195,6 +199,7 @@ export type DocumentSettings = {
 };
 
 export type NotificationSettings = {
+  trainingPopupEnabled: boolean; recruitmentPopupEnabled: boolean;
   enabled: boolean;
   inAppEnabled: boolean;
   emailEnabled: boolean;
@@ -246,6 +251,7 @@ export type FeatureFlagSettings = {
 };
 
 export type TenantSettingsPayload = {
+  training: TrainingSettings; recruitment: RecruitmentSettings;
   institution: InstitutionSettings;
   branding: BrandingSettings;
   organization: OrganizationSettings;

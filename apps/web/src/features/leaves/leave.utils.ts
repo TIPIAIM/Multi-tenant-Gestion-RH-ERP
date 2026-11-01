@@ -20,18 +20,21 @@ export const leaveStatusLabels: Record<
 > = {
   DRAFT: "Brouillon",
   SUBMITTED: "Soumise",
-  MANAGER_APPROVED: "Validation hiérarchique",
+  MANAGER_APPROVED: "Accord hiérarchique · examen RH",
+  RH_APPROVED: "Accord RH · décision administrateur",
   APPROVED: "Approuvée",
   REJECTED: "Refusée",
   CANCELLED: "Annulée",
 };
 
 export const leaveActivityLabels: Record<string, string> = {
+  BALANCE_ACCRUED: "Acquisition mensuelle automatique",
   CREATED: "Demande créée",
   UPDATED: "Demande modifiée",
   SUBMITTED: "Demande soumise",
-  MANAGER_APPROVED: "Validation hiérarchique",
-  APPROVED: "Décision RH favorable",
+  MANAGER_APPROVED: "Accord hiérarchique · examen RH",
+  RH_APPROVED: "Accord RH · décision administrateur",
+  APPROVED: "Décision finale favorable de l’administrateur",
   REJECTED: "Demande refusée",
   CANCELLED: "Demande annulée",
   BALANCE_CREATED: "Solde créé",
