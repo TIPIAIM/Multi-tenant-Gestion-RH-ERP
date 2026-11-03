@@ -1,8 +1,17 @@
+const agentDateFormatter0=new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+import { useAgentDialog } from "./use-agent-dialog";
 import { useTenantSettings } from "../settings/settings.context";
 import { AgentAvatar, AgentPhotoEditor } from "./AgentPhoto";
-import AgentDocumentsPanel from "./AgentDocumentsPanel";
+const AgentDocumentsPanel=lazy(()=>import("./AgentDocumentsPanel"));
 
 import {
+  lazy,
+  Suspense,
   useEffect,
   useMemo,
   useState,
@@ -11,13 +20,11 @@ import {
 } from "react";
 import {
   BriefcaseBusiness,
-  
   FileText,
   History,
   LoaderCircle,
   Pencil,
   Plus,
-  
   UserRound,
   X,
 } from "lucide-react";
@@ -74,15 +81,8 @@ function formatDate(value?: string): string {
     return "Non renseignée";
   }
 
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(value));
+  return agentDateFormatter0.format(new Date(value));
 }
-
-
 
 function getTodayDate(): string {
   const date = new Date();
@@ -107,6 +107,7 @@ export default function AgentDetailsDrawer({
   onEdit,
   onAddHistory,
 }: AgentDetailsDrawerProps) {
+  useAgentDialog(isAddingHistory, onClose, ".agent-details-drawer");
   const { settings: tenantSettings } = useTenantSettings();
   const [isHistoryFormOpen, setIsHistoryFormOpen] = useState(false);
 
@@ -133,15 +134,15 @@ export default function AgentDetailsDrawer({
       [...(agent?.history ?? [])].sort(
         (first, second) =>
           new Date(second.eventDate).getTime() -
-          new Date(first.eventDate).getTime()
+          new Date(first.eventDate).getTime(),
       ),
-    [agent?.history]
+    [agent?.history],
   );
 
   function handleHistoryChange(
     event: ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >
+    >,
   ): void {
     const { name, value } = event.target;
 
@@ -152,7 +153,7 @@ export default function AgentDetailsDrawer({
   }
 
   async function handleAddHistory(
-    event: FormEvent<HTMLFormElement>
+    event: FormEvent<HTMLFormElement>,
   ): Promise<void> {
     event.preventDefault();
 
@@ -182,6 +183,7 @@ export default function AgentDetailsDrawer({
         className="agent-drawer-backdrop"
         type="button"
         aria-label="Fermer les détails"
+        disabled={isAddingHistory}
         onClick={onClose}
       />
 
@@ -201,6 +203,7 @@ export default function AgentDetailsDrawer({
             className="agent-icon-button"
             type="button"
             aria-label="Fermer"
+            disabled={isAddingHistory}
             onClick={onClose}
           >
             <X size={20} />
@@ -319,18 +322,19 @@ export default function AgentDetailsDrawer({
               </dl>
             </section>
 
-            {tenantSettings?.featureFlags.documents && <section className="agent-drawer-section">
-              <div className="agent-drawer-section-heading">
-                <FileText size={18} />
-                <h5>Documents RH sécurisés</h5>
-              </div>
+            {tenantSettings?.featureFlags.documents && (
+              <section className="agent-drawer-section">
+                <div className="agent-drawer-section-heading">
+                  <FileText size={18} />
+                  <h5>Documents RH sécurisés</h5>
+                </div>
 
-              <AgentDocumentsPanel
-                agentId={agent.id}
-                canManageAgents={canManageAgents}
-              />
-            </section>}
-
+                <Suspense fallback={<p role="status">Chargement des documents…</p>}><AgentDocumentsPanel
+                  agentId={agent.id}
+                  canManageAgents={canManageAgents}
+                /></Suspense>
+              </section>
+            )}
 
             <section className="agent-drawer-section">
               <div className="agent-drawer-section-heading history-heading">

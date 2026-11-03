@@ -801,3 +801,41 @@
     color: var(--at-muted);
   }
 }
+
+/* Cartes et actions communes aux modules RH. */
+.attendance-page .attendance-stat-card { background:#fff; border:1px solid rgba(11,37,54,.14); border-radius:12px; min-height:116px; padding:16px; gap:13px; align-items:center; }
+.attendance-page .attendance-stat-card .attendance-stat-icon { width:36px; height:36px; flex:0 0 36px; border-radius:10px; }
+.attendance-page .attendance-stat-icon svg { width:18px; height:18px; }
+.attendance-page .attendance-stat-card > div > span { font-size:.75rem; color:rgba(11,37,54,.73); font-weight:600; }
+.attendance-page .attendance-stat-card strong { font-size:1.45rem; line-height:1.2; }
+.attendance-page .attendance-stat-card p { font-size:.6875rem; line-height:1.5; color:rgba(11,37,54,.65); }
+.attendance-page .attendance-hero-actions button { min-height:44px; display:inline-flex; align-items:center; justify-content:center; gap:8px; border:0; background:#fff; color:#046242; }
+.attendance-page .attendance-hero-actions button svg { width:18px; height:18px; flex-shrink:0; }
+.attendance-page .attendance-hero-actions button:not(:disabled):hover { background:#046242; color:#fff; }
+@media(max-width:649px) { .attendance-page .attendance-stats-grid { grid-template-columns:repeat(2,minmax(0,1fr)); } .attendance-page .attendance-stat-card { flex-direction:column; align-items:flex-start; padding:14px; gap:10px; } }
+
+.attendance-page .attendance-stat-card[aria-pressed="true"] { border-color:var(--at-green); box-shadow:inset 0 0 0 1px var(--at-green); }
+
+/* Reprise exacte des deux actions du module Utilisateurs. */
+@media screen {
+.attendance-page .attendance-hero .attendance-hero-actions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:8px; }
+.attendance-page .attendance-hero .attendance-hero-actions :is(.attendance-primary-button,.attendance-secondary-button) {
+ display:inline-flex; align-items:center; justify-content:center; gap:8px;
+ flex:0 1 auto; width:auto; height:44px; min-height:44px; padding:0 14px;
+ border:0; border-radius:10px; background:#fff; color:var(--tenant-primary,#046242);
+ line-height:1; box-shadow:none; filter:none; transform:none;
+}
+.attendance-page .attendance-hero .attendance-hero-actions button span {
+ position:static; width:auto; height:auto; overflow:visible; clip-path:none; white-space:normal;
+ display:block; margin:0; padding:0; font-size:.8125rem; line-height:18px; color:inherit; align-self:center; transform:none;
+}
+.attendance-page .attendance-hero .attendance-hero-actions button svg {
+ display:block; width:18px; height:18px; flex:0 0 18px; margin:0; padding:0;
+ color:inherit; stroke:currentColor; align-self:center; vertical-align:middle; transform:none;
+}
+}
+@media screen and (hover:hover) {
+.attendance-page .attendance-hero .attendance-hero-actions :is(.attendance-primary-button,.attendance-secondary-button):not(:disabled):hover {
+ background:var(--tenant-primary,#046242); color:#fff; border:0; box-shadow:none; filter:none; transform:none;
+}
+}

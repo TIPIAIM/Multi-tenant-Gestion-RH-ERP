@@ -2,6 +2,7 @@ import type { Types } from "mongoose";
 
 export const userAdminActivityActions = [
   "USER_CREATED",
+  "USER_DELETED",
   "USER_UPDATED",
   "USER_STATUS_CHANGED",
   "USER_EMAIL_VERIFIED",

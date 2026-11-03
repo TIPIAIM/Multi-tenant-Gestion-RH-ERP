@@ -1,5 +1,7 @@
+import { useRoadmapDialog } from "./use-roadmap-dialog";
 import {
   useMemo,
+  useRef,
   useState,
   type ChangeEvent,
   type FormEvent,
@@ -110,6 +112,8 @@ export default function RoadmapEditorModal({
   onClose,
   onSave,
 }: RoadmapEditorModalProps) {
+  const dialogRef = useRef<HTMLElement>(null);
+  useRoadmapDialog(dialogRef, onClose, isSubmitting);
   const [formState, setFormState] = useState<RoadmapFormState>(
     () => buildInitialState(roadmap),
   );
@@ -123,9 +127,9 @@ export default function RoadmapEditorModal({
     [formState.items],
   );
 
-  const validItemCount = sanitizedItems.filter(
+  const validItemCount = useMemo(() => sanitizedItems.filter(
     (item) => item.title.length >= 3 && item.kpiLabel.length >= 2,
-  ).length;
+  ).length, [sanitizedItems]);
 
   const canSubmit =
     !isSubmitting &&
@@ -247,6 +251,8 @@ export default function RoadmapEditorModal({
       />
 
       <section
+        ref={dialogRef}
+        tabIndex={-1}
         className="roadmap-modal"
         role="dialog"
         aria-modal="true"

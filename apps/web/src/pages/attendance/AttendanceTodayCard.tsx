@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import {
   CheckCircle2,
   CircleAlert,
@@ -25,7 +25,7 @@ import {
 import "./attendance-page.css";
 import "./attendance-ui.css";
 
-export default function AttendanceTodayCard() {
+function AttendanceTodayCard() {
   const queryClient = useQueryClient();
 
   const [now, setNow] = useState(() => new Date());
@@ -253,3 +253,5 @@ export default function AttendanceTodayCard() {
     </section>
   );
 }
+
+export default memo(AttendanceTodayCard);

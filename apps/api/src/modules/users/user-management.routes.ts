@@ -6,6 +6,7 @@ import {
 import { tenantContextMiddleware } from "../../middlewares/tenant-context.middleware.js";
 import {
   createUserController,
+  deleteUserController,
   forceVerifyUserEmailController,
   getUserAgentOptionsController,
   getUserController,
@@ -66,6 +67,7 @@ userManagementRouter.post(
   "/",
   requirePermissions("USER_CREATE"),
   createUserController,
+  deleteUserController,
 );
 
 userManagementRouter.get(
@@ -136,3 +138,5 @@ userManagementRouter.get(
   requirePermissions("USER_VIEW"),
   listUserActivitiesController,
 );
+
+userManagementRouter.delete("/:id", requirePermissions("USER_UPDATE"), deleteUserController);

@@ -1,5 +1,19 @@
+import { useTaskDialog } from "./use-task-dialog";
+const taskDateFormatter1 = new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+const taskDateFormatter2 = new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 import {
   useMemo,
+  useRef,
   useState,
   type ChangeEvent,
   type FormEventHandler,
@@ -74,23 +88,13 @@ const statusLabels: Record<TaskStatus, string> = {
 function formatDate(value?: string): string {
   if (!value) return "Non renseignée";
 
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  }).format(new Date(value));
+  return taskDateFormatter1.format(new Date(value));
 }
 
 function formatDateTime(value?: string): string {
   if (!value) return "Non renseignée";
 
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
+  return taskDateFormatter2.format(new Date(value));
 }
 
 function formatBytes(value: number): string {
@@ -144,6 +148,8 @@ export default function TaskDetailsDrawer({
 }: TaskDetailsDrawerProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const drawerRef = useRef<HTMLElement>(null);
+  useTaskDialog(drawerRef, onClose);
 
   const role = user?.role ?? "";
 
@@ -434,20 +440,11 @@ export default function TaskDetailsDrawer({
       }
     };
 
-  const requiredKpis =
-    task.kpis.filter(
-      (kpi) => kpi.required,
-    );
-
-  const completedKpis =
-    task.kpis.filter(
-      (kpi) => kpi.isSubmitted,
-    );
-
-  const pendingRequiredKpis =
-    requiredKpis.filter(
-      (kpi) => !kpi.isSubmitted,
-    );
+  const { completedKpis, pendingRequiredKpis } = useMemo(() => {
+    const requiredKpis = task.kpis.filter(kpi => kpi.required);
+    return { requiredKpis, completedKpis: task.kpis.filter(kpi => kpi.isSubmitted),
+      pendingRequiredKpis: requiredKpis.filter(kpi => !kpi.isSubmitted) };
+  }, [task.kpis]);
 
   return (
     <div
@@ -468,6 +465,8 @@ export default function TaskDetailsDrawer({
       }}
     >
       <aside
+        ref={drawerRef}
+        tabIndex={-1}
         className="task-drawer"
         role="dialog"
         aria-modal="true"

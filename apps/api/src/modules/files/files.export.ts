@@ -3,7 +3,7 @@ import { mkdtemp, rm, stat } from "node:fs/promises";
 import { createWriteStream, createReadStream } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, extname } from "node:path";
-import { Transform } from "node:stream";
+
 import { pipeline } from "node:stream/promises";
 import archiver from "archiver";
 import { AppError } from "../../core/errors/app-error.js";
@@ -12,9 +12,11 @@ import { openStorage } from "./files.storage.js";
 import { moduleLabels, safeName } from "./files.rules.js";
 import { all, filterEntries, audit, type Filters } from "./files.service.js";
 import type { Actor, Entry } from "./files.types.js";
-const MB = 1024 * 1024,
-  FILE_LIMIT = 512 * MB,
-  VOLUME_LIMIT = 512 * MB;
+import {
+  shouldFlushVolume,
+  largeDownloadMessage,
+  VOLUME_TARGET,
+} from "./files.download-policy.js";
 const running = new Set<Promise<void>>();
 export function exportBucket() {
   if (!mongoose.connection.db)
@@ -59,20 +61,10 @@ async function stage(a: Actor, entry: Entry, path: string) {
   }
   if (!exists) throw new Error("FILE_REMOVED");
   const stream = await openStorage(entry.storage, a);
-  let total = 0;
-  await pipeline(
-    stream,
-    new Transform({
-      transform(chunk, _encoding, callback) {
-        total += chunk.length;
-        if (total > FILE_LIMIT) callback(new Error("FILE_TOO_LARGE"));
-        else callback(null, chunk);
-      },
-    }),
-    createWriteStream(path, { flags: "wx", mode: 0o600 }),
-  );
-  return total;
+  await pipeline(stream, createWriteStream(path, { flags: "wx", mode: 0o600 }));
+  return (await stat(path)).size;
 }
+
 async function pack(
   folder: string,
   items: { path: string; entry: Entry }[],
@@ -83,6 +75,7 @@ async function pack(
     zip = archiver("zip", { zlib: { level: 3 }, forceZip64: true });
   const target = createWriteStream(output, { flags: "wx", mode: 0o600 });
   const done = pipeline(zip, target);
+  void done.catch(() => {});
   const names = new Set<string>();
   for (const item of items) {
     let name = exportName(item.entry),
@@ -93,7 +86,14 @@ async function pack(
       name = `${original.slice(0, original.length - extension.length)} (${counter++})${extension}`;
     }
     names.add(name);
-    zip.file(item.path, { name });
+    const entryData: archiver.ZipEntryData = {
+      name,
+      store:
+        /^(image\/(jpeg|png|webp|gif)|audio\/|video\/|application\/(zip|x-7z-compressed|gzip))/.test(
+          item.entry.mime,
+        ),
+    };
+    zip.file(item.path, entryData);
   }
   zip.append("Nom;Module;Résultat\r\n" + report, { name: "BILAN.csv" });
   zip.append(
@@ -111,8 +111,9 @@ async function pack(
   return output;
 }
 export async function startExport(a: Actor, filters: Filters, ids?: string[]) {
+  const selectedIds = ids ? new Set(ids) : null;
   const entries = filterEntries(await all(a), filters).filter(
-    (e) => !ids || ids.includes(e.id),
+    (e) => !selectedIds || selectedIds.has(e.id),
   );
   if (ids && entries.length !== new Set(ids).size)
     throw new AppError(
@@ -126,6 +127,11 @@ export async function startExport(a: Actor, filters: Filters, ids?: string[]) {
       400,
       "FILES_EMPTY_EXPORT",
     );
+  const estimatedBytes = entries.reduce(
+    (sum, entry) => sum + Math.max(0, entry.bytes || 0),
+    0,
+  );
+  const unknownSizes = entries.filter((entry) => !entry.bytes).length;
   let job: any;
   try {
     job = await FileExport.create({
@@ -148,11 +154,15 @@ export async function startExport(a: Actor, filters: Filters, ids?: string[]) {
   }
   const task = build(a, String(job._id), entries);
   running.add(task);
-  void task.finally(() => running.delete(task));
+  void task.then(
+    () => running.delete(task),
+    () => running.delete(task),
+  );
   return {
     id: String(job._id),
-    message:
-      "Votre téléchargement se prépare. Vous pouvez continuer à utiliser la plateforme.",
+    message: largeDownloadMessage(estimatedBytes, unknownSizes),
+    estimatedBytes,
+    unknownSizes,
   };
 }
 async function build(a: Actor, id: string, entries: Entry[]) {
@@ -161,7 +171,9 @@ async function build(a: Actor, id: string, entries: Entry[]) {
     downloaded = 0,
     failed = 0,
     volume = 1,
-    bytes = 0;
+    bytes = 0,
+    lastProgressAt = 0,
+    totalBytes = 0;
   let pending: { path: string; entry: Entry }[] = [];
   const report: string[] = [];
   const heartbeat = setInterval(() => {
@@ -219,27 +231,31 @@ async function build(a: Actor, id: string, entries: Entry[]) {
       try {
         size = await stage(a, entry, target);
         staged = true;
-      } catch {
+      } catch (error) {
+        if (
+          ["ENOSPC", "EDQUOT"].includes(
+            (error as NodeJS.ErrnoException).code ?? "",
+          )
+        )
+          throw error;
         await rm(target, { force: true });
         failed++;
         report.push(
           [
             entry.name,
             moduleLabels[entry.modules[0] ?? ""],
-            "Indisponible : accès externe requis, fichier absent ou limite de 512 Mo dépassée",
+            "Indisponible : accès externe requis, fichier absent ou transfert interrompu ; réessayez le téléchargement individuel",
           ]
             .map(csv)
             .join(";"),
         );
       }
       if (staged) {
-        if (
-          pending.length &&
-          (bytes + size > VOLUME_LIMIT || pending.length >= 200)
-        )
+        if (pending.length && shouldFlushVolume(bytes, pending.length, size))
           await flush();
         pending.push({ path: target, entry });
         bytes += size;
+        totalBytes += size;
         downloaded++;
         report.push(
           [
@@ -252,10 +268,13 @@ async function build(a: Actor, id: string, entries: Entry[]) {
         );
       }
       processed++;
-      await FileExport.updateOne(
-        { _id: id },
-        { $set: { processed, downloaded, failed, heartbeatAt: new Date() } },
-      );
+      if (Date.now() - lastProgressAt >= 500 || processed === entries.length) {
+        await FileExport.updateOne(
+          { _id: id },
+          { $set: { processed, downloaded, failed, heartbeatAt: new Date() } },
+        );
+        lastProgressAt = Date.now();
+      }
     }
     // Final volume contains the complete report, including failures and all previous volumes.
     await flush();
@@ -264,25 +283,40 @@ async function build(a: Actor, id: string, entries: Entry[]) {
       {
         $set: {
           status: "COMPLETED",
-          message: `${downloaded} fichier(s) inclus, ${failed} indisponible(s). Le bilan complet est dans le dernier volume.`,
+          processed,
+          downloaded,
+          failed,
+          message: `${downloaded} fichier(s) inclus, ${failed} indisponible(s). Le bilan complet est dans le dernier volume. Téléchargez les volumes un par un et ouvrez chaque ZIP séparément.`,
           expiresAt: new Date(Date.now() + 86400000),
         },
       },
     );
+    if (totalBytes > VOLUME_TARGET)
+      await FileExport.updateOne(
+        { _id: id },
+        {
+          $set: {
+            message: `${downloaded} fichier(s) inclus, ${failed} indisponible(s). ${largeDownloadMessage(totalBytes)} Le bilan complet est dans le dernier volume.`,
+          },
+        },
+      );
     await audit(
       a,
       "EXPORT",
       `${downloaded} fichier(s) inclus ; ${failed} indisponible(s)`,
       downloaded,
     );
-  } catch {
+  } catch (error) {
     await FileExport.updateOne(
       { _id: id },
       {
         $set: {
           status: "FAILED",
-          message:
-            "La préparation a été interrompue. Relancez le téléchargement groupé.",
+          message: ["ENOSPC", "EDQUOT"].includes(
+            (error as NodeJS.ErrnoException).code ?? "",
+          )
+            ? "Espace de préparation insuffisant sur le serveur. Téléchargez les gros fichiers individuellement ou sélectionnez un lot plus petit ; contactez le responsable technique si le problème persiste."
+            : "La préparation a été interrompue. Réessayez avec un lot plus petit ou téléchargez les gros fichiers individuellement.",
           processed,
           downloaded,
           failed,
@@ -362,6 +396,7 @@ export async function openExport(a: Actor, id: string, partId: string) {
   return {
     stream: exportBucket().openDownloadStream(new Types.ObjectId(partId)),
     name: part.name,
+    bytes: part.bytes,
   };
 }
 export async function cleanExports() {

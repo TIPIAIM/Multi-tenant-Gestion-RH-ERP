@@ -298,3 +298,8 @@ export async function getAgentOptionsForUserLink(): Promise<UserAgentOption[]> {
 
   return payload.items;
 }
+
+export async function deleteManagedUser(id: string): Promise<{ deletedUserId: string; revokedSessions: number; unlinkedAgents: number }> {
+  const response = await api.delete<ApiEnvelope<{ deletedUserId: string; revokedSessions: number; unlinkedAgents: number }>>(`/admin-users/${id}`);
+  return response.data.data;
+}

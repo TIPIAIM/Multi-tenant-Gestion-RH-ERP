@@ -90,6 +90,23 @@ export async function list(a: Actor, f: Filters, page: number) {
       .lean()
       .exec(),
   ]);
+  const statistics = {
+    total: entries.length,
+    files: 0,
+    links: 0,
+    bytes: 0,
+    recent: 0,
+  };
+  const counts = new Map<string, number>();
+  const recentSince = Date.now() - 7 * 86400000;
+  for (const entry of entries) {
+    if (entry.storage.kind === "link") statistics.links++;
+    else statistics.files++;
+    statistics.bytes += entry.bytes;
+    if (Date.parse(entry.createdAt) > recentSince) statistics.recent++;
+    for (const module of new Set(entry.modules))
+      counts.set(module, (counts.get(module) ?? 0) + 1);
+  }
   return {
     items: filtered.slice((page - 1) * 25, page * 25).map(publicEntry),
     pagination: {
@@ -97,19 +114,11 @@ export async function list(a: Actor, f: Filters, page: number) {
       total: filtered.length,
       totalPages: Math.max(1, Math.ceil(filtered.length / 25)),
     },
-    statistics: {
-      total: entries.length,
-      files: entries.filter((e) => e.storage.kind !== "link").length,
-      links: entries.filter((e) => e.storage.kind === "link").length,
-      bytes: entries.reduce((s, e) => s + e.bytes, 0),
-      recent: entries.filter(
-        (e) => Date.parse(e.createdAt) > Date.now() - 7 * 86400000,
-      ).length,
-    },
+    statistics,
     modules: Object.entries(moduleLabels).map(([key, label]) => ({
       key,
       label,
-      count: entries.filter((e) => e.modules.includes(key)).length,
+      count: counts.get(key) ?? 0,
     })),
     pending: pending.map((p) => ({
       id: String(p._id),

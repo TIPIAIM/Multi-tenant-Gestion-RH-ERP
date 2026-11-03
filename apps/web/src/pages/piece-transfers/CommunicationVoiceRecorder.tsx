@@ -17,6 +17,7 @@ export default function CommunicationVoiceRecorder({ disabled, remainingBytes, r
   const recorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const recordedBytesRef = useRef(0);
   const urlRef = useRef<string | null>(null);
   const generationRef = useRef(0);
   const startedRef = useRef(0);
@@ -29,7 +30,7 @@ export default function CommunicationVoiceRecorder({ disabled, remainingBytes, r
     if (recorder) { recorder.ondataavailable = null; recorder.onstop = null; recorder.onerror = null; if (recorder.state !== "inactive") recorder.stop(); }
     recorderRef.current = null;
     streamRef.current?.getTracks().forEach(track => track.stop()); streamRef.current = null;
-    chunksRef.current = [];
+    chunksRef.current = []; recordedBytesRef.current = 0;
   }
   function cancel() {
     generationRef.current++; release();
@@ -60,11 +61,12 @@ export default function CommunicationVoiceRecorder({ disabled, remainingBytes, r
       if (generation !== generationRef.current) { stream.getTracks().forEach(track => track.stop()); return; }
       streamRef.current = stream;
       const recorder = new MediaRecorder(stream, { mimeType, audioBitsPerSecond: 64_000 });
-      recorderRef.current = recorder; chunksRef.current = [];
+      recorderRef.current = recorder; chunksRef.current = []; recordedBytesRef.current = 0;
       recorder.ondataavailable = event => {
         if (generation !== generationRef.current || !event.data.size) return;
         chunksRef.current.push(event.data);
-        if (chunksRef.current.reduce((size, chunk) => size + chunk.size, 0) > budgetRef.current) { cancel(); setError("Le vocal dépasse la taille disponible. Enregistrez un message plus court."); }
+        recordedBytesRef.current += event.data.size;
+        if (recordedBytesRef.current > budgetRef.current) { cancel(); setError("Le vocal dépasse la taille disponible. Enregistrez un message plus court."); }
       };
       recorder.onerror = () => { if (generation === generationRef.current) { cancel(); setError("L’enregistrement a été interrompu. Vous pouvez réessayer."); } };
       recorder.onstop = () => {
@@ -72,7 +74,7 @@ export default function CommunicationVoiceRecorder({ disabled, remainingBytes, r
         if (generation !== generationRef.current) return;
         recorderRef.current = null;
         const type = (recorder.mimeType.split(";")[0] ?? "audio/webm").toLowerCase();
-        const blob = new Blob(chunksRef.current, { type }); chunksRef.current = [];
+        const blob = new Blob(chunksRef.current, { type }); chunksRef.current = []; recordedBytesRef.current = 0;
         if (!blob.size || blob.size > budgetRef.current) { cancel(); setError("Vocal vide ou trop volumineux. Réessayez."); return; }
         const extension = type === "audio/mp4" ? "m4a" : type === "audio/ogg" ? "ogg" : "webm";
         const file = new File([blob], `Vocal-${new Date().toISOString().replace(/[:.]/g, "-")}.${extension}`, { type });

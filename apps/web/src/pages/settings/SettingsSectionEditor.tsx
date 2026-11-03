@@ -1,8 +1,8 @@
 import NumberingPatternEditor from "./NumberingPatternEditor";
 import {featureLabels,documentFormats} from "../../features/settings/settings.presentation";
-import BrandingSettingsEditor from "./BrandingSettingsEditor";
+const BrandingSettingsEditor=lazy(()=>import("./BrandingSettingsEditor"));
 import { Plus, Trash2 } from "lucide-react";
-import {isValidElement,type ReactNode} from "react";
+import {lazy,Suspense,isValidElement,type ReactNode} from "react";
 import type {
   SettingsSectionKey,
   TenantSettingsPayload,
@@ -85,9 +85,9 @@ export default function SettingsSectionEditor({ section, settings, readOnly, onC
   }
 
   if (section === "branding") {
-    return <BrandingSettingsEditor branding={settings.branding} organizationName={settings.institution.shortName}
+    return <Suspense fallback={<p role="status">Chargement de l’identité visuelle…</p>}><BrandingSettingsEditor branding={settings.branding} organizationName={settings.institution.shortName}
       readOnly={readOnly} expectedRevision={expectedRevision}
-      onChange={branding => updateSection("branding", branding)} onSaved={onBrandingSaved} onBusyChange={onAppearanceBusy} />;
+      onChange={branding => updateSection("branding", branding)} onSaved={onBrandingSaved} onBusyChange={onAppearanceBusy} /></Suspense>;
   }
 
   if (section === "organization") {

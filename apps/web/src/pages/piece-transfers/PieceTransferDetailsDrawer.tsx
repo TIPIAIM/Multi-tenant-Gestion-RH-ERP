@@ -1,5 +1,7 @@
+import { dateTime, timeOnly } from "./communication-formatters";
 import "./communication-emoji-position.css";
 import "./communication-exchange-refinement.css";
+import { useCommunicationConfirm } from "./use-communication-confirm";
 import CommunicationAvatar from "./CommunicationAvatar";
 import MessageReceipt from "./MessageReceipt";
 import CommunicationVoiceRecorder from "./CommunicationVoiceRecorder";
@@ -88,18 +90,12 @@ function formatBytes(value?: number): string {
 
 function formatTime(value?: string): string {
   if (!value) return "";
-  return new Intl.DateTimeFormat("fr-FR", {
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
+  return timeOnly.format(new Date(value));
 }
 
 function formatDateTime(value?: string): string {
   if (!value) return "—";
-  return new Intl.DateTimeFormat("fr-FR", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+  return dateTime.format(new Date(value));
 }
 
 function initials(value: string): string {
@@ -137,6 +133,7 @@ export default function PieceTransferDetailsDrawer({
   onRevoke,
 }: Props) {
   const { user } = useAuth();
+  const { confirm, confirmation } = useCommunicationConfirm();
   const queryClient = useQueryClient();
   const endRef = useRef<HTMLDivElement | null>(null);
   const drawerRef = useRef<HTMLElement | null>(null);
@@ -223,11 +220,13 @@ export default function PieceTransferDetailsDrawer({
   const replyDraftsRef = useRef(new Map<string, PieceTransferMessage | null>());
   const replyRef = useRef(replyTarget);
   replyRef.current = replyTarget;
+  const [debouncedForwardSearch, setDebouncedForwardSearch] = useState("");
+  useEffect(() => { const timer = window.setTimeout(() => setDebouncedForwardSearch(forwardSearch.trim()), 300); return () => window.clearTimeout(timer); }, [forwardSearch]);
   const forwardQuery = useQuery({
-    queryKey: ["piece-transfers", "forward-destinations", user?.id, forwardSearch],
+    queryKey: ["piece-transfers", "forward-destinations", user?.id, debouncedForwardSearch],
     enabled: Boolean(forwardTarget && forwardMode === "DISCUSSION" && user?.id),
     queryFn: async () => {
-      const params = { page: 1, limit: 30, search: forwardSearch || undefined };
+      const params = { page: 1, limit: 30, search: debouncedForwardSearch || undefined };
       const [inbox, sent] = await Promise.all([getPieceTransferInbox(params), getPieceTransferSent(params)]);
       return [...new Map([...inbox.items, ...sent.items].map(item => [item.id, item])).values()].filter(item => item.id !== transferId && item.status === "ACTIVE");
     },
@@ -428,9 +427,17 @@ export default function PieceTransferDetailsDrawer({
 
   useEffect(() => {
     if (!transferId) return;
-    const timer = window.setInterval(() => setNow(Date.now()), 1_000);
+    const deadlines = [transfer?.revocableUntil, ...(messagesQuery.data?.pages.flatMap(page => page.items.map(message => message.editableUntil)) ?? [])]
+      .filter((value): value is string => Boolean(value)).map(value => new Date(value).getTime());
+    const lastDeadline = Math.max(0, ...deadlines);
+    setNow(Date.now());
+    if (lastDeadline <= Date.now()) return;
+    const timer = window.setInterval(() => {
+      const current = Date.now(); setNow(current);
+      if (current >= lastDeadline) window.clearInterval(timer);
+    }, 1_000);
     return () => window.clearInterval(timer);
-  }, [transferId]);
+  }, [transferId, transfer?.revocableUntil, messagesQuery.data]);
 
   useEffect(() => {
     const previousId = previousTransferRef.current;
@@ -557,11 +564,11 @@ export default function PieceTransferDetailsDrawer({
     editMessageMutation.mutate({ messageId: message.id, body });
   }
 
-  function deleteMessage(message: PieceTransferMessage): void {
+  async function deleteMessage(message: PieceTransferMessage): Promise<void> {
     if (!message.permissions.canDelete) return;
 
     if (
-      window.confirm(
+      await confirm(
         "Supprimer ce message ? La trace d’audit restera conservée.",
       )
     ) {
@@ -1022,6 +1029,7 @@ export default function PieceTransferDetailsDrawer({
       </div>
 
       {forwardNotice && <div className="communication-forward-notice" role="status"><Check size={16} />{forwardNotice}<button type="button" aria-label="Fermer la confirmation" onClick={() => setForwardNotice(null)}><X size={14} /></button></div>}
+      {confirmation}
       {forwardTarget && <div className="communication-forward-layer"><section ref={forwardDialogRef} tabIndex={-1} role="dialog" aria-modal="true" className="communication-forward-panel" aria-label="Transférer un message">
         <header><strong><Forward size={16} /> Transférer ce message</strong><button type="button" disabled={forwardMutation.isPending || forwardAgentsMutation.isPending} aria-label="Fermer le transfert" onClick={() => setForwardTarget(null)}><X size={18} /></button></header>
         <div className="communication-forward-scroll">

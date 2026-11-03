@@ -63,12 +63,12 @@ export async function publicStream(
       url,
       {
         family: target.family,
-        autoSelectFamily: false,
+        ...{ autoSelectFamily: false },
         lookup: (_host, _options, callback) =>
           callback(null, target.address, target.family),
         headers: {
           "Accept-Encoding": "identity",
-          "User-Agent": "FADES-RH Files/1",
+          "User-Agent": "RH-Files/1",
         },
       },
       (res) => {
@@ -110,7 +110,7 @@ export async function publicStream(
             res.destroy(
               error("Le téléchargement a dépassé le délai autorisé."),
             ),
-          120000,
+          60 * 60 * 1000,
         );
         timeout.unref();
         res.once("close", () => clearTimeout(timeout));

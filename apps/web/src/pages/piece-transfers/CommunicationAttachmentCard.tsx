@@ -73,7 +73,7 @@ export default function CommunicationAttachmentCard({ attachment, transferId, me
     <button type="button" className="communication-attachment-main" disabled={deleted || !attachment.canView || Boolean(busy || pending)}
       aria-label={`${image && url ? "Agrandir" : "Ouvrir"} ${attachment.originalFileName}`}
       onClick={() => image && url ? setZoom(true) : onView()}>
-      {image && url ? <img className="communication-attachment-image" src={url} alt={attachment.originalFileName} loading="lazy" onError={() => setPreviewFailed(true)} />
+      {image && url ? <img className="communication-attachment-image" src={url} alt={attachment.originalFileName} loading="lazy" decoding="async" onError={() => setPreviewFailed(true)} />
         : <span className={`communication-attachment-icon file-${extension.toLowerCase()}`}><Icon size={25} aria-hidden="true" />
           {busy === "VIEW" && <LoaderCircle size={14} className="is-spinning" />}</span>}
       <span className="communication-attachment-copy"><strong>{attachment.originalFileName}</strong>

@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
+const evaluationDateFormatter = new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import {
   Award,
   BadgeCheck,
@@ -45,8 +51,8 @@ import type {
   UpdateEvaluationInput,
   ValidateEvaluationHrInput,
 } from "../../features/evaluations/evaluation.types";
-import EvaluationDetailsDrawer from "./EvaluationDetailsDrawer";
-import EvaluationFormModal from "./EvaluationFormModal";
+const EvaluationDetailsDrawer = lazy(() => import("./EvaluationDetailsDrawer"));
+const EvaluationFormModal = lazy(() => import("./EvaluationFormModal"));
 import "./evaluation-page.css";
 
 type EvaluationFilters = {
@@ -137,12 +143,7 @@ function currentYear(): string {
 function formatDate(value?: string): string {
   if (!value) return "—";
 
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(value));
+  return evaluationDateFormatter.format(new Date(value));
 }
 
 function getScoreClass(score: number): string {
@@ -191,23 +192,13 @@ export default function EvaluationsPage() {
 
   useEffect(() => {
     const timeoutId = window.setTimeout(
-      () => setDebouncedSearch(filters.search.trim()),
+      () => { setDebouncedSearch(filters.search.trim()); setPage(1); },
       350,
     );
 
     return () => window.clearTimeout(timeoutId);
   }, [filters.search]);
 
-  useEffect(() => {
-    setPage(1);
-  }, [
-    debouncedSearch,
-    filters.status,
-    filters.evaluationYear,
-    filters.directionId,
-    filters.serviceId,
-    filters.agentId,
-  ]);
 
   const organizationQuery = useQuery({
     queryKey: ["organization-tree"],
@@ -237,7 +228,7 @@ export default function EvaluationsPage() {
   });
 
   const evaluationsQuery = useQuery({
-    queryKey: ["evaluations", page, debouncedSearch, filters],
+    queryKey: ["evaluations", page, debouncedSearch, filters.status, filters.evaluationYear, filters.directionId, filters.serviceId, filters.agentId],
     queryFn: () =>
       getEvaluations({
         page,
@@ -437,6 +428,7 @@ export default function EvaluationsPage() {
     key: keyof EvaluationFilters,
     value: string,
   ): void {
+    if (key !== "search") setPage(1);
     setFilters((current) => ({
       ...current,
       [key]: value,
@@ -446,6 +438,8 @@ export default function EvaluationsPage() {
   }
 
   function clearFilters(): void {
+    setPage(1);
+    setDebouncedSearch("");
     setFilters({
       search: "",
       status: "",
@@ -870,6 +864,7 @@ export default function EvaluationsPage() {
         )}
       </section>
 
+      <Suspense fallback={<p role="status">Chargement du formulaire…</p>}>
       {modalMode && (
         <EvaluationFormModal
           key={`${modalMode}-${editingEvaluation?.id ?? "new"}`}
@@ -891,6 +886,7 @@ export default function EvaluationsPage() {
         />
       )}
 
+      </Suspense>
       <div className="evaluation-view-status" role="status" aria-live="polite" aria-atomic="true">
         {selectedEvaluationId && selectedEvaluationQuery.isPending && (
           <span><LoaderCircle size={18} className="evaluation-button-spinner" aria-hidden="true" /> Ouverture de l’évaluation…</span>
@@ -912,6 +908,7 @@ export default function EvaluationsPage() {
           <button className="evaluation-cancel-button" type="button" onClick={closeEvaluationDetails}>Fermer</button>
         </div>
       )}
+      <Suspense fallback={<p role="status">Chargement du dossier…</p>}>
       {selectedEvaluationId && selectedEvaluationQuery.data && (
         <EvaluationDetailsDrawer
           evaluation={selectedEvaluationQuery.data}
@@ -951,6 +948,7 @@ export default function EvaluationsPage() {
         />
       )}
 
+      </Suspense>
       {evaluationToDelete && (
         <div className="evaluation-delete-layer">
           <button

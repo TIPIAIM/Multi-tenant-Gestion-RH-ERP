@@ -1,7 +1,8 @@
+import { AppError } from "../../core/errors/app-error.js";
 import { fileURLToPath } from "node:url";
 import PDFDocument from "pdfkit";
-import { getCloudinaryConfig } from "../../config/env.js";
-import { AppError } from "../../core/errors/app-error.js";
+
+
 import type { PayrollRecord } from "./payroll.model.js";
 import type {
   BrandingSettings,
@@ -18,60 +19,7 @@ export const payslipFilename = (
 ) =>
   `bulletin-${row.period}-${row.matricule.replace(/[^a-z0-9_-]/gi, "-").slice(0, 60)}.pdf`;
 
-/** Only the configured Cloudinary image host is fetched, without redirects. */
-export async function loadPayslipLogo(
-  settings: PayslipSettings,
-): Promise<Buffer | undefined> {
-  const value = settings.branding.printLogoUrl || settings.branding.logoUrl;
-  if (!value) return undefined;
-  try {
-    const url = new URL(value);
-    const { cloudName } = getCloudinaryConfig();
-    if (
-      url.protocol !== "https:" ||
-      url.hostname !== "res.cloudinary.com" ||
-      url.port ||
-      url.username ||
-      url.password ||
-      !url.pathname.startsWith(`/${cloudName}/image/upload/`)
-    ) {
-      throw new Error("Logo non géré");
-    }
-    const response = await fetch(url, {
-      redirect: "error",
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (
-      !response.ok ||
-      !response.body ||
-      Number(response.headers.get("content-length") || 0) > 2_000_000
-    )
-      throw new Error("Logo indisponible");
-    const chunks: Buffer[] = [];
-    let size = 0;
-    for await (const chunk of response.body) {
-      size += chunk.byteLength;
-      if (size > 2_000_000) {
-        await response.body.cancel().catch(() => undefined);
-        throw new Error("Logo trop volumineux");
-      }
-      chunks.push(Buffer.from(chunk));
-    }
-    const buffer = Buffer.concat(chunks);
-    const png = buffer
-      .subarray(0, 8)
-      .equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
-    const jpeg = buffer[0] === 0xff && buffer[1] === 0xd8;
-    if (!png && !jpeg) throw new Error("Format non imprimable");
-    return buffer;
-  } catch {
-    throw new AppError(
-      "Le logo imprimable est indisponible. Téléversez un logo dans Configuration, puis publiez les modifications.",
-      503,
-      "PAYROLL_LOGO_UNAVAILABLE",
-    );
-  }
-}
+export { loadPayslipLogo } from "./payroll-logo.js";
 
 /** Lean MongoDB reads can expose a BSON Binary instead of a Node Buffer. */
 export function payslipMarkBytes(value: unknown): Buffer | undefined {

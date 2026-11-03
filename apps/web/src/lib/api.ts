@@ -1,7 +1,17 @@
 import axios, { type InternalAxiosRequestConfig } from "axios";
 
-const apiBaseUrl = String(import.meta.env.VITE_API_URL ?? "http://localhost:5000/api/v1")
+const configuredApiUrl = String(import.meta.env.VITE_API_URL ?? "http://localhost:5000/api/v1")
   .trim().replace(/\/+$/, "");
+function resolveApiBaseUrl(): string {
+  if (!import.meta.env.DEV) return configuredApiUrl;
+  try {
+    const configured = new URL(configuredApiUrl);
+    if (["localhost", "127.0.0.1", "[::1]"].includes(configured.hostname)
+      && configured.pathname.startsWith("/api/")) return configured.pathname;
+  } catch { /* Preserve relative API URLs supplied by the environment. */ }
+  return configuredApiUrl;
+}
+const apiBaseUrl = resolveApiBaseUrl();
 const TENANT_STORAGE_KEY = "fades_tenant_slug";
 
 function normalizeTenantSlug(value?: string | null): string | null {

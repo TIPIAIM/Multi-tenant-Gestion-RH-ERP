@@ -20,3 +20,27 @@
 @media(prefers-reduced-motion:reduce){.settings-page *,.settings-native-dialog *{transition:none!important;animation:none!important}}
 
 .settings-native-dialog{position:fixed;inset:0;height:fit-content}.settings-native-dialog>header>.settings-icon-button{width:44px;height:44px;min-width:44px;border-radius:10px}.settings-feedback{padding:12px 16px;margin:0;border:1px solid var(--settings-border);border-radius:10px;background:rgba(4,98,66,.05);color:var(--settings-green);font-size:.75rem}.settings-page .settings-primary-button{color:var(--tenant-on-primary,#fff)}
+
+/* Charte commune aux modules RH, sans incidence sur les documents imprimés. */
+@media screen {
+.settings-page .settings-hero { background:#fff; border:1px solid rgba(11,37,54,.14); border-radius:14px; box-shadow:none; }
+.settings-page .settings-hero .settings-hero-actions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:8px; }
+.settings-page .settings-hero .settings-hero-actions>button { display:inline-flex; align-items:center; justify-content:center; gap:8px; width:auto; min-width:0; height:44px; min-height:44px; padding:0 14px; border:0; border-radius:10px; background:#fff; color:var(--tenant-primary,#046242); font-family:inherit; font-size:.8125rem; line-height:18px; box-shadow:none; filter:none; transform:none; }
+.settings-page .settings-hero .settings-hero-actions button svg { width:18px; height:18px; flex:0 0 18px; margin:0; color:inherit; }
+.settings-page .settings-hero .settings-hero-actions button span { position:static; display:block; width:auto; height:auto; clip-path:none; overflow:visible; color:inherit; line-height:18px; margin:0; padding:0; }
+.settings-page .settings-overview-card { min-height:116px; padding:16px; gap:13px; align-items:center; border:1px solid rgba(11,37,54,.14); border-radius:12px; background:#fff; box-shadow:none; }
+.settings-page .settings-overview-card>svg { width:36px; height:36px; flex:0 0 36px; padding:9px; border-radius:10px; color:var(--tenant-primary,#046242); background:rgba(4,98,66,.07); }
+.settings-page .settings-overview-card>div>span { font-size:.75rem; font-weight:600; color:rgba(11,37,54,.73); }
+.settings-page .settings-overview-card>div>strong { font-size:1.45rem; line-height:1.2; color:#0b2536; }
+.settings-page .settings-overview-card p { font-size:.6875rem; line-height:1.5; color:rgba(11,37,54,.65); }
+.settings-page .settings-ring { flex-shrink:0; }
+.settings-page .settings-overview-card>div { min-width:0; overflow-wrap:anywhere; }
+}
+@media screen and (hover:hover) {
+.settings-page .settings-hero .settings-hero-actions>button:not(:disabled):hover { background:var(--tenant-primary,#046242); color:#fff; border:0; box-shadow:none; filter:none; transform:none; }
+}
+@media screen and (max-width:649px) {
+.settings-page .settings-overview-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.settings-page .settings-overview-card { flex-direction:column; align-items:flex-start; padding:14px; gap:10px; min-width:0; }
+.settings-page .settings-overview-card>div>strong { font-size:1.15rem; }
+}

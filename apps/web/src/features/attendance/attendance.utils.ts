@@ -4,6 +4,47 @@ import type {
   } from "./attendance.types";
   
   export const attendanceTimezone = "Africa/Conakry";
+
+const attendanceFormatter0 = new Intl.DateTimeFormat("en-CA", {
+      timeZone: attendanceTimezone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    });
+
+const attendanceFormatter1 = new Intl.DateTimeFormat("fr-FR", {
+      timeZone: attendanceTimezone,
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+
+const attendanceFormatter2 = new Intl.DateTimeFormat("fr-FR", {
+      timeZone: attendanceTimezone,
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+const attendanceFormatter3 = new Intl.DateTimeFormat("fr-FR", {
+      timeZone: attendanceTimezone,
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    });
+
+const attendanceFormatter4 = new Intl.DateTimeFormat("fr-FR", {
+      timeZone: attendanceTimezone,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hourCycle: "h23",
+    });
   
   export const attendanceStatusLabels: Record<
     AttendanceStatus,
@@ -31,15 +72,7 @@ import type {
   function getConakryParts(
     date: Date,
   ): Record<string, string> {
-    return new Intl.DateTimeFormat("en-CA", {
-      timeZone: attendanceTimezone,
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      hourCycle: "h23",
-    })
+    return attendanceFormatter0
       .formatToParts(date)
       .reduce<Record<string, string>>((result, part) => {
         if (part.type !== "literal") {
@@ -84,12 +117,7 @@ import type {
       return "Non renseignée";
     }
   
-    return new Intl.DateTimeFormat("fr-FR", {
-      timeZone: attendanceTimezone,
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    }).format(new Date(`${value}T00:00:00Z`));
+    return attendanceFormatter1.format(new Date(`${value}T00:00:00Z`));
   }
   
   export function formatDateTime(
@@ -99,14 +127,7 @@ import type {
       return "Non renseignée";
     }
   
-    return new Intl.DateTimeFormat("fr-FR", {
-      timeZone: attendanceTimezone,
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(value));
+    return attendanceFormatter2.format(new Date(value));
   }
   
   export function formatClockTime(
@@ -116,24 +137,13 @@ import type {
       return "—";
     }
   
-    return new Intl.DateTimeFormat("fr-FR", {
-      timeZone: attendanceTimezone,
-      hour: "2-digit",
-      minute: "2-digit",
-      hourCycle: "h23",
-    }).format(new Date(value));
+    return attendanceFormatter3.format(new Date(value));
   }
   
   export function formatLiveClock(
     value: Date,
   ): string {
-    return new Intl.DateTimeFormat("fr-FR", {
-      timeZone: attendanceTimezone,
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hourCycle: "h23",
-    }).format(value);
+    return attendanceFormatter4.format(value);
   }
   
   export function formatMinutes(

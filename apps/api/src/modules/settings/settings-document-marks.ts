@@ -49,11 +49,11 @@ assetSchema.index({ state: 1, nextAttemptAt: 1 });
 const Current: Model<InferSchemaType<typeof currentSchema>> =
   (mongoose.models.TenantDocumentMarks as
     Model<InferSchemaType<typeof currentSchema>> | undefined) ??
-  mongoose.model("TenantDocumentMarks", currentSchema);
+  mongoose.model<InferSchemaType<typeof currentSchema>>("TenantDocumentMarks", currentSchema);
 const Asset: Model<InferSchemaType<typeof assetSchema>> =
   (mongoose.models.TenantDocumentMarkAsset as
     Model<InferSchemaType<typeof assetSchema>> | undefined) ??
-  mongoose.model("TenantDocumentMarkAsset", assetSchema);
+  mongoose.model<InferSchemaType<typeof assetSchema>>("TenantDocumentMarkAsset", assetSchema);
 let initialized: Promise<unknown> | undefined;
 function init() {
   initialized ??= Promise.all([Current.init(), Asset.init()]).catch((error) => {

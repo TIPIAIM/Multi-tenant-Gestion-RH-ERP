@@ -1,6 +1,10 @@
+const settingsDateFormatter=new Intl.DateTimeFormat("fr-FR", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 import SettingsDialog from "./SettingsDialog";
 import {GraduationCap,BriefcaseBusiness} from "lucide-react";
-import TenantDocumentMarksPanel from "../../features/settings/DocumentMarks";
+const TenantDocumentMarksPanel=lazy(()=>import("../../features/settings/DocumentMarks"));
 import {
   resolveAppearance,
   DEFAULT_APPEARANCE,
@@ -8,6 +12,8 @@ import {
 } from "../../features/settings/settings.appearance";
 import { assertBrandingContrast } from "../../features/settings/settings.colors";
 import {
+  lazy,
+  Suspense,
   useEffect,
   useRef,
   useMemo,
@@ -66,9 +72,9 @@ import {
   isSameSettingsValue,
   settingsSectionLabels,
 } from "../../features/settings/settings.utils";
-import SettingsHistoryDrawer from "./SettingsHistoryDrawer";
+const SettingsHistoryDrawer=lazy(()=>import("./SettingsHistoryDrawer"));
 import SettingsPreviewPanel from "./SettingsPreviewPanel";
-import SettingsPublishModal from "./SettingsPublishModal";
+const SettingsPublishModal=lazy(()=>import("./SettingsPublishModal"));
 import SettingsSectionEditor from "./SettingsSectionEditor";
 import "./settings-page.css";
  
@@ -114,10 +120,7 @@ const allSections = Object.keys(settingsSectionLabels) as SettingsSectionKey[];
 
 function formatDate(value?: string | null): string {
   if (!value) return "—";
-  return new Intl.DateTimeFormat("fr-FR", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+  return settingsDateFormatter.format(new Date(value));
 }
 
 function maturityLabel(level?: string): string {
@@ -605,7 +608,7 @@ export default function SettingsPage() {
             onBrandingSaved={acceptBrandingRecord}
             onAppearanceBusy={setAppearanceBusy}
           />
-          {activeSection === "branding" && <TenantDocumentMarksPanel />}
+          {activeSection === "branding" && <Suspense fallback={<p role="status">Chargement des cachets et signatures…</p>}><TenantDocumentMarksPanel /></Suspense>}
         </main>
 
         <SettingsPreviewPanel
@@ -689,7 +692,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      <SettingsHistoryDrawer
+      {historyOpen && <Suspense fallback={<p role="status">Chargement…</p>}><SettingsHistoryDrawer
         open={historyOpen}
         revisions={historyQuery.data?.items ?? []}
         isLoading={historyQuery.isLoading}
@@ -700,9 +703,9 @@ export default function SettingsPage() {
         error={historyQuery.isError?getApiErrorMessage(historyQuery.error):null}
         onClose={() => setHistoryOpen(false)}
         onRestore={(version) => setRestoreVersion(version)}
-      />
+      /></Suspense>}
 
-      <SettingsPublishModal
+      {publishOpen && <Suspense fallback={<p role="status">Chargement…</p>}><SettingsPublishModal
         open={publishOpen}
         error={publishMutation.isError?getApiErrorMessage(publishMutation.error):null}
         impact={impact}
@@ -711,7 +714,7 @@ export default function SettingsPage() {
         onPublish={async (reason) => {
           await publishMutation.mutateAsync(reason);
         }}
-      />
+      /></Suspense>}
 
       {restoreVersion!==null&&<SettingsDialog title={`Restaurer la version ${restoreVersion}`} eyebrow="RESTAURATION" busy={restoreMutation.isPending} onClose={()=>setRestoreVersion(null)}>
        <p>Cette action publie une nouvelle version et conserve l’historique. Les anciens logos supprimés ne sont pas recréés ; le logo actuel est conservé.</p>

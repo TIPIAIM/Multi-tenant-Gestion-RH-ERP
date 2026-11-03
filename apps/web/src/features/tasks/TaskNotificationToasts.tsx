@@ -1,3 +1,4 @@
+const taskDateFormatter1 = new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" });
 import { getNotificationPopupPortal } from "../notifications/notification-popup-portal";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -117,7 +118,7 @@ function TaskPopupSession({ tenantId, userId }: { tenantId: string; userId: stri
               <span className="task-popup-kind">{item.kind === "ASSIGNED" ? "Nouvelle attribution" : "Tâche terminée"}</span>
               <strong>{item.title}</strong>
               <span className="task-popup-message">{item.message}</span>
-              <time dateTime={item.createdAt}>{new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.createdAt))}</time>
+              <time dateTime={item.createdAt}>{taskDateFormatter1.format(new Date(item.createdAt))}</time>
             </Link>
             <button type="button" className="task-popup-close" title="Fermer la notification"
               ref={node => { if (node) closeFocus.current.set(key, node); else closeFocus.current.delete(key); }}

@@ -196,6 +196,7 @@ export default function TaskFormModal({
     ) ?? []).filter(element => element.getClientRects().length > 0);
     dialog?.querySelector<HTMLInputElement>('input')?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
+      if (document.querySelector("dialog[open]")) return;
       if (event.key === "Escape") {
         event.preventDefault();
         if (!pendingRef.current && !savingRef.current) closeRef.current();
@@ -675,6 +676,7 @@ export default function TaskFormModal({
               <label className="task-form-field">
                 <span>Direction</span>
                 <select
+                  aria-label="Direction"
                   value={formState.directionId}
                   onChange={
                     handleDirectionChange
@@ -705,6 +707,7 @@ export default function TaskFormModal({
               <label className="task-form-field">
                 <span>Service</span>
                 <select
+                  aria-label="Service"
                   value={formState.serviceId}
                   onChange={
                     handleServiceChange
@@ -739,6 +742,7 @@ export default function TaskFormModal({
                 </span>
 
                 <select
+                  aria-label="Agent responsable"
                   name="assignedToAgentId"
                   value={
                     formState.assignedToAgentId

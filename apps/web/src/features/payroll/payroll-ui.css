@@ -437,15 +437,6 @@
     background: #fff;
     color: var(--pay-green);
   }
-  .payroll-page .payroll-row-actions .payroll-view-button {
-    background: var(--pay-green);
-    border-color: var(--pay-green);
-    color: #fff;
-  }
-  .payroll-page .payroll-row-actions .payroll-view-button:hover {
-    background: var(--pay-green);
-    filter: brightness(0.95);
-  }
   .payroll-page .payroll-row-actions .payroll-cancel-action {
     border-color: var(--pay-border);
     background: #fff;
@@ -732,4 +723,20 @@
   .payroll-stats-grid {
     display: none !important;
   }
+}
+
+@media screen {
+ .payroll-page .payroll-stat-card { align-items: center; gap: 13px; }
+ .payroll-page .payroll-stat-card strong { font-size: 1.45rem; line-height: 1.2; }
+ .payroll-page .payroll-stat-card small { line-height: 1.5; color: rgba(11,37,54,.65); }
+ .payroll-page .payroll-stat-icon { background: rgba(4,98,66,.08); }
+ .payroll-page .payroll-stat-icon svg { width: 18px; height: 18px; }
+ .payroll-page .payroll-table-hero .payroll-hero-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; border: 0; border-radius: 10px; background: #fff; color: var(--pay-green); box-shadow: none; }
+ .payroll-page .payroll-table-hero .payroll-hero-actions button:hover:not(:disabled) { background: var(--pay-green); color: #fff; }
+ .payroll-page .payroll-table-hero .payroll-hero-actions button svg { display: block; flex: 0 0 18px; width: 18px; height: 18px; margin: 0; }
+}
+@media screen and (max-width:649px) { .payroll-page .payroll-stat-card { flex-direction: column; align-items: flex-start; padding: 14px; gap: 10px; } }
+@media screen {
+ .payroll-page .payroll-table-hero .payroll-hero-actions button { width: auto; min-width: 0; padding: 0 14px; }
+ .payroll-page .payroll-table-hero .payroll-hero-actions button .ui-action-label { display: block; margin: 0; padding: 0; line-height: 18px; color: inherit; }
 }

@@ -1,3 +1,17 @@
+const roadmapDateFormatter1 = new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "Africa/Conakry",
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+const roadmapDateFormatter2 = new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "Africa/Conakry",
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
 import type {
   KpiReviewStatus,
   RoadmapStatus,
@@ -37,14 +51,7 @@ export function formatRoadmapDate(value?: string): string {
     return "Non renseignée";
   }
 
-  return new Intl.DateTimeFormat("fr-FR", {
-    timeZone: "Africa/Conakry",
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
+  return roadmapDateFormatter1.format(new Date(value));
 }
 
 export function formatRoadmapDateOnly(value?: string): string {
@@ -52,12 +59,7 @@ export function formatRoadmapDateOnly(value?: string): string {
     return "Non renseignée";
   }
 
-  return new Intl.DateTimeFormat("fr-FR", {
-    timeZone: "Africa/Conakry",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  }).format(new Date(value));
+  return roadmapDateFormatter2.format(new Date(value));
 }
 
 export function formatFileSize(bytes: number): string {

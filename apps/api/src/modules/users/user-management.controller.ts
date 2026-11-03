@@ -1,3 +1,4 @@
+import { deleteManagedUserAccount } from "./user-deletion.service.js";
 import type { NextFunction, Request, Response } from "express";
 import { AppError } from "../../core/errors/app-error.js";
 import {
@@ -301,4 +302,13 @@ export async function listUserActivitiesController(
   } catch (error) {
     next(error);
   }
+}
+
+export async function deleteUserController(request: Request, response: Response, next: NextFunction): Promise<void> {
+  try {
+    const { tenant, actor } = await context(request);
+    const { id } = userIdParamsSchema.parse(request.params);
+    const result = await deleteManagedUserAccount(tenant, actor.userId, id);
+    response.status(200).json({ success: true, data: result });
+  } catch (error) { next(error); }
 }

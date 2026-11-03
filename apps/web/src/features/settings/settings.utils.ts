@@ -28,7 +28,7 @@ export function cloneSettings<T>(value: T): T {
 }
 
 export function isSameSettingsValue(first: unknown, second: unknown): boolean {
-  return JSON.stringify(first) === JSON.stringify(second);
+  return first === second || JSON.stringify(first) === JSON.stringify(second);
 }
 
 export function getEnabledModules(settings: TenantSettingsPayload): string[] {

@@ -1,3 +1,9 @@
+const evaluationDateFormatter = new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 import { useMemo, useState, type FormEvent } from "react";
 import { Link2, LoaderCircle, Plus, Save, Trash2, X } from "lucide-react";
 import type { Agent } from "../../features/agents/agent.types";
@@ -53,12 +59,7 @@ function formatDateInput(value?: string): string {
 function formatAgentDate(value?: string): string {
   if (!value) return "Non renseignée";
 
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(value));
+  return evaluationDateFormatter.format(new Date(value));
 }
 
 export default function EvaluationFormModal({

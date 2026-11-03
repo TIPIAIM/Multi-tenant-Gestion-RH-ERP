@@ -123,3 +123,8 @@
   .task-notices button { transition: none; }
   .task-notices button:not(:disabled):active, .task-notices button:not(:disabled):hover { transform: none; }
 }
+
+/* Actions cohérentes avec les autres modules. */
+.task-notices button { border: 0; border-radius: 10px; color: var(--tenant-primary, #046242); }
+.task-notices button:hover:not(:disabled) { background: var(--tenant-primary, #046242); color: #fff; }
+.task-notices button svg { flex-shrink: 0; }

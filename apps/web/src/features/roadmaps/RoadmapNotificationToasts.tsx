@@ -1,3 +1,4 @@
+const roadmapDateFormatter1 = new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" });
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
@@ -93,7 +94,7 @@ function Session({ tenantId, userId }: { tenantId: string; userId: string }) {
         <span className="task-popup-kind">Feuille de route · réalisation soumise</span>
         <strong>{item.title}</strong>
         <span className="task-popup-message">{item.message}</span>
-        <time dateTime={item.createdAt}>{new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.createdAt))}</time>
+        <time dateTime={item.createdAt}>{roadmapDateFormatter1.format(new Date(item.createdAt))}</time>
       </Link>
       <button className="task-popup-close" type="button" title="Fermer la notification" aria-label={`Fermer la notification : ${item.title}`}
         ref={node => { if (node) closeRefs.current.set(taskPopupKey(item), node); else closeRefs.current.delete(taskPopupKey(item)); }}

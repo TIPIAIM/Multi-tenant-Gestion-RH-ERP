@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Camera, Trash2 } from "lucide-react";
 import { api } from "../../lib/api";
@@ -6,7 +6,11 @@ import { useAuth } from "../auth/auth.context";
 import { getApiErrorMessage } from "../auth/auth.api";
 import type { Agent } from "./agent.types";
 import "./agent-photo.css";
-export function AgentAvatar({ agent }: { agent: Agent }) {
+export const AgentAvatar = memo(function AgentAvatar({
+  agent,
+}: {
+  agent: Agent;
+}) {
   const { user } = useAuth();
   const [url, setUrl] = useState("");
   const query = useQuery({
@@ -41,6 +45,7 @@ export function AgentAvatar({ agent }: { agent: Agent }) {
       src={url}
       alt={`Portrait de ${agent.fullName}`}
       loading="lazy"
+      decoding="async"
       onError={() => setUrl("")}
     />
   ) : (
@@ -54,7 +59,8 @@ export function AgentAvatar({ agent }: { agent: Agent }) {
         .toUpperCase()}
     </span>
   );
-}
+});
+
 export function AgentPhotoEditor({
   agent,
   canManage,

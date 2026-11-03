@@ -1,4 +1,4 @@
-/* Couche de présentation Feuilles de route : charte FADES et styles écran. */
+/* Couche de présentation Feuilles de route : charte commune et styles écran. */
 @media screen {
   .roadmaps-page, .roadmap-modal {
     --rm-green: var(--tenant-primary, #046242);
@@ -147,4 +147,55 @@
 }
 @media screen and (max-width: 1100px) {
   .roadmaps-page .roadmap-register-scroll-hint { display: block; margin: 12px 0 0; font-size: .6875rem; line-height: 1.5; color: var(--rm-muted); }
+}
+
+/* Référence commune des cartes : module Agents. */
+@media screen {
+ .roadmaps-page, .roadmaps-page *, .roadmap-modal, .roadmap-modal *, .roadmap-details-drawer, .roadmap-details-drawer * { box-sizing: border-box; }
+ .roadmaps-page :is(button,input,select,textarea) { font-family: inherit; }
+ .roadmaps-page .roadmaps-hero-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+ .roadmaps-page .roadmaps-hero-actions :is(.roadmaps-primary-button,.roadmaps-secondary-button) {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 44px; min-height: 44px; width: auto; padding: 0 14px; border: 0;
+  border-radius: 10px; background: #fff; color: var(--rm-green); box-shadow: none; transform: none;
+ }
+ .roadmaps-page .roadmaps-hero-actions button span { display: block; margin: 0; padding: 0; line-height: 18px; color: inherit; }
+ .roadmaps-page .roadmaps-hero-actions button svg { display: block; flex: 0 0 18px; width: 18px; height: 18px; margin: 0; }
+ .roadmaps-page .roadmaps-hero-actions button:hover:not(:disabled) { background: var(--rm-green); color: #fff; }
+ .roadmaps-page .roadmap-stat-card { display: flex; align-items: center; gap: 13px; min-height: 116px; padding: 16px; border-radius: 12px; background: #fff; }
+ .roadmaps-page .roadmap-stat-card .roadmap-stat-icon { flex: 0 0 36px; width: 36px; height: 36px; place-items: center; border-radius: 10px; background: rgba(4,98,66,.08); }
+ .roadmaps-page .roadmap-stat-card.submitted .roadmap-stat-icon { background: rgba(233,181,33,.15); color: #0b2536; }
+ .roadmaps-page .roadmap-stat-card strong { margin-top: 7px; font-size: 1.45rem; line-height: 1.2; }
+ .roadmaps-page .roadmap-stat-card p { margin-top: 6px; font-size: .6875rem; line-height: 1.5; color: rgba(11,37,54,.65); }
+ .roadmaps-page :is(.roadmap-modal,.roadmap-details-drawer) { animation: none; background: #fff; border-radius: 14px; color: #0b2536; }
+ .roadmaps-page .roadmap-modal-layer { padding: 16px; place-items: center; }
+ .roadmaps-page .roadmap-modal { max-width: 100%; min-width: 0; max-height: calc(100dvh - 32px); }
+ .roadmaps-page .roadmap-details-drawer { border-radius: 14px 0 0 14px; }
+ .roadmaps-page :is(.roadmap-modal-header,.roadmap-drawer-header) { background: #fff; color: #0b2536; }
+ .roadmaps-page :is(button,input,textarea,select):focus-visible { outline: 3px solid #e9b521; outline-offset: 3px; }
+ .roadmap-lazy-status { padding: 12px 16px; color: #046242; background: #fff; border-radius: 12px; border: 1px solid rgba(11,37,54,.14); }
+}
+@media screen and (max-width:649px) {
+ .roadmaps-page .roadmap-stats-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+ .roadmaps-page .roadmap-stat-card { flex-direction: column; align-items: flex-start; gap: 10px; padding: 14px; }
+ .roadmaps-page .roadmap-modal-layer { padding: 8px; }
+ .roadmaps-page .roadmap-modal { max-height: calc(100dvh - 16px); }
+ .roadmaps-page .roadmap-details-drawer { border-radius: 0; }
+}
+
+.roadmap-confirm { box-sizing: border-box; width: min(460px,calc(100vw - 32px)); padding: 24px; border: 0; border-radius: 14px; color: #0b2536; background: white; box-shadow: 0 20px 70px #0b25362e; font: inherit; }
+.roadmap-confirm::backdrop { background: #0b253680; }
+.roadmap-confirm header,.roadmap-confirm header span,.roadmap-confirm footer { display: flex; align-items: center; gap: 10px; }
+.roadmap-confirm header { justify-content: space-between; font-weight: 700; }
+.roadmap-confirm p { line-height: 1.6; overflow-wrap: anywhere; margin: 20px 0; }
+.roadmap-confirm footer { justify-content: flex-end; }
+.roadmap-confirm button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 0; border-radius: 10px; background: #f1f5f4; color: #046242; font: inherit; cursor: pointer; }
+.roadmap-confirm button.is-danger { background: #b7332c; color: white; }
+@media screen {
+ .roadmaps-page, .roadmaps-page > *, .roadmaps-page :is(.roadmap-list-panel,.roadmap-filters-panel,.roadmap-register-scroll) { min-width: 0; max-width: 100%; }
+ .roadmaps-page .roadmap-register-scroll { overflow-x: auto; }
+}
+@media screen and (max-width:649px) {
+ .roadmap-modal .roadmap-modal-footer { display: grid; grid-template-columns: minmax(0,1fr); }
+ .roadmap-modal .roadmap-modal-footer > button { width: 100%; max-width: 100%; min-width: 0; white-space: normal; }
 }

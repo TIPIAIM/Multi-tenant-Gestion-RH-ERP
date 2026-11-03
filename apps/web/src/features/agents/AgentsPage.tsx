@@ -1,16 +1,20 @@
+const agentDateFormatter0=new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 import { uploadAgentCreationPhoto } from "./agent-creation-photo.api";
 import { AgentAvatar } from "./AgentPhoto";
 import {
+  lazy,
+  Suspense,
   useEffect,
   useMemo,
   useState,
   type ChangeEvent,
 } from "react";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   BadgeCheck,
   BriefcaseBusiness,
@@ -47,9 +51,11 @@ import type {
   CreateAgentInput,
 } from "../../features/agents/agent.types";
 import { getOrganizationTree } from "../../features/organisation/organisation.api";
-import AgentDetailsDrawer from "./AgentDetailsDrawer";
-import AgentFormModal from "./AgentFormModal";
+const AgentDetailsDrawer = lazy(() => import("./AgentDetailsDrawer"));
+const AgentFormModal = lazy(() => import("./AgentFormModal"));
 import "./agents-page.css";
+import "./agents-ui.css";
+import { useAgentDialog } from "./use-agent-dialog";
 
 type AgentFilters = {
   search: string;
@@ -68,19 +74,12 @@ const statusLabels: Record<AgentEmploymentStatus, string> = {
   LEFT: "Sorti",
 };
 
-
-
 function formatDate(value?: string): string {
   if (!value) {
     return "—";
   }
 
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(value));
+  return agentDateFormatter0.format(new Date(value));
 }
 
 function getStatusClass(status: AgentEmploymentStatus): string {
@@ -99,6 +98,8 @@ function isOwnAgentScoped(scope?: AgentScope): boolean {
   return scope?.role === "AGENT";
 }
 
+const EMPTY_DIRECTIONS: Awaited<ReturnType<typeof getOrganizationTree>> = [];
+
 export default function AgentsPage() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -114,18 +115,16 @@ export default function AgentsPage() {
   const [page, setPage] = useState(1);
 
   const [modalMode, setModalMode] = useState<ModalMode>(null);
-  const [editingAgent, setEditingAgent] =
-    useState<Agent | null>(null);
+  const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
 
-  const [selectedAgentId, setSelectedAgentId] = useState<
-    string | null
-  >(null);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
 
   const [agentToDelete, setAgentToDelete] = useState<Agent | null>(null);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       setDebouncedSearch(filters.search.trim());
+      setPage(1);
     }, 350);
 
     return () => {
@@ -146,22 +145,20 @@ export default function AgentsPage() {
     isDirectionScoped(scope) ||
     isServiceScoped(scope) ||
     isOwnAgentScoped(scope)
-      ? scope?.directionId ?? ""
+      ? (scope?.directionId ?? "")
       : "";
 
   const lockedServiceId =
     isServiceScoped(scope) || isOwnAgentScoped(scope)
-      ? scope?.serviceId ?? ""
+      ? (scope?.serviceId ?? "")
       : "";
 
   const isDirectionFilterLocked = Boolean(lockedDirectionId);
   const isServiceFilterLocked = Boolean(lockedServiceId);
 
-  const effectiveDirectionId =
-    lockedDirectionId || filters.directionId;
+  const effectiveDirectionId = lockedDirectionId || filters.directionId;
 
-  const effectiveServiceId =
-    lockedServiceId || filters.serviceId;
+  const effectiveServiceId = lockedServiceId || filters.serviceId;
 
   useEffect(() => {
     if (!scope) {
@@ -169,13 +166,11 @@ export default function AgentsPage() {
     }
 
     setFilters((currentValue) => {
-      const nextDirectionId =
-        lockedDirectionId || currentValue.directionId;
+      const nextDirectionId = lockedDirectionId || currentValue.directionId;
 
       const nextServiceId =
         lockedServiceId ||
-        (lockedDirectionId &&
-        currentValue.directionId !== lockedDirectionId
+        (lockedDirectionId && currentValue.directionId !== lockedDirectionId
           ? ""
           : currentValue.serviceId);
 
@@ -217,6 +212,7 @@ export default function AgentsPage() {
   });
 
   const agentsQuery = useQuery({
+    enabled: scopeQuery.isFetched,
     queryKey: [
       "agents",
       page,
@@ -230,8 +226,7 @@ export default function AgentsPage() {
         page,
         limit: 12,
         search: debouncedSearch || undefined,
-        employmentStatus:
-          filters.employmentStatus || undefined,
+        employmentStatus: filters.employmentStatus || undefined,
         directionId: effectiveDirectionId || undefined,
         serviceId: effectiveServiceId || undefined,
       }),
@@ -266,43 +261,40 @@ export default function AgentsPage() {
     retry: false,
   });
 
-  const directions = organizationQuery.data ?? [];
+  const directions = organizationQuery.data ?? EMPTY_DIRECTIONS;
 
   const visibleDirections = useMemo(() => {
     if (!lockedDirectionId) {
       return directions;
     }
 
-    return directions.filter(
-      (direction) => direction.id === lockedDirectionId,
-    );
+    return directions.filter((direction) => direction.id === lockedDirectionId);
   }, [directions, lockedDirectionId]);
 
   const activeDirections = useMemo(
     () =>
-      visibleDirections.filter(
-        (direction) => direction.status === "ACTIVE",
-      ),
+      visibleDirections.filter((direction) => direction.status === "ACTIVE"),
     [visibleDirections],
   );
 
-  const selectedFilterDirection = directions.find(
-    (direction) => direction.id === effectiveDirectionId,
+  const selectedFilterDirection = useMemo(
+    () => directions.find((direction) => direction.id === effectiveDirectionId),
+    [directions, effectiveDirectionId],
   );
 
-  const availableFilterServices =
-    selectedFilterDirection?.services.filter(
-      (service) =>
-        service.status === "ACTIVE" ||
-        service.id === effectiveServiceId,
-    ) ?? [];
+  const availableFilterServices = useMemo(
+    () =>
+      selectedFilterDirection?.services.filter(
+        (service) =>
+          service.status === "ACTIVE" || service.id === effectiveServiceId,
+      ) ?? [],
+    [selectedFilterDirection, effectiveServiceId],
+  );
 
   const agentLookup = useMemo(() => {
     const agents = supervisorsQuery.data?.items ?? [];
 
-    return new Map(
-      agents.map((agent) => [agent.id, agent.fullName]),
-    );
+    return new Map(agents.map((agent) => [agent.id, agent.fullName]));
   }, [supervisorsQuery.data?.items]);
 
   const organizationLookup = useMemo(() => {
@@ -324,8 +316,7 @@ export default function AgentsPage() {
   }, [directions]);
 
   const canManageAgents =
-    user?.role === "TENANT_ADMIN" ||
-    user?.role === "RH_MANAGER";
+    user?.role === "TENANT_ADMIN" || user?.role === "RH_MANAGER";
 
   const canDeleteAgents = user?.role === "TENANT_ADMIN";
 
@@ -343,10 +334,17 @@ export default function AgentsPage() {
     ]);
   }
 
-  const [pendingCreatedAgent, setPendingCreatedAgent] = useState<Agent | null>(null);
+  const [pendingCreatedAgent, setPendingCreatedAgent] = useState<Agent | null>(
+    null,
+  );
 
   function closeAgentModal(): void {
-    if (createMutation.isPending || photoMutation.isPending || updateMutation.isPending) return;
+    if (
+      createMutation.isPending ||
+      photoMutation.isPending ||
+      updateMutation.isPending
+    )
+      return;
     setPendingCreatedAgent(null);
     setModalMode(null);
     setEditingAgent(null);
@@ -366,7 +364,8 @@ export default function AgentsPage() {
   });
 
   const photoMutation = useMutation({
-    mutationFn: ({ agentId, file }: { agentId: string; file: File }) => uploadAgentCreationPhoto(agentId, file),
+    mutationFn: ({ agentId, file }: { agentId: string; file: File }) =>
+      uploadAgentCreationPhoto(agentId, file),
     retry: false,
   });
 
@@ -469,8 +468,10 @@ export default function AgentsPage() {
       return;
     }
 
-    const created = pendingCreatedAgent ?? await createMutation.mutateAsync(input);
-    if (photo) await photoMutation.mutateAsync({ agentId: created.id, file: photo });
+    const created =
+      pendingCreatedAgent ?? (await createMutation.mutateAsync(input));
+    if (photo)
+      await photoMutation.mutateAsync({ agentId: created.id, file: photo });
     await refreshAgentData();
     await queryClient.invalidateQueries({ queryKey: ["agent", created.id] });
     await queryClient.invalidateQueries({ queryKey: ["agent-photo"] });
@@ -479,9 +480,7 @@ export default function AgentsPage() {
     setEditingAgent(null);
   }
 
-  async function handleAddHistory(
-    input: AddAgentHistoryInput,
-  ): Promise<void> {
+  async function handleAddHistory(input: AddAgentHistoryInput): Promise<void> {
     if (!selectedAgentId) {
       return;
     }
@@ -500,10 +499,8 @@ export default function AgentsPage() {
     await deleteMutation.mutateAsync(agentToDelete.id);
   }
 
-  function updateFilter(
-    key: keyof AgentFilters,
-    value: string,
-  ): void {
+  function updateFilter(key: keyof AgentFilters, value: string): void {
+    if (key !== "search") setPage(1);
     setFilters((currentValue) => {
       if (key === "directionId" && isDirectionFilterLocked) {
         return currentValue;
@@ -522,6 +519,7 @@ export default function AgentsPage() {
   }
 
   function clearFilters(): void {
+    setPage(1);
     setFilters({
       search: "",
       employmentStatus: "",
@@ -539,19 +537,22 @@ export default function AgentsPage() {
     Boolean(filters.directionId && !isDirectionFilterLocked) ||
     Boolean(filters.serviceId && !isServiceFilterLocked);
 
+  useAgentDialog(
+    deleteMutation.isPending,
+    () => setAgentToDelete(null),
+    ".agent-delete-modal",
+    Boolean(agentToDelete),
+  );
+
   return (
     <section className="agents-page">
       <header className="agents-hero">
         <div>
-          <p className="agents-eyebrow">
-            GESTION DES RESSOURCES HUMAINES
-          </p>
+          <p className="agents-eyebrow">GESTION DES RESSOURCES HUMAINES</p>
 
           <h2>
-            Dossiers <span>Agents.</span>
+            Dossiers <span>des agents</span>
           </h2>
-
- 
         </div>
 
         <div className="agents-hero-actions">
@@ -571,7 +572,10 @@ export default function AgentsPage() {
               statsQuery.isFetching ||
               scopeQuery.isFetching
             }
-           data-ui-action="compact" aria-label="Actualiser" title="Actualiser">
+            data-ui-action="compact"
+            aria-label="Actualiser"
+            title="Actualiser"
+          >
             <RefreshCw
               size={18}
               className={
@@ -596,11 +600,13 @@ export default function AgentsPage() {
                   ? "Créez d’abord une Direction active."
                   : "Créer un dossier agent"
               }
-             aria-label={
+              aria-label={
                 activeDirections.length === 0
                   ? "Créez d’abord une Direction active."
                   : "Créer un dossier agent"
-              } data-ui-action="compact">
+              }
+              data-ui-action="compact"
+            >
               <Plus size={18} />
               <span>Nouvel Agent</span>
             </button>
@@ -614,29 +620,26 @@ export default function AgentsPage() {
           <div>
             <strong>Périmètre Agent indisponible.</strong>
             <p>
-              Le compte connecté doit être lié à un Agent actif avec
-              une Direction renseignée pour accéder au module Agents
-              avec un périmètre Direction ou Service.
+              Le compte connecté doit être lié à un Agent actif avec une
+              Direction renseignée pour accéder au module Agents avec un
+              périmètre Direction ou Service.
             </p>
           </div>
         </div>
       )}
 
-      {activeDirections.length === 0 &&
-        !organizationQuery.isLoading && (
-          <div className="agents-alert">
-            <CircleAlert size={20} />
-            <div>
-              <strong>
-                La structure organisationnelle doit être complétée.
-              </strong>
-              <p>
-                Créez au moins une Direction active dans la Structure
-                avant d’enregistrer un agent.
-              </p>
-            </div>
+      {activeDirections.length === 0 && !organizationQuery.isLoading && (
+        <div className="agents-alert">
+          <CircleAlert size={20} />
+          <div>
+            <strong>La structure organisationnelle doit être complétée.</strong>
+            <p>
+              Créez au moins une Direction active dans la Structure avant
+              d’enregistrer un agent.
+            </p>
           </div>
-        )}
+        </div>
+      )}
 
       {(agentsQuery.isError ||
         statsQuery.isError ||
@@ -644,12 +647,10 @@ export default function AgentsPage() {
         <div className="agents-alert">
           <CircleAlert size={20} />
           <div>
-            <strong>
-              Une partie des données Agents est indisponible.
-            </strong>
+            <strong>Une partie des données Agents est indisponible.</strong>
             <p>
-              Vérifie que le serveur est démarré, que ta
-              session est active et que le rôle possède AGENT_VIEW.
+              Vérifie que le serveur est démarré, que ta session est active et
+              que le rôle possède AGENT_VIEW.
             </p>
           </div>
         </div>
@@ -710,9 +711,9 @@ export default function AgentsPage() {
             <Search size={18} />
             <input
               value={filters.search}
-              onChange={(
-                event: ChangeEvent<HTMLInputElement>,
-              ) => updateFilter("search", event.target.value)}
+              onChange={(event: ChangeEvent<HTMLInputElement>) =>
+                updateFilter("search", event.target.value)
+              }
               placeholder="Nom, prénom, matricule, email ou poste..."
             />
           </label>
@@ -721,24 +722,17 @@ export default function AgentsPage() {
             <span>Statut</span>
             <select
               value={filters.employmentStatus}
-              onChange={(
-                event: ChangeEvent<HTMLSelectElement>,
-              ) =>
-                updateFilter(
-                  "employmentStatus",
-                  event.target.value,
-                )
+              onChange={(event: ChangeEvent<HTMLSelectElement>) =>
+                updateFilter("employmentStatus", event.target.value)
               }
             >
               <option value="">Tous les statuts</option>
 
-              {Object.entries(statusLabels).map(
-                ([value, label]) => (
-                  <option key={value} value={value}>
-                    {label}
-                  </option>
-                ),
-              )}
+              {Object.entries(statusLabels).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
             </select>
           </label>
 
@@ -746,9 +740,7 @@ export default function AgentsPage() {
             <span>Direction</span>
             <select
               value={effectiveDirectionId}
-              onChange={(
-                event: ChangeEvent<HTMLSelectElement>,
-              ) =>
+              onChange={(event: ChangeEvent<HTMLSelectElement>) =>
                 updateFilter("directionId", event.target.value)
               }
               disabled={isDirectionFilterLocked}
@@ -772,14 +764,10 @@ export default function AgentsPage() {
             <span>Service</span>
             <select
               value={effectiveServiceId}
-              onChange={(
-                event: ChangeEvent<HTMLSelectElement>,
-              ) =>
+              onChange={(event: ChangeEvent<HTMLSelectElement>) =>
                 updateFilter("serviceId", event.target.value)
               }
-              disabled={
-                !effectiveDirectionId || isServiceFilterLocked
-              }
+              disabled={!effectiveDirectionId || isServiceFilterLocked}
               title={
                 isServiceFilterLocked
                   ? "Service imposé par le compte connecté."
@@ -821,14 +809,14 @@ export default function AgentsPage() {
           </span>
         </header>
 
-        {agentsQuery.isLoading && (
+        {(scopeQuery.isPending || agentsQuery.isLoading) && (
           <div className="agents-loading-state">
             <LoaderCircle size={24} className="is-spinning" />
             <span>Chargement des agents...</span>
           </div>
         )}
 
-        {!agentsQuery.isLoading &&
+        {!(scopeQuery.isPending || agentsQuery.isLoading) &&
           !agentsQuery.isError &&
           agents.length === 0 && (
             <div className="agents-empty-state">
@@ -837,21 +825,23 @@ export default function AgentsPage() {
               <h4>Aucun agent trouvé.</h4>
 
               <p>
-                Ajustez vos filtres ou créez le premier dossier agent de votre structure organisationnelle
-                .
+                Ajustez vos filtres ou créez le premier dossier agent de votre
+                structure organisationnelle .
               </p>
 
-              {canManageAgents &&
-                activeDirections.length > 0 && (
-                  <button
-                    className="agents-primary-button"
-                    type="button"
-                    onClick={openCreateModal}
-                   data-ui-action="compact" aria-label="Créer un Agent" title="Créer un Agent">
-                    <Plus size={18} />
-                    <span className="ui-action-label">Créer un Agent</span>
-                  </button>
-                )}
+              {canManageAgents && activeDirections.length > 0 && (
+                <button
+                  className="agents-primary-button"
+                  type="button"
+                  onClick={openCreateModal}
+                  data-ui-action="compact"
+                  aria-label="Créer un Agent"
+                  title="Créer un Agent"
+                >
+                  <Plus size={18} />
+                  <span className="ui-action-label">Créer un Agent</span>
+                </button>
+              )}
             </div>
           )}
 
@@ -880,9 +870,7 @@ export default function AgentsPage() {
                   </div>
 
                   <div className="agent-cell">
-                    <span className="agent-cell-label">
-                      Rattachement
-                    </span>
+                    <span className="agent-cell-label">Rattachement</span>
 
                     <strong>
                       {organizationLookup.directionNames.get(
@@ -922,7 +910,10 @@ export default function AgentsPage() {
                       className="agent-view-button"
                       type="button"
                       onClick={() => setSelectedAgentId(agent.id)}
-                     data-ui-action="compact" aria-label="Voir" title="Voir">
+                      data-ui-action="compact"
+                      aria-label="Voir"
+                      title="Voir"
+                    >
                       <Eye size={17} />
                       <span className="ui-action-label">Voir</span>
                     </button>
@@ -933,7 +924,8 @@ export default function AgentsPage() {
                         type="button"
                         title="Modifier cet agent"
                         onClick={() => openEditModal(agent)}
-                       aria-label="Modifier cet agent">
+                        aria-label="Modifier cet agent"
+                      >
                         <BriefcaseBusiness size={17} />
                       </button>
                     )}
@@ -948,7 +940,8 @@ export default function AgentsPage() {
                           setAgentToDelete(agent);
                         }}
                         disabled={deleteMutation.isPending}
-                       aria-label="Supprimer définitivement cet agent">
+                        aria-label="Supprimer définitivement cet agent"
+                      >
                         <Trash2 size={17} />
                       </button>
                     )}
@@ -969,9 +962,7 @@ export default function AgentsPage() {
               <button
                 type="button"
                 onClick={() =>
-                  setPage((currentValue) =>
-                    Math.max(1, currentValue - 1),
-                  )
+                  setPage((currentValue) => Math.max(1, currentValue - 1))
                 }
                 disabled={pagination.page <= 1}
               >
@@ -983,15 +974,10 @@ export default function AgentsPage() {
                 type="button"
                 onClick={() =>
                   setPage((currentValue) =>
-                    Math.min(
-                      pagination.totalPages,
-                      currentValue + 1,
-                    ),
+                    Math.min(pagination.totalPages, currentValue + 1),
                   )
                 }
-                disabled={
-                  pagination.page >= pagination.totalPages
-                }
+                disabled={pagination.page >= pagination.totalPages}
               >
                 <span>Suivant</span>
                 <ChevronRight size={18} />
@@ -1002,20 +988,32 @@ export default function AgentsPage() {
       </section>
 
       {modalMode && (
-        <AgentFormModal
-          key={`${modalMode}-${editingAgent?.id ?? "new"}`}
-          mode={modalMode}
-          agent={editingAgent}
-          directions={directions}
-          supervisors={supervisorsQuery.data?.items ?? []}
-          isSubmitting={
-            createMutation.isPending || photoMutation.isPending || updateMutation.isPending
+        <Suspense
+          fallback={
+            <div className="agents-dialog-loading" role="status">
+              Chargement du formulaire…
+            </div>
           }
-          creationSaved={modalMode === "CREATE" && Boolean(pendingCreatedAgent)}
-          errorMessage={formError}
-          onClose={closeAgentModal}
-          onSubmit={handleSaveAgent}
-        />
+        >
+          <AgentFormModal
+            key={`${modalMode}-${editingAgent?.id ?? "new"}`}
+            mode={modalMode}
+            agent={editingAgent}
+            directions={directions}
+            supervisors={supervisorsQuery.data?.items ?? []}
+            isSubmitting={
+              createMutation.isPending ||
+              photoMutation.isPending ||
+              updateMutation.isPending
+            }
+            creationSaved={
+              modalMode === "CREATE" && Boolean(pendingCreatedAgent)
+            }
+            errorMessage={formError}
+            onClose={closeAgentModal}
+            onSubmit={handleSaveAgent}
+          />
+        </Suspense>
       )}
 
       {agentToDelete && (
@@ -1041,16 +1039,16 @@ export default function AgentsPage() {
 
             <p>
               Cette action supprimera définitivement le dossier de
-              <strong> {agentToDelete.fullName}</strong>. Les comptes utilisateurs
-              liés à cet Agent seront automatiquement détachés.
+              <strong> {agentToDelete.fullName}</strong>. Les comptes
+              utilisateurs liés à cet Agent seront automatiquement détachés.
             </p>
 
             <div className="agent-delete-warning">
               <CircleAlert size={18} />
               <span>
-                La suppression est réservée à l'administrateur. Si cet Agent est
-                renseigné comme supérieur hiérarchique d'autres agents, le backend
-                refusera l'opération jusqu'à réaffectation.
+                La suppression est réservée à l'administrateur. Si cet agent est
+                le supérieur hiérarchique d’autres agents, réaffectez-les avant
+                de supprimer son dossier.
               </span>
             </div>
 
@@ -1094,35 +1092,43 @@ export default function AgentsPage() {
       )}
 
       {selectedAgentId && (
-        <AgentDetailsDrawer
-          agent={selectedAgentQuery.data}
-          isLoading={selectedAgentQuery.isLoading}
-          canManageAgents={canManageAgents}
-          isAddingHistory={addHistoryMutation.isPending}
-          historyError={historyError}
-          getDirectionName={(directionId) =>
-            organizationLookup.directionNames.get(directionId) ??
-            "Direction non renseignée"
+        <Suspense
+          fallback={
+            <div className="agents-dialog-loading" role="status">
+              Chargement du dossier…
+            </div>
           }
-          getServiceName={(serviceId) =>
-            serviceId
-              ? organizationLookup.serviceNames.get(serviceId) ??
-                "Service non renseigné"
-              : "Aucun service précisé"
-          }
-          getSupervisorName={(supervisorAgentId) =>
-            supervisorAgentId
-              ? agentLookup.get(supervisorAgentId) ??
-                "Supérieur non renseigné"
-              : "Aucun supérieur hiérarchique"
-          }
-          onClose={() => setSelectedAgentId(null)}
-          onEdit={(agent) => {
-            setSelectedAgentId(null);
-            openEditModal(agent);
-          }}
-          onAddHistory={handleAddHistory}
-        />
+        >
+          <AgentDetailsDrawer
+            agent={selectedAgentQuery.data}
+            isLoading={selectedAgentQuery.isLoading}
+            canManageAgents={canManageAgents}
+            isAddingHistory={addHistoryMutation.isPending}
+            historyError={historyError}
+            getDirectionName={(directionId) =>
+              organizationLookup.directionNames.get(directionId) ??
+              "Direction non renseignée"
+            }
+            getServiceName={(serviceId) =>
+              serviceId
+                ? (organizationLookup.serviceNames.get(serviceId) ??
+                  "Service non renseigné")
+                : "Aucun service précisé"
+            }
+            getSupervisorName={(supervisorAgentId) =>
+              supervisorAgentId
+                ? (agentLookup.get(supervisorAgentId) ??
+                  "Supérieur non renseigné")
+                : "Aucun supérieur hiérarchique"
+            }
+            onClose={() => setSelectedAgentId(null)}
+            onEdit={(agent) => {
+              setSelectedAgentId(null);
+              openEditModal(agent);
+            }}
+            onAddHistory={handleAddHistory}
+          />
+        </Suspense>
       )}
     </section>
   );

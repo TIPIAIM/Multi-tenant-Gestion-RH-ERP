@@ -6,6 +6,7 @@ import {
   type Response,
   type NextFunction,
 } from "express";
+import { Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 import { z } from "zod";
 import { requireAuth } from "../../middlewares/auth.middleware.js";
@@ -143,6 +144,8 @@ filesRouter.get(
       id.parse(r.params.part),
     );
     s.type("application/zip");
+    s.setHeader("Content-Length", String(result.bytes));
+    s.setTimeout(60 * 60 * 1000);
     disposition(s, result.name);
     await pipeline(result.stream, s);
   }),
@@ -175,7 +178,14 @@ filesRouter.get(
   "/:key/download",
   handle(async (a, r, s) => {
     const entry = await service.get(a, key.parse(r.params.key));
+    if (r.query.preview === "1" && entry.bytes > 50 * 1024 ** 2)
+      throw new AppError(
+        "Ce fichier est volumineux. Utilisez Télécharger pour le consulter sur votre ordinateur.",
+        413,
+        "FILES_PREVIEW_TOO_LARGE",
+      );
     const stream = await openStorage(entry.storage, a);
+    s.setTimeout(60 * 60 * 1000);
     const inline =
       r.query.preview === "1" &&
       entry.storage.kind !== "link" &&
@@ -187,7 +197,23 @@ filesRouter.get(
     disposition(s, entry.name, inline);
     try {
       await service.audit(a, inline ? "VIEW" : "DOWNLOAD", entry.name);
-      await pipeline(stream, s);
+      if (inline) {
+        let previewBytes = 0;
+        await pipeline(
+          stream,
+          new Transform({
+            transform(chunk, _encoding, callback) {
+              previewBytes += chunk.length;
+              if (previewBytes > 50 * 1024 ** 2)
+                callback(new Error("FILES_PREVIEW_TOO_LARGE"));
+              else callback(null, chunk);
+            },
+          }),
+          s,
+        );
+      } else {
+        await pipeline(stream, s);
+      }
     } catch (e) {
       stream.destroy();
       throw e;

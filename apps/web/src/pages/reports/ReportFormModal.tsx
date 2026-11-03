@@ -1,3 +1,13 @@
+const reportDateFormatter0=new Intl.DateTimeFormat("fr-FR", {
+                              month: "long",
+                            });
+const reportDateFormatter1=new Intl.DateTimeFormat("fr-FR", {
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        });
 import { useMemo, useState, type FormEvent } from "react";
 import { FilePlus2, LoaderCircle, Save, X } from "lucide-react";
 import type { OrganizationTreeDirection } from "../../features/organisation/organisation.types";
@@ -242,9 +252,7 @@ export default function ReportFormModal({
                       >
                         {Array.from({ length: 12 }, (_, index) => (
                           <option key={index + 1} value={index + 1}>
-                            {new Intl.DateTimeFormat("fr-FR", {
-                              month: "long",
-                            }).format(new Date(2026, index, 1))}
+                            {reportDateFormatter0.format(new Date(2026, index, 1))}
                           </option>
                         ))}
                       </select>
@@ -369,13 +377,7 @@ export default function ReportFormModal({
                   Dernière version enregistrée :{" "}
                   <strong>
                     {report?.updatedAt
-                      ? new Intl.DateTimeFormat("fr-FR", {
-                          day: "2-digit",
-                          month: "long",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }).format(new Date(report.updatedAt))
+                      ? reportDateFormatter1.format(new Date(report.updatedAt))
                       : "version initiale"}
                   </strong>
                 </div>

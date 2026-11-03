@@ -1,9 +1,8 @@
+import { useUserDialog } from "./use-user-dialog";
 import { useEffect, useMemo, useState } from "react";
 import { LoaderCircle, X } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  getAgentOptionsForUserLink,
-} from "../../features/users/user-management.api";
+import { getAgentOptionsForUserLink } from "../../features/users/user-management.api";
 import type {
   CreateManagedUserInput,
   ManagedUser,
@@ -59,6 +58,7 @@ export default function UserFormModal({
   onClose,
   onSave,
 }: Props) {
+  useUserDialog(isSubmitting, onClose, ".users-modal");
   const [form, setForm] = useState<FormState>(() => buildInitialState(user));
   const [clientError, setClientError] = useState<string | null>(null);
 
@@ -129,7 +129,9 @@ export default function UserFormModal({
       <button
         className="users-modal-backdrop"
         type="button"
-        aria-label="Fermer" title="Fermer cette fenêtre"
+        aria-label="Fermer"
+        title="Fermer cette fenêtre"
+        disabled={isSubmitting}
         onClick={onClose}
       />
 
@@ -137,10 +139,18 @@ export default function UserFormModal({
         <header className="users-modal-header">
           <div>
             <p>{isEdition ? "MODIFICATION" : "NOUVEAU COMPTE"}</p>
-            <h3>{isEdition ? "Modifier l’utilisateur" : "Créer un utilisateur"}</h3>
+            <h3>
+              {isEdition ? "Modifier l’utilisateur" : "Créer un utilisateur"}
+            </h3>
           </div>
 
-          <button type="button" onClick={onClose} aria-label="Fermer" title="Fermer cette fenêtre">
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={onClose}
+            aria-label="Fermer"
+            title="Fermer cette fenêtre"
+          >
             <X size={20} />
           </button>
         </header>
@@ -219,7 +229,9 @@ export default function UserFormModal({
               <input
                 type="text"
                 value={form.password}
-                onChange={(event) => updateField("password", event.target.value)}
+                onChange={(event) =>
+                  updateField("password", event.target.value)
+                }
                 placeholder="Laisser vide pour générer automatiquement"
               />
             </label>
@@ -229,7 +241,9 @@ export default function UserFormModal({
             <input
               type="checkbox"
               checked={form.isActive}
-              onChange={(event) => updateField("isActive", event.target.checked)}
+              onChange={(event) =>
+                updateField("isActive", event.target.checked)
+              }
             />
             <span>Compte actif</span>
           </label>
@@ -251,16 +265,33 @@ export default function UserFormModal({
             <strong>{selectedAgent.fullName}</strong>
             <span>
               {selectedAgent.directionName || "Direction non renseignée"}
-              {selectedAgent.serviceName ? ` · ${selectedAgent.serviceName}` : ""}
+              {selectedAgent.serviceName
+                ? ` · ${selectedAgent.serviceName}`
+                : ""}
             </span>
           </div>
         )}
 
         <footer className="users-modal-actions">
-          <button type="button" onClick={onClose} title="Fermer sans enregistrer">
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={onClose}
+            title="Fermer sans enregistrer"
+          >
             Annuler
           </button>
-          <button type="button" disabled={isSubmitting} aria-busy={isSubmitting} title={isEdition ? "Enregistrer les modifications" : "Créer le compte utilisateur"} onClick={() => void submit()}>
+          <button
+            type="button"
+            disabled={isSubmitting}
+            aria-busy={isSubmitting}
+            title={
+              isEdition
+                ? "Enregistrer les modifications"
+                : "Créer le compte utilisateur"
+            }
+            onClick={() => void submit()}
+          >
             {isSubmitting && <LoaderCircle className="is-spinning" size={16} />}
             {isEdition ? "Enregistrer" : "Créer le compte"}
           </button>

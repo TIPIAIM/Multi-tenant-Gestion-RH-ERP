@@ -774,16 +774,18 @@ export async function getRoadmapStats(
 ): Promise<{ total: number; draft: number; submitted: number; partiallyApproved: number; approved: number; returned: number; closed: number; averageProgress: number }> {
   const base = { tenantId: tenant._id, ...getRoadmapScopeFilter(actor) };
 
-  const [rows, aggregate] = await Promise.all([
-    RoadmapModel.aggregate<{ _id: string; count: number }>([
-      { $match: base },
-      { $group: { _id: "$status", count: { $sum: 1 } } },
-    ]).exec(),
-    RoadmapModel.aggregate<{ total: number; averageProgress: number }>([
-      { $match: base },
-      { $group: { _id: null, total: { $sum: 1 }, averageProgress: { $avg: "$progressPercentage" } } },
-    ]).exec(),
-  ]);
+  const [statistics] = await RoadmapModel.aggregate<{
+    rows: Array<{ _id: string; count: number }>;
+    summary: Array<{ total: number; averageProgress: number }>;
+  }>([
+    { $match: base },
+    { $facet: {
+      rows: [{ $group: { _id: "$status", count: { $sum: 1 } } }],
+      summary: [{ $group: { _id: null, total: { $sum: 1 }, averageProgress: { $avg: "$progressPercentage" } } }],
+    } },
+  ]).exec();
+  const rows = statistics?.rows ?? [];
+  const aggregate = statistics?.summary ?? [];
 
   const result = {
     total: aggregate[0]?.total ?? 0,

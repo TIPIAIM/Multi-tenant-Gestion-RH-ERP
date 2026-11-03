@@ -1,3 +1,4 @@
+import { useUserDialog } from "./use-user-dialog";
 import { useQuery } from "@tanstack/react-query";
 import { LoaderCircle, X } from "lucide-react";
 import {
@@ -29,6 +30,7 @@ function formatDate(value?: string | null): string {
 }
 
 export default function UserDetailsDrawer({ user, onClose }: Props) {
+  useUserDialog(false, onClose, ".users-drawer");
   const sessionsQuery = useQuery({
     queryKey: ["admin-users", user.id, "sessions"],
     queryFn: () => getManagedUserSessions(user.id),
@@ -46,7 +48,8 @@ export default function UserDetailsDrawer({ user, onClose }: Props) {
       <button
         className="users-drawer-backdrop"
         type="button"
-        aria-label="Fermer" title="Fermer cette fenêtre"
+        aria-label="Fermer"
+        title="Fermer cette fenêtre"
         onClick={onClose}
       />
 
@@ -58,7 +61,12 @@ export default function UserDetailsDrawer({ user, onClose }: Props) {
             <span>{user.email}</span>
           </div>
 
-          <button type="button" onClick={onClose} aria-label="Fermer" title="Fermer cette fenêtre">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Fermer"
+            title="Fermer cette fenêtre"
+          >
             <X size={20} />
           </button>
         </header>
@@ -92,12 +100,17 @@ export default function UserDetailsDrawer({ user, onClose }: Props) {
             <div className="users-linked-agent-card">
               <strong>{user.linkedAgent.fullName}</strong>
               <span>
-                {user.linkedAgent.matricule ? `${user.linkedAgent.matricule} · ` : ""}
+                {user.linkedAgent.matricule
+                  ? `${user.linkedAgent.matricule} · `
+                  : ""}
                 {user.linkedAgent.directionName || "Direction non renseignée"}
-                {user.linkedAgent.serviceName ? ` · ${user.linkedAgent.serviceName}` : ""}
+                {user.linkedAgent.serviceName
+                  ? ` · ${user.linkedAgent.serviceName}`
+                  : ""}
               </span>
               <small>
-                Cette liaison est réutilisable : le même Agent peut être affecté à plusieurs comptes.
+                Cette liaison est réutilisable : le même Agent peut être affecté
+                à plusieurs comptes.
               </small>
             </div>
           ) : (
@@ -118,7 +131,9 @@ export default function UserDetailsDrawer({ user, onClose }: Props) {
           <div className="users-session-list">
             {sessionsQuery.data?.map((session) => (
               <article key={session.id}>
-                <strong>{session.isRevoked ? "Révoquée" : "Active / historique"}</strong>
+                <strong>
+                  {session.isRevoked ? "Révoquée" : "Active / historique"}
+                </strong>
                 <span>{formatDate(session.createdAt)}</span>
                 <small>{session.ip || "IP non disponible"}</small>
               </article>
@@ -153,9 +168,10 @@ export default function UserDetailsDrawer({ user, onClose }: Props) {
               </article>
             ))}
 
-            {!activitiesQuery.isLoading && activitiesQuery.data?.length === 0 && (
-              <p className="users-muted">Aucune activité enregistrée.</p>
-            )}
+            {!activitiesQuery.isLoading &&
+              activitiesQuery.data?.length === 0 && (
+                <p className="users-muted">Aucune activité enregistrée.</p>
+              )}
           </div>
         </section>
       </aside>

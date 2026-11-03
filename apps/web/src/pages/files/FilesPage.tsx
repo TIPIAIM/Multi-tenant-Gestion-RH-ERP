@@ -1,4 +1,11 @@
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Archive,
@@ -27,6 +34,7 @@ import { getApiErrorMessage } from "../../features/auth/auth.api";
 import * as api from "./files.api";
 import type { FileItem, Filter } from "./files.api";
 import "./files-page.css";
+import "./files-ui.css";
 const bytes = (n: number) =>
   n
     ? n >= 1024 ** 3
@@ -35,13 +43,11 @@ const bytes = (n: number) =>
         ? `${(n / 1024 ** 2).toFixed(1)} Mo`
         : `${Math.ceil(n / 1024)} Ko`
     : "Taille non renseignée";
-const date = (v: string) =>
-  v
-    ? new Intl.DateTimeFormat("fr-FR", {
-        dateStyle: "medium",
-        timeZone: "Africa/Conakry",
-      }).format(new Date(v))
-    : "—";
+const dateFormatter = new Intl.DateTimeFormat("fr-FR", {
+  dateStyle: "medium",
+  timeZone: "Africa/Conakry",
+});
+const date = (v: string) => (v ? dateFormatter.format(new Date(v)) : "—");
 function Dialog({
   title,
   busy,
@@ -158,7 +164,7 @@ export default function FilesPage() {
   });
   const mutation = useMutation({
     mutationFn: (work: () => Promise<unknown>) => work(),
-    onSuccess: () => client.invalidateQueries(),
+    onSuccess: () => client.invalidateQueries({ queryKey: root }),
   });
   const busy = mutation.isPending,
     jobRunning = jobs.data?.some((j) => j.status === "RUNNING") ?? false,
@@ -175,11 +181,11 @@ export default function FilesPage() {
       /* Displayed in the current surface. */
     }
   }
+  const selectedKeys = useMemo(() => new Set(selected), [selected]);
   const label = (key: string) =>
     query.data?.modules.find((m) => m.key === key)?.label ?? "Documents";
   const shown = query.data?.items ?? [],
-    allChecked =
-      shown.length > 0 && shown.every((f) => selected.includes(f.id));
+    allChecked = shown.length > 0 && shown.every((f) => selectedKeys.has(f.id));
   if (!allowed)
     return (
       <section className="fl-page">
@@ -198,7 +204,7 @@ export default function FilesPage() {
             Retrouvez et conservez les fichiers de votre organisation.
           </span>
         </div>
-        <div className="fl-actions">
+        <div className="fl-actions fl-hero-actions">
           <button
             className="fl-icon"
             title="Actualiser"
@@ -210,6 +216,7 @@ export default function FilesPage() {
               size={16}
               className={query.isFetching ? "fl-spin" : undefined}
             />
+            <span>Actualiser</span>
           </button>
           <button
             className="fl-button fl-primary"
@@ -420,7 +427,7 @@ export default function FilesPage() {
                       <input
                         type="checkbox"
                         aria-label={`Sélectionner ${item.name}`}
-                        checked={selected.includes(item.id)}
+                        checked={selectedKeys.has(item.id)}
                         onChange={(e) =>
                           setSelected((current) =>
                             e.target.checked
@@ -478,6 +485,13 @@ export default function FilesPage() {
                           target="_blank"
                           rel="noopener noreferrer"
                           title="Télécharger"
+                          aria-describedby="fl-large-download-help"
+                          onClick={() => {
+                            if (item.bytes > 1024 ** 3)
+                              setNotice(
+                                "Ce fichier dépasse 1 Go. Le téléchargement direct démarre dans votre navigateur. Vérifiez votre espace libre et gardez la connexion active jusqu’à la fin.",
+                              );
+                          }}
                           aria-label={`Télécharger ${item.name}`}
                         >
                           <ArrowDownToLine size={16} />
@@ -532,6 +546,20 @@ export default function FilesPage() {
             </button>
           </div>
         </footer>
+      </section>
+      <section
+        id="fl-large-download-help"
+        className="fl-large-help"
+        aria-label="Télécharger les gros volumes"
+      >
+        <strong>Volumes ZIP d’environ 500 Mo</strong>
+        <p>
+          Pour les gros lots, téléchargez les volumes ZIP un par un, puis ouvrez
+          chaque archive séparément. Un fichier de plus de 500 Mo reste entier
+          dans un volume distinct. Prévoyez assez d’espace sur votre ordinateur
+          pour les ZIP et les fichiers extraits. Gardez la connexion active
+          pendant chaque téléchargement.
+        </p>
       </section>
       {!!jobs.data?.length && (
         <section className="fl-panel">
@@ -600,6 +628,7 @@ export default function FilesPage() {
                 onClick={() =>
                   void run(async () => {
                     await api.retry(p.id);
+                    await client.invalidateQueries();
                     setNotice("La suppression a été relancée.");
                   })
                 }
@@ -783,6 +812,7 @@ export default function FilesPage() {
                     deleteItem.id,
                     deleteItem.token,
                   );
+                  await client.invalidateQueries();
                   setNotice(result.message);
                   setSelected((s) => s.filter((id) => id !== deleteItem.id));
                   setDeleteItem(null);
@@ -816,6 +846,16 @@ export default function FilesPage() {
               : `Préparer les ${selected.length} éléments sélectionnés.`}{" "}
             Les fichiers sont regroupés par module et répartis en volumes ZIP
             pour faciliter leur téléchargement.
+          </p>
+          <p className="fl-large-help" role="note">
+            {exportScope === "all" &&
+            (query.data?.statistics.bytes ?? 0) > 1024 ** 3
+              ? "Le volume connu dépasse 1 Go. "
+              : ""}
+            Les téléchargements de 1 Go et plus sont pris en charge. Les lots
+            sont répartis en volumes d’environ 500 Mo ; les fichiers plus gros
+            restent entiers. Téléchargez chaque volume un par un. Certaines
+            tailles peuvent être inconnues avant la préparation.
           </p>
           <p className="fl-help">
             Certains liens externes peuvent nécessiter une connexion chez leur

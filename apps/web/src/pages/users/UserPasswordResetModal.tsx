@@ -1,3 +1,4 @@
+import { useUserDialog } from "./use-user-dialog";
 import { useState } from "react";
 import { KeyRound, LoaderCircle, X } from "lucide-react";
 
@@ -16,6 +17,7 @@ export default function UserPasswordResetModal({
   onClose,
   onConfirm,
 }: Props) {
+  useUserDialog(isSubmitting, onClose, ".users-modal");
   const [password, setPassword] = useState("");
   const [clientError, setClientError] = useState<string | null>(null);
 
@@ -35,18 +37,30 @@ export default function UserPasswordResetModal({
       <button
         className="users-modal-backdrop"
         type="button"
-        aria-label="Fermer" title="Fermer cette fenêtre"
+        aria-label="Fermer"
+        title="Fermer cette fenêtre"
+        disabled={isSubmitting}
         onClick={onClose}
       />
 
-      <section className="users-modal users-modal-small" role="dialog" aria-modal="true">
+      <section
+        className="users-modal users-modal-small"
+        role="dialog"
+        aria-modal="true"
+      >
         <header className="users-modal-header">
           <div>
             <p>SÉCURITÉ</p>
             <h3>Réinitialiser le mot de passe</h3>
           </div>
 
-          <button type="button" onClick={onClose} aria-label="Fermer" title="Fermer cette fenêtre">
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={onClose}
+            aria-label="Fermer"
+            title="Fermer cette fenêtre"
+          >
             <X size={20} />
           </button>
         </header>
@@ -58,8 +72,9 @@ export default function UserPasswordResetModal({
         <div className="users-reset-panel">
           <KeyRound size={28} />
           <p>
-            Le mot de passe de <strong>{userName}</strong> sera remplacé. Si le champ
-            reste vide, un mot de passe temporaire sera généré automatiquement.
+            Le mot de passe de <strong>{userName}</strong> sera remplacé. Si le
+            champ reste vide, un mot de passe temporaire sera généré
+            automatiquement.
           </p>
 
           <label>
@@ -73,10 +88,21 @@ export default function UserPasswordResetModal({
         </div>
 
         <footer className="users-modal-actions">
-          <button type="button" onClick={onClose} title="Fermer sans enregistrer">
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={onClose}
+            title="Fermer sans enregistrer"
+          >
             Annuler
           </button>
-          <button type="button" disabled={isSubmitting} aria-busy={isSubmitting} title="Confirmer la réinitialisation du mot de passe" onClick={() => void submit()}>
+          <button
+            type="button"
+            disabled={isSubmitting}
+            aria-busy={isSubmitting}
+            title="Confirmer la réinitialisation du mot de passe"
+            onClick={() => void submit()}
+          >
             {isSubmitting && <LoaderCircle className="is-spinning" size={16} />}
             Réinitialiser
           </button>

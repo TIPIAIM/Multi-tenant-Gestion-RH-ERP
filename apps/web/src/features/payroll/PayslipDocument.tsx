@@ -2,7 +2,7 @@ import {
   PrivateDocumentMark,
   useDocumentMarks,
 } from "../settings/DocumentMarks";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Download, Share2, X, ShieldCheck } from "lucide-react";
 import { useTenantSettings } from "../settings/settings.context";
 import { getApiErrorMessage } from "../auth/auth.api";
@@ -72,17 +72,18 @@ export default function PayslipDocument({
     }
   }
   const company = settings?.institution;
-  const logo = settings?.branding.printLogoUrl || settings?.branding.logoUrl;
-  const money = (n: number) =>
-    new Intl.NumberFormat("fr-FR", {
+  const [failedLogos, setFailedLogos] = useState<string[]>([]);
+  const logo = [settings?.branding.printLogoUrl, settings?.branding.logoUrl].find(value => value && !failedLogos.includes(value));
+  const moneyFormat = useMemo(() => new Intl.NumberFormat("fr-FR", {
       style: "currency",
       currency: row.currency,
-    }).format(n / 10 ** row.minorUnitDigits);
-  const amount = (n: number) =>
-    new Intl.NumberFormat("fr-FR", {
+    }), [row.currency]);
+  const money = (n: number) => moneyFormat.format(n / 10 ** row.minorUnitDigits);
+  const amountFormat = useMemo(() => new Intl.NumberFormat("fr-FR", {
       minimumFractionDigits: row.minorUnitDigits,
       maximumFractionDigits: row.minorUnitDigits,
-    }).format(n / 10 ** row.minorUnitDigits);
+    }), [row.minorUnitDigits]);
+  const amount = (n: number) => amountFormat.format(n / 10 ** row.minorUnitDigits);
   const period = new Intl.DateTimeFormat("fr-FR", {
     month: "long",
     year: "numeric",
@@ -228,6 +229,8 @@ export default function PayslipDocument({
           {logo && (
             <img
               src={logo}
+              decoding="async"
+              onError={() => { if (logo) setFailedLogos(current => [...current, logo]); }}
               alt={`Logo de ${company?.shortName || "l’entreprise"}`}
             />
           )}

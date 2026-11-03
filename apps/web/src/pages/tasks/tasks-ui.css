@@ -1,0 +1,97 @@
+/* Harmonisation du module Tâches, sans modifier ses états métier. */
+.tasks-page.tasks-page-harmonized {
+  color: var(--tenant-text, #0b2536); width: 100%; gap: 18px;
+  --task-ui-green: var(--tenant-primary, #046242);
+}
+.tasks-page-harmonized > * { animation: none; }
+.tasks-page-harmonized :is(button,input,select,textarea) { font-family: inherit; }
+.tasks-page-harmonized .tasks-hero { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 18px; padding: 22px 24px; background: #fff; border: 1px solid var(--tenant-border, #e2e8ec); border-radius: 14px; box-shadow: 0 2px 12px #0b253606; }
+.tasks-page-harmonized .tasks-hero::after { display: none; }
+.tasks-page-harmonized .tasks-eyebrow { color: var(--tenant-muted, #52676e); font-size: .7rem; letter-spacing: .07em; margin-bottom: 8px; }
+.tasks-page-harmonized .tasks-hero h2 { color: var(--tenant-text, #0b2536); font-size: 1.6rem; letter-spacing: -.03em; margin: 0; }
+.tasks-page-harmonized .tasks-hero h2 span { color: var(--task-ui-green); }
+.tasks-page-harmonized .tasks-hero-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tasks-page-harmonized .tasks-hero-actions :is(.tasks-primary-button,.tasks-secondary-button) { display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: auto; min-width: 0; height: 44px; min-height: 44px; padding: 0 14px; border: 0; border-radius: 10px; background: #fff; color: var(--task-ui-green); box-shadow: none; transform: none; font-size: .875rem; font-weight: 600; }
+.tasks-page-harmonized .tasks-hero-actions button span { display: block; margin: 0; padding: 0; line-height: 18px; color: inherit; }
+.tasks-page-harmonized .tasks-hero-actions button svg { display: block; flex: 0 0 18px; height: 18px; width: 18px; margin: 0; }
+.tasks-page-harmonized .tasks-hero-actions button:hover:not(:disabled) { color: #fff; background: var(--task-ui-green); }
+.tasks-page-harmonized .tasks-hero-actions button:disabled { opacity: .5; cursor: not-allowed; }
+.tasks-page-harmonized :is(button,a,input,select,textarea):focus-visible { outline: 3px solid #e9b521; outline-offset: 3px; }
+.tasks-page-harmonized :is(.tasks-filter-panel,.tasks-list-panel,.tasks-board-shell) { background: #fff; border: 1px solid var(--tenant-border, #e2e8ec); border-radius: 14px; box-shadow: 0 2px 12px #0b253604; }
+.tasks-page-harmonized .tasks-metric-card { background: #fff; border: 1px solid var(--tenant-border, #e2e8ec); border-radius: 12px; box-shadow: none; min-height: 116px; }
+.tasks-page-harmonized .tasks-metric-card::after { display: none; }
+.tasks-page-harmonized .tasks-metric-card:hover { transform: none; background: #f7faf8; }
+.tasks-page-harmonized .tasks-metric-card.is-selected { border-color: var(--task-ui-green); box-shadow: inset 0 0 0 1px var(--task-ui-green); }
+.tasks-page-harmonized .tasks-metric-copy strong { color: var(--tenant-text, #0b2536); }
+.tasks-page-harmonized :is(.tasks-kanban-column,.task-kanban-card,.task-list-row) { border-radius: 12px; box-shadow: none; }
+.tasks-page-harmonized :is(.task-kanban-card,.task-list-row) { border-color: var(--tenant-border, #e2e8ec); }
+.tasks-page-harmonized :is(.tasks-filter-field select,.tasks-search-field,.task-form-field input,.task-form-field select,.task-form-field textarea) { border-radius: 10px; min-height: 44px; }
+.tasks-page-harmonized :is(.task-modal,.task-drawer) { border-radius: 14px; background: #fff; color: var(--tenant-text, #0b2536); }
+.tasks-page-harmonized :is(.task-modal-header,.task-drawer-header) { background: #fff; color: var(--tenant-text, #0b2536); border-bottom: 1px solid #e2e8ec; }
+.tasks-page-harmonized :is(.task-modal-header h3,.task-drawer-header h3) { color: var(--tenant-text, #0b2536); }
+.tasks-page-harmonized :is(.task-modal-header p,.task-drawer-header p) { color: var(--task-ui-green); }
+.tasks-page-harmonized .task-item-card { border-radius: 12px; border-color: #e2e8ec; box-shadow: none; }
+.tasks-page-harmonized .task-drawer { border-radius: 14px 0 0 14px; }
+.task-lazy-state { position: fixed; inset: auto 20px 20px auto; z-index: 1600; padding: 16px 20px; border: 1px solid #dce5e9; border-radius: 12px; background: #fff; color: #046242; box-shadow: 0 6px 24px #0b253615; }
+@media(max-width: 760px) {
+ .tasks-page-harmonized .tasks-hero { padding: 18px; align-items: flex-start; }
+ .tasks-page-harmonized .tasks-hero h2 { font-size: 1.4rem; }
+ .tasks-page-harmonized .tasks-hero-actions { width: 100%; }
+ .tasks-page-harmonized .tasks-hero-actions :is(.tasks-primary-button,.tasks-secondary-button) { padding: 0 10px; }
+ .tasks-page-harmonized :is(.tasks-filter-panel,.tasks-board-shell,.tasks-list-panel) { min-width: 0; }
+ .tasks-page-harmonized .task-drawer { border-radius: 0; }
+ .tasks-page-harmonized :is(input,select,textarea) { font-size: 16px; }
+}
+@media(prefers-reduced-motion: reduce) { .tasks-page-harmonized *, .task-lazy-state { animation: none!important; transition: none!important; scroll-behavior: auto!important; } }
+.tasks-page-harmonized, .tasks-page-harmonized * { box-sizing: border-box; }
+.tasks-page-harmonized :is(.task-modal-layer,.task-drawer-layer,.task-modal,.task-drawer) { animation: none; }
+.tasks-page-harmonized .task-modal-layer { padding: 16px; place-items: center; }
+.tasks-page-harmonized .task-modal { width: min(870px, 100%); max-width: 100%; max-height: calc(100dvh - 32px); min-width: 0; }
+.tasks-page-harmonized .task-modal :is(input,select,textarea) { max-width: 100%; min-width: 0; }
+@media(max-width:600px) {
+ .tasks-page-harmonized .task-modal-layer { padding: 8px; }
+ .tasks-page-harmonized .task-modal { max-height: calc(100dvh - 16px); padding: 18px; }
+}
+
+/* Cartes statistiques : mêmes dimensions et typographie que le module Agents. */
+.tasks-page-harmonized .tasks-metrics-grid { gap: 12px; }
+.tasks-page-harmonized .tasks-metrics-grid .tasks-metric-card {
+  display: flex; align-items: center; gap: 13px; min-width: 0;
+  min-height: 116px; padding: 16px; border: 1px solid rgba(11,37,54,.14);
+  border-radius: 12px; background: #fff; box-shadow: none; text-align: left;
+}
+.tasks-page-harmonized .tasks-metrics-grid .tasks-metric-card:hover {
+  background: #fff; border-color: rgba(4,98,66,.32); box-shadow: none; transform: none;
+}
+.tasks-page-harmonized .tasks-metrics-grid .tasks-metric-card.is-selected {
+  border-color: var(--task-ui-green); box-shadow: inset 0 0 0 1px var(--task-ui-green);
+}
+.tasks-page-harmonized .tasks-metric-icon {
+  display: grid; place-items: center; width: 36px; height: 36px;
+  flex: 0 0 36px; border-radius: 10px;
+}
+.tasks-page-harmonized .tasks-metric-icon svg { width: 18px; height: 18px; }
+.tasks-page-harmonized .tasks-metric-icon:is(.total,.progress) {
+  background: rgba(4,98,66,.08); color: var(--task-ui-green);
+}
+.tasks-page-harmonized .tasks-metric-icon.complete {
+  background: rgba(233,181,33,.15); color: #0b2536;
+}
+.tasks-page-harmonized .tasks-metric-icon.alert { background: rgba(200,59,47,.08); color: #b7332c; }
+.tasks-page-harmonized .tasks-metric-copy { min-width: 0; }
+.tasks-page-harmonized .tasks-metric-copy > span:first-child {
+  color: rgba(11,37,54,.73); font-size: .75rem; font-weight: 600; line-height: 1.5;
+}
+.tasks-page-harmonized .tasks-metric-copy > strong {
+  margin-top: 7px; color: #0b2536; font-size: 1.45rem; line-height: 1.2;
+}
+.tasks-page-harmonized .tasks-metric-copy > .tasks-metric-description {
+  margin-top: 6px; color: rgba(11,37,54,.65); font-size: .6875rem;
+  font-weight: 400; line-height: 1.5;
+}
+@media(max-width:649px) {
+  .tasks-page-harmonized .tasks-metrics-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .tasks-page-harmonized .tasks-metrics-grid .tasks-metric-card {
+    flex-direction: column; align-items: flex-start; padding: 14px; gap: 10px;
+  }
+}

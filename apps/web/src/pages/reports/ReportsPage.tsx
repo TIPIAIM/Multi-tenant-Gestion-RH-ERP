@@ -1,4 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+const reportDateFormatter0=new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import {
   Archive,
   BadgeCheck,
@@ -41,8 +47,8 @@ import type {
   ManagementReportType,
   UpdateManagementReportInput,
 } from "../../features/reports/report.types";
-import ReportDetailsDrawer from "./ReportDetailsDrawer";
-import ReportFormModal from "./ReportFormModal";
+const ReportDetailsDrawer=lazy(()=>import("./ReportDetailsDrawer"));
+const ReportFormModal=lazy(()=>import("./ReportFormModal"));
 import "./report-page.css";
 import "./reports-ui.css";
 import { useReportDialog } from "./use-report-dialog";
@@ -75,12 +81,7 @@ const riskLabels = {
 
 function formatDate(value?: string): string {
   if (!value) return "—";
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(value));
+  return reportDateFormatter0.format(new Date(value));
 }
 function currentYear(): string {
   return String(new Date().getFullYear());
@@ -116,22 +117,12 @@ export default function ReportsPage() {
 
   useEffect(() => {
     const timer = window.setTimeout(
-      () => setDebouncedSearch(filters.search.trim()),
+      () => {setDebouncedSearch(filters.search.trim());setPage(1);},
       350,
     );
     return () => window.clearTimeout(timer);
   }, [filters.search]);
-  useEffect(
-    () => setPage(1),
-    [
-      debouncedSearch,
-      filters.reportType,
-      filters.status,
-      filters.reportYear,
-      filters.directionId,
-      filters.serviceId,
-    ],
-  );
+
 
   const organizationQuery = useQuery({
     queryKey: ["organization-tree"],
@@ -149,7 +140,7 @@ export default function ReportsPage() {
     staleTime: 30_000,
   });
   const reportsQuery = useQuery({
-    queryKey: ["reports", page, debouncedSearch, filters],
+    queryKey: ["reports", page, debouncedSearch, filters.reportType, filters.status, filters.reportYear, filters.directionId, filters.serviceId],
     queryFn: () =>
       getManagementReports({
         page,
@@ -259,6 +250,7 @@ export default function ReportsPage() {
   const stats = statsQuery.data;
 
   function setFilter(key: keyof Filters, value: string): void {
+    if(key!=="search")setPage(1);
     setFilters((current) => ({
       ...current,
       [key]: value,
@@ -266,6 +258,7 @@ export default function ReportsPage() {
     }));
   }
   function clearFilters(): void {
+    setPage(1);setDebouncedSearch("");
     setFilters({
       search: "",
       reportType: "",
@@ -713,6 +706,7 @@ export default function ReportsPage() {
         )}
       </section>
 
+      <Suspense fallback={<p role="status">Chargement…</p>}>
       {formMode && accessScope && (
         <ReportFormModal
           key={`${formMode}-${editingReport?.id ?? "new"}-${
@@ -853,6 +847,7 @@ export default function ReportsPage() {
           </section>
         </div>
       )}
+      </Suspense>
     </section>
   );
 }

@@ -78,6 +78,10 @@ export function downloadUrl(path: string) {
   return `${String(api.defaults.baseURL).replace(/\/$/, "")}/files/${path}`;
 }
 export async function previewFile(item: FileItem) {
+  if (item.bytes > 50 * 1024 ** 2)
+    throw new Error(
+      "Ce fichier est volumineux. Utilisez Télécharger pour le consulter sur votre ordinateur.",
+    );
   const response = await api.get<Blob>(`/files/${item.id}/download`, {
     params: { preview: 1 },
     responseType: "blob",

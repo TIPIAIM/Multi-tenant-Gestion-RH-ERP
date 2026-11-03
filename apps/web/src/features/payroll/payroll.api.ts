@@ -183,3 +183,12 @@ export async function updatePayrollPresentation(
     )
   ).data.data.payroll;
 }
+
+/** Counts use the same authorization and filters, without transferring salary rows. */
+export async function countPayroll(period: string, options: PayrollListFilters, signal?: AbortSignal): Promise<{ total: number }> {
+  const response = await api.get<{ data: PayrollListResult }>("/payroll", {
+    params: { ...options, period: period || undefined, page: 1, countOnly: "1" }, signal,
+  });
+  if (response.data.data.listVersion !== "payroll-table-1") throw new Error("Le service de paie nécessite une mise à jour. Contactez le support de la plateforme.");
+  return { total: response.data.data.total };
+}

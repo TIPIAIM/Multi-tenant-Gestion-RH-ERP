@@ -1,5 +1,5 @@
 import { getApiErrorMessage } from "../../features/auth/auth.api";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -15,14 +15,12 @@ import {
   Search,
   ShieldCheck,
   UsersRound,
+  Trash2,
 } from "lucide-react";
-import {
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   createManagedUser,
+  deleteManagedUser,
   forceLogoutManagedUser,
   getManagedUserStats,
   getManagedUsers,
@@ -37,10 +35,13 @@ import type {
   UpdateManagedUserInput,
   UserManagementRole,
 } from "../../features/users/user-management.types";
-import UserDetailsDrawer from "./UserDetailsDrawer";
-import UserFormModal from "./UserFormModal";
-import UserPasswordResetModal from "./UserPasswordResetModal";
+const UserDetailsDrawer = lazy(() => import("./UserDetailsDrawer"));
+const UserFormModal = lazy(() => import("./UserFormModal"));
+const UserPasswordResetModal = lazy(() => import("./UserPasswordResetModal"));
 import "./users-page.css";
+import "./users-ui.css";
+import { useAuth } from "../../features/auth/auth.context";
+import { useUserDialog } from "./use-user-dialog";
 
 type Filters = {
   search: string;
@@ -76,6 +77,8 @@ function formatDate(value?: string | null): string {
 
 export default function UsersPage() {
   const queryClient = useQueryClient();
+  const { user: currentUser } = useAuth();
+  const [userToDelete, setUserToDelete] = useState<ManagedUser | null>(null);
 
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -85,11 +88,14 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<ManagedUser | null>(null);
   const [selectedUser, setSelectedUser] = useState<ManagedUser | null>(null);
   const [passwordUser, setPasswordUser] = useState<ManagedUser | null>(null);
-  const [temporaryPassword, setTemporaryPassword] = useState<string | null>(null);
+  const [temporaryPassword, setTemporaryPassword] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       setDebouncedSearch(filters.search.trim());
+      setPage(1);
     }, 350);
 
     return () => window.clearTimeout(timer);
@@ -127,6 +133,21 @@ export default function UsersPage() {
       }),
     staleTime: 15_000,
     placeholderData: (previous) => previous,
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteManagedUser,
+    onSuccess: async (_, id) => {
+      setUserToDelete(null);
+      if (selectedUser?.id === id) setSelectedUser(null);
+      if (passwordUser?.id === id) setPasswordUser(null);
+      setPage(1);
+      await Promise.all([
+        refresh(),
+        queryClient.invalidateQueries({ queryKey: ["agents"] }),
+        queryClient.invalidateQueries({ queryKey: ["agent"] }),
+      ]);
+    },
   });
 
   async function refresh(): Promise<void> {
@@ -224,17 +245,34 @@ export default function UsersPage() {
     await createMutation.mutateAsync(input as CreateManagedUserInput);
   }
 
+  useUserDialog(
+    deleteMutation.isPending,
+    () => setUserToDelete(null),
+    ".users-delete-modal",
+    Boolean(userToDelete),
+  );
+
   return (
     <section className="users-page">
       <header className="users-hero">
         <div>
           <p>ADMINISTRATION</p>
-          <h2>Utilisateurs <span>& accès.</span></h2>
+          <h2>
+            Utilisateurs <span>et accès</span>
+          </h2>
         </div>
 
         <div className="users-hero-actions">
-          <button type="button" onClick={() => void refresh()} className="users-header-icon-button" aria-label="Actualiser les utilisateurs" title="Actualiser les utilisateurs">
-            <RefreshCw size={20} aria-hidden="true" /></button>
+          <button
+            type="button"
+            onClick={() => void refresh()}
+            className="users-header-icon-button"
+            aria-label="Actualiser les utilisateurs"
+            title="Actualiser les utilisateurs"
+          >
+            <RefreshCw size={20} aria-hidden="true" />
+            <span>Actualiser</span>
+          </button>
 
           <button
             type="button"
@@ -247,6 +285,7 @@ export default function UsersPage() {
             }}
           >
             <Plus size={20} aria-hidden="true" />
+            <span>Nouvel utilisateur</span>
           </button>
         </div>
       </header>
@@ -298,7 +337,9 @@ export default function UsersPage() {
         <label className="users-search-field">
           <span className="users-search-label">Rechercher</span>
           <Search size={18} aria-hidden="true" />
-          <input type="search" autoComplete="off"
+          <input
+            type="search"
+            autoComplete="off"
             value={filters.search}
             onChange={(event) =>
               setFilters((current) => ({
@@ -313,55 +354,55 @@ export default function UsersPage() {
         <label className="users-filter-field">
           <span>Rôle</span>
           <select
-          value={filters.role}
-          onChange={(event) =>
-            setFilters((current) => ({
-              ...current,
-              role: event.target.value as Filters["role"],
-            }))
-          }
-        >
-          <option value="ALL">Tous les rôles</option>
-          {Object.entries(roleLabels).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
+            value={filters.role}
+            onChange={(event) =>
+              setFilters((current) => ({
+                ...current,
+                role: event.target.value as Filters["role"],
+              }))
+            }
+          >
+            <option value="ALL">Tous les rôles</option>
+            {Object.entries(roleLabels).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
         </label>
 
         <label className="users-filter-field">
           <span>Statut</span>
           <select
-          value={filters.status}
-          onChange={(event) =>
-            setFilters((current) => ({
-              ...current,
-              status: event.target.value as Filters["status"],
-            }))
-          }
-        >
-          <option value="ALL">Tous les statuts</option>
-          <option value="ACTIVE">Actifs</option>
-          <option value="INACTIVE">Inactifs</option>
-        </select>
+            value={filters.status}
+            onChange={(event) =>
+              setFilters((current) => ({
+                ...current,
+                status: event.target.value as Filters["status"],
+              }))
+            }
+          >
+            <option value="ALL">Tous les statuts</option>
+            <option value="ACTIVE">Actifs</option>
+            <option value="INACTIVE">Inactifs</option>
+          </select>
         </label>
 
         <label className="users-filter-field">
           <span>Dossier agent</span>
           <select
-          value={filters.linked}
-          onChange={(event) =>
-            setFilters((current) => ({
-              ...current,
-              linked: event.target.value as Filters["linked"],
-            }))
-          }
-        >
-          <option value="ALL">Tous les liens Agent</option>
-          <option value="LINKED">Avec Agent lié</option>
-          <option value="UNLINKED">Sans Agent lié</option>
-        </select>
+            value={filters.linked}
+            onChange={(event) =>
+              setFilters((current) => ({
+                ...current,
+                linked: event.target.value as Filters["linked"],
+              }))
+            }
+          >
+            <option value="ALL">Tous les liens Agent</option>
+            <option value="LINKED">Avec Agent lié</option>
+            <option value="UNLINKED">Sans Agent lié</option>
+          </select>
         </label>
       </section>
 
@@ -389,10 +430,20 @@ export default function UsersPage() {
           <div className="users-empty">Aucun utilisateur trouvé.</div>
         ) : (
           <>
-            <p className="users-table-scroll-hint">Faites défiler le tableau horizontalement pour accéder à toutes les colonnes.</p>
-            <div className="users-table-wrap" role="region" aria-label="Registre des utilisateurs" tabIndex={0}>
+            <p className="users-table-scroll-hint">
+              Faites défiler le tableau horizontalement pour accéder à toutes
+              les colonnes.
+            </p>
+            <div
+              className="users-table-wrap"
+              role="region"
+              aria-label="Registre des utilisateurs"
+              tabIndex={0}
+            >
               <table className="users-table">
-                <caption className="users-table-caption">Comptes utilisateurs et accès</caption>
+                <caption className="users-table-caption">
+                  Comptes utilisateurs et accès
+                </caption>
                 <thead>
                   <tr>
                     <th scope="col">Utilisateur</th>
@@ -446,9 +497,11 @@ export default function UsersPage() {
                         <div className="users-actions">
                           <button
                             type="button"
-                            className="users-view-button" title="Consulter le compte"
+                            className="users-view-button"
+                            title="Consulter le compte"
                             onClick={() => setSelectedUser(managedUser)}
-                           aria-label={`Consulter le compte de ${managedUser.fullName}`}>
+                            aria-label={`Consulter le compte de ${managedUser.fullName}`}
+                          >
                             <Eye size={20} aria-hidden="true" />
                           </button>
 
@@ -459,7 +512,8 @@ export default function UsersPage() {
                               setEditingUser(managedUser);
                               setIsFormOpen(true);
                             }}
-                           aria-label={`Modifier le compte de ${managedUser.fullName}`}>
+                            aria-label={`Modifier le compte de ${managedUser.fullName}`}
+                          >
                             <Edit3 size={16} />
                           </button>
 
@@ -468,8 +522,11 @@ export default function UsersPage() {
                               type="button"
                               title="Vérifier l’email"
                               disabled={verifyMutation.isPending}
-                              onClick={() => verifyMutation.mutate(managedUser.id)}
-                             aria-label="Vérifier l’email">
+                              onClick={() =>
+                                verifyMutation.mutate(managedUser.id)
+                              }
+                              aria-label="Vérifier l’email"
+                            >
                               <CheckCircle2 size={16} />
                             </button>
                           )}
@@ -478,7 +535,8 @@ export default function UsersPage() {
                             type="button"
                             title="Réinitialiser mot de passe"
                             onClick={() => setPasswordUser(managedUser)}
-                           aria-label={`Réinitialiser le mot de passe de ${managedUser.fullName}`}>
+                            aria-label={`Réinitialiser le mot de passe de ${managedUser.fullName}`}
+                          >
                             <KeyRound size={16} />
                           </button>
 
@@ -486,14 +544,19 @@ export default function UsersPage() {
                             type="button"
                             title="Forcer déconnexion"
                             disabled={logoutMutation.isPending}
-                            onClick={() => logoutMutation.mutate(managedUser.id)}
-                           aria-label={`Déconnecter les sessions de ${managedUser.fullName}`}>
+                            onClick={() =>
+                              logoutMutation.mutate(managedUser.id)
+                            }
+                            aria-label={`Déconnecter les sessions de ${managedUser.fullName}`}
+                          >
                             <LogOut size={16} />
                           </button>
 
                           <button
                             type="button"
-                            title={managedUser.isActive ? "Désactiver" : "Activer"}
+                            title={
+                              managedUser.isActive ? "Désactiver" : "Activer"
+                            }
                             disabled={statusMutation.isPending}
                             onClick={() =>
                               statusMutation.mutate({
@@ -501,9 +564,37 @@ export default function UsersPage() {
                                 isActive: !managedUser.isActive,
                               })
                             }
-                           aria-label={managedUser.isActive ? "Désactiver" : "Activer"}>
+                            aria-label={
+                              managedUser.isActive ? "Désactiver" : "Activer"
+                            }
+                          >
                             <Power size={16} />
                           </button>
+                          {currentUser?.role === "TENANT_ADMIN" &&
+                            managedUser.id !== currentUser.id && (
+                              <button
+                                type="button"
+                                className="users-delete-trigger"
+                                aria-label={`Supprimer ${managedUser.fullName}`}
+                                disabled={
+                                  deleteMutation.isPending ||
+                                  (managedUser.role === "TENANT_ADMIN" &&
+                                    managedUser.isActive)
+                                }
+                                title={
+                                  managedUser.role === "TENANT_ADMIN" &&
+                                  managedUser.isActive
+                                    ? "Désactivez cet administrateur avant de le supprimer."
+                                    : "Supprimer ce compte"
+                                }
+                                onClick={() => {
+                                  deleteMutation.reset();
+                                  setUserToDelete(managedUser);
+                                }}
+                              >
+                                <Trash2 size={17} />
+                              </button>
+                            )}
                         </div>
                       </td>
                     </tr>
@@ -544,35 +635,130 @@ export default function UsersPage() {
       </section>
 
       {isFormOpen && (
-        <UserFormModal
-          user={editingUser}
-          isSubmitting={createMutation.isPending || updateMutation.isPending}
-          errorMessage={formError}
-          onClose={() => {
-            setIsFormOpen(false);
-            setEditingUser(null);
-          }}
-          onSave={saveUser}
-        />
+        <Suspense
+          fallback={
+            <div className="users-dialog-loading" role="status">
+              Chargement de la fenêtre…
+            </div>
+          }
+        >
+          <UserFormModal
+            user={editingUser}
+            isSubmitting={createMutation.isPending || updateMutation.isPending}
+            errorMessage={formError}
+            onClose={() => {
+              setIsFormOpen(false);
+              setEditingUser(null);
+            }}
+            onSave={saveUser}
+          />
+        </Suspense>
       )}
 
       {passwordUser && (
-        <UserPasswordResetModal
-          userName={passwordUser.fullName}
-          isSubmitting={resetMutation.isPending}
-          errorMessage={resetMutation.isError ? getErrorMessage(resetMutation.error) : null}
-          onClose={() => setPasswordUser(null)}
-          onConfirm={async (password) => {
-            await resetMutation.mutateAsync({ id: passwordUser.id, password });
-          }}
-        />
+        <Suspense
+          fallback={
+            <div className="users-dialog-loading" role="status">
+              Chargement de la fenêtre…
+            </div>
+          }
+        >
+          <UserPasswordResetModal
+            userName={passwordUser.fullName}
+            isSubmitting={resetMutation.isPending}
+            errorMessage={
+              resetMutation.isError
+                ? getErrorMessage(resetMutation.error)
+                : null
+            }
+            onClose={() => setPasswordUser(null)}
+            onConfirm={async (password) => {
+              await resetMutation.mutateAsync({
+                id: passwordUser.id,
+                password,
+              });
+            }}
+          />
+        </Suspense>
       )}
 
       {selectedUser && (
-        <UserDetailsDrawer
-          user={selectedUser}
-          onClose={() => setSelectedUser(null)}
-        />
+        <Suspense
+          fallback={
+            <div className="users-dialog-loading" role="status">
+              Chargement de la fenêtre…
+            </div>
+          }
+        >
+          <UserDetailsDrawer
+            user={selectedUser}
+            onClose={() => setSelectedUser(null)}
+          />
+        </Suspense>
+      )}
+
+      {userToDelete && (
+        <div className="users-modal-layer">
+          <button
+            type="button"
+            className="users-modal-backdrop"
+            aria-label="Fermer la confirmation"
+            disabled={deleteMutation.isPending}
+            onClick={() => setUserToDelete(null)}
+          />
+          <section
+            className="users-modal users-delete-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="users-delete-title"
+          >
+            <header className="users-modal-header">
+              <div>
+                <p>SUPPRESSION DU COMPTE</p>
+                <h3 id="users-delete-title">Supprimer cet utilisateur ?</h3>
+              </div>
+            </header>
+            <p className="users-delete-identity">
+              <strong>{userToDelete.fullName}</strong>
+              <br />
+              {userToDelete.email}
+            </p>
+            <p>
+              Ce compte sera supprimé et ses sessions seront révoquées. La fiche
+              RH de l’agent lié et les historiques seront conservés. Cette
+              action est irréversible.
+            </p>
+            {deleteMutation.isError && (
+              <div className="users-alert" role="alert">
+                {getErrorMessage(deleteMutation.error)}
+              </div>
+            )}
+            <footer className="users-modal-footer">
+              <button
+                type="button"
+                className="users-cancel-button"
+                disabled={deleteMutation.isPending}
+                onClick={() => setUserToDelete(null)}
+              >
+                Conserver le compte
+              </button>
+              <button
+                type="button"
+                className="users-danger-button"
+                disabled={deleteMutation.isPending}
+                aria-busy={deleteMutation.isPending}
+                onClick={() => deleteMutation.mutate(userToDelete.id)}
+              >
+                {deleteMutation.isPending ? (
+                  <LoaderCircle size={18} className="is-spinning" />
+                ) : (
+                  <Trash2 size={18} />
+                )}
+                Supprimer le compte
+              </button>
+            </footer>
+          </section>
+        </div>
       )}
     </section>
   );

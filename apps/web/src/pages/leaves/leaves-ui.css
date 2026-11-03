@@ -429,3 +429,31 @@
     margin-top: 14px;
   }
 }
+
+/* Actions du bandeau alignées sur le module Utilisateurs. */
+@media screen {
+.leaves-page .leaves-hero .leaves-hero-actions { display:flex; align-items:center; justify-content:flex-end; flex-wrap:wrap; gap:8px; }
+.leaves-page .leaves-hero .leaves-hero-actions > button {
+ display:inline-flex; align-items:center; justify-content:center; gap:8px;
+ flex:0 1 auto; width:auto; height:44px; min-height:44px; padding:0 14px;
+ border:0; border-radius:10px; background:#fff; color:var(--leave-primary);
+ font-size:.8125rem; line-height:18px; box-shadow:none; filter:none; transform:none;
+}
+.leaves-page .leaves-hero .leaves-hero-actions button span {
+ position:static; width:auto; height:auto; overflow:visible; clip-path:none; white-space:normal;
+ display:block; margin:0; padding:0; font-size:.8125rem; line-height:18px;
+ color:inherit; align-self:center; transform:none;
+}
+.leaves-page .leaves-hero .leaves-hero-actions button svg {
+ display:block; width:18px; height:18px; flex:0 0 18px; margin:0; padding:0;
+ color:inherit; stroke:currentColor; align-self:center; vertical-align:middle; transform:none;
+}
+}
+@media screen and (hover:hover) {
+.leaves-page .leaves-hero .leaves-hero-actions > button:not(:disabled):hover {
+ background:var(--leave-primary); color:#fff; border:0; box-shadow:none; filter:none; transform:none;
+}
+}
+@media screen and (max-width:649px) {
+.leaves-page .leaves-hero .leaves-hero-actions > button { flex:1 1 100%; }
+}

@@ -10,6 +10,7 @@ import { PayrollModel, type PayrollRecord } from "./payroll.model.js";
 const statuses = ["DRAFT", "APPROVED", "PAID", "CANCELLED"] as const;
 export const payrollListQuery = z
   .object({
+    countOnly: z.enum(["0", "1"]).optional(),
     period: z
       .string()
       .regex(/^\d{4}-(0[1-9]|1[0-2])$/)
@@ -175,6 +176,12 @@ export const listPayrollController: RequestHandler = async (req, res, next) => {
     }
     const filter = buildPayrollListFilter(tenantId, query, manager, agentId);
     const total = await PayrollModel.countDocuments(filter).exec();
+    if (query.countOnly === "1") {
+      res.set("Cache-Control", "private, no-store").json({ success: true, data: {
+        items: [], total, page: 1, limit: query.limit, listVersion: "payroll-table-1",
+      } });
+      return;
+    }
     const page = Math.min(
       query.page,
       Math.max(1, Math.ceil(total / query.limit)),

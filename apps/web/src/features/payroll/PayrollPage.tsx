@@ -1,7 +1,18 @@
-import PayrollShareDialog from "./PayrollShareDialog";
-import PayslipDocument from "./PayslipDocument";
+const payrollDateFormatter1 = new Intl.DateTimeFormat("fr-FR", {
+                          month: "short",
+                          year: "numeric",
+                          timeZone: "UTC",
+                        });
+const payrollDateFormatter2 = new Intl.DateTimeFormat("fr-FR", {
+                              day: "2-digit",
+                              month: "short",
+                              year: "numeric",
+                              timeZone: "UTC",
+                            });
+const PayrollShareDialog = lazy(() => import("./PayrollShareDialog"));
+const PayslipDocument = lazy(() => import("./PayslipDocument"));
 import { usePayrollDialog } from "./payroll-dialog";
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState, type FormEvent } from "react";
 import {
   useMutation,
   useQueries,
@@ -34,6 +45,7 @@ import { useAuth } from "../auth/auth.context";
 import { getApiErrorMessage } from "../auth/auth.api";
 import {
   listPayroll,
+  countPayroll,
   savePayroll,
   searchPayrollAgents,
   transitionPayroll,
@@ -51,14 +63,14 @@ const statusLabels = {
   PAID: "Payé",
   CANCELLED: "Annulé",
 };
+const moneyFormats = new Map<string, Intl.NumberFormat>();
 function money(
   value: number,
   row: Pick<Payroll, "minorUnitDigits" | "currency">,
 ) {
-  return new Intl.NumberFormat("fr-FR", {
-    style: "currency",
-    currency: row.currency,
-  }).format(value / 10 ** row.minorUnitDigits);
+  let formatter = moneyFormats.get(row.currency);
+  if (!formatter) { formatter = new Intl.NumberFormat("fr-FR", { style: "currency", currency: row.currency }); if (moneyFormats.size >= 16) moneyFormats.delete(moneyFormats.keys().next().value!); moneyFormats.set(row.currency, formatter); }
+  return formatter.format(value / 10 ** row.minorUnitDigits);
 }
 function localMonth() {
   const now = new Date();
@@ -187,9 +199,8 @@ export default function PayrollPage() {
         },
       ],
       queryFn: ({ signal }: { signal: AbortSignal }) =>
-        listPayroll(
+        countPayroll(
           view.period,
-          1,
           { ...view, status: card.status, limit: 20 },
           signal,
         ),
@@ -544,11 +555,7 @@ export default function PayrollPage() {
                         <span>{row.matricule}</span>
                       </th>
                       <td className="payroll-period-cell">
-                        {new Intl.DateTimeFormat("fr-FR", {
-                          month: "short",
-                          year: "numeric",
-                          timeZone: "UTC",
-                        }).format(new Date(`${row.period}-01T00:00:00Z`))}
+                        {payrollDateFormatter1.format(new Date(`${row.period}-01T00:00:00Z`))}
                       </td>
                       <td className="is-number">{money(row.gross, row)}</td>
                       <td className="is-number">
@@ -570,12 +577,7 @@ export default function PayrollPage() {
                       <td className="payroll-payment-cell">
                         {row.paidAt ? (
                           <time dateTime={row.paidAt}>
-                            {new Intl.DateTimeFormat("fr-FR", {
-                              day: "2-digit",
-                              month: "short",
-                              year: "numeric",
-                              timeZone: "UTC",
-                            }).format(new Date(row.paidAt))}
+                            {payrollDateFormatter2.format(new Date(row.paidAt))}
                           </time>
                         ) : (
                           <span className="payroll-muted">—</span>
@@ -729,6 +731,7 @@ export default function PayrollPage() {
           aria-modal="true"
           aria-label="Bulletin de paie"
         >
+          <Suspense fallback={<div className="payroll-dialog" role="status">Ouverture du bulletin…</div>}>
           <PayslipDocument
             row={selected}
             manager={manager}
@@ -747,10 +750,13 @@ export default function PayrollPage() {
                 : undefined
             }
           />
+          </Suspense>
         </section>
       )}
       {share && (
+        <Suspense fallback={<div role="status">Ouverture du partage…</div>}>
         <PayrollShareDialog row={share} onClose={() => setShare(null)} />
+        </Suspense>
       )}
       {confirmation && (
         <section

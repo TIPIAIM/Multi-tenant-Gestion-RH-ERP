@@ -1,3 +1,9 @@
+const reportDateFormatter0=new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 import { useState } from "react";
 import {
   Archive,
@@ -68,12 +74,7 @@ const leaveTypeLabels: Record<string, string> = {
 
 function formatDate(value?: string): string {
   if (!value) return "—";
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(value));
+  return reportDateFormatter0.format(new Date(value));
 }
 function formatNumber(value: number, digits = 1): string {
   return new Intl.NumberFormat("fr-FR", {

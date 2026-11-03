@@ -1,8 +1,11 @@
+import { shortDate, dateTime, timeOnly, numberLabel } from "./communication-formatters";
 import CommunicationAvatar from "./CommunicationAvatar";
 import CommunicationAdminReadStats from "./CommunicationAdminReadStats";
 import { useSearchParams } from "react-router-dom";
 import { usePieceTransferNotifications } from "../../features/piece-transfers/use-piece-transfer-notifications";
 import {
+  lazy,
+  Suspense,
   useEffect,
   useMemo,
   useRef,
@@ -62,9 +65,12 @@ import type {
 } from "../../features/piece-transfers/piece-transfer.types";
 import { getApiErrorMessage } from "../../features/auth/auth.api";
 import { useAuth } from "../../features/auth/auth.context";
-import PieceTransferComposer from "./PieceTransferComposer";
+const PieceTransferComposer = lazy(() => import("./PieceTransferComposer"));
+import { useCommunicationConfirm } from "./use-communication-confirm";
 import PieceTransferDetailsDrawer from "./PieceTransferDetailsDrawer";
 import "./piece-transfers-page.css";
+import "./communication-readability.css";
+import "./communications-ui.css";
 
 type UserFilter = "ALL" | "INBOX" | "SENT" | "UNREAD";
 type Workspace = "CHATS" | "ADMIN" | "FILES" | "MESSAGES";
@@ -83,24 +89,15 @@ function formatShortDate(value?: string): string {
   const today = new Date();
 
   if (date.toDateString() === today.toDateString()) {
-    return new Intl.DateTimeFormat("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(date);
+    return timeOnly.format(date);
   }
 
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "2-digit",
-  }).format(date);
+  return shortDate.format(date);
 }
 
 function formatDateTime(value?: string): string {
   if (!value) return "—";
-  return new Intl.DateTimeFormat("fr-FR", {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+  return dateTime.format(new Date(value));
 }
 
 
@@ -116,6 +113,7 @@ function useDebouncedSearch(value: string): string {
 
 export default function PieceTransfersPage() {
   const { user } = useAuth();
+  const { confirm, confirmation } = useCommunicationConfirm();
   const queryClient = useQueryClient();
   const isAdmin = user?.role === "TENANT_ADMIN";
   const [searchParams, setSearchParams] = useSearchParams();
@@ -422,9 +420,9 @@ export default function PieceTransfersPage() {
     }
   }
 
-  function handleRevoke(transferId: string): void {
+  async function handleRevoke(transferId: string): Promise<void> {
     if (
-      window.confirm(
+      await confirm(
         "Révoquer cette communication ? Elle sera fermée pour tous les participants.",
       )
     ) {
@@ -432,10 +430,10 @@ export default function PieceTransfersPage() {
     }
   }
 
-  function handleAdminDeleteFile(item: PieceTransferAdminFile): void {
+  async function handleAdminDeleteFile(item: PieceTransferAdminFile): Promise<void> {
     if (item.fileStatus === "DELETED") return;
     if (
-      window.confirm(
+      await confirm(
         `Supprimer définitivement « ${item.fileName} » ? L’historique restera conservé.`,
       )
     ) {
@@ -443,10 +441,10 @@ export default function PieceTransfersPage() {
     }
   }
 
-  function handleAdminDeleteMessage(item: PieceTransferAdminMessage): void {
+  async function handleAdminDeleteMessage(item: PieceTransferAdminMessage): Promise<void> {
     if (!item.messageId || !item.canDeleteMessage) return;
     if (
-      window.confirm(
+      await confirm(
         "Supprimer ce message ? Une trace de suppression restera dans la communication.",
       )
     ) {
@@ -505,7 +503,7 @@ export default function PieceTransfersPage() {
 
         <div className="piece-transfer-appbar-actions">
           <button type="button" disabled={refreshing} aria-label="Actualiser les communications" onClick={() => void refresh()} title="Actualiser">
-            <RefreshCw size={18} className={refreshing ? "is-spinning" : ""} />
+            <RefreshCw size={18} className={refreshing ? "is-spinning" : ""} /><span>Actualiser</span>
           </button>
 
           {isAdmin && (
@@ -519,7 +517,7 @@ export default function PieceTransfersPage() {
               aria-label="Administration"
               title="Administration"
             >
-              <ShieldCheck size={18} />
+              <ShieldCheck size={18} /><span>Administration</span>
             </button>
           )}
 
@@ -530,7 +528,7 @@ export default function PieceTransfersPage() {
             aria-label="Nouvelle communication"
             title="Nouvelle communication"
           >
-            <Plus size={19} />
+            <Plus size={18} /><span>Nouvelle communication</span>
           </button>
         </div>
       </header>
@@ -653,7 +651,7 @@ export default function PieceTransfersPage() {
               <ShieldCheck size={20} />
               <div>
                 <strong>Administration</strong>
-                <span>Supervision du tenant</span>
+                <span>Vue d’ensemble des communications</span>
               </div>
             </div>
 
@@ -776,6 +774,8 @@ export default function PieceTransfersPage() {
         </section>
       )}
 
+      {confirmation}
+      {composerOpen && <Suspense fallback={<div className="piece-transfer-notice" role="status">Ouverture du formulaire…</div>}>
       <PieceTransferComposer
         open={composerOpen}
         pending={createMutation.isPending}
@@ -783,6 +783,7 @@ export default function PieceTransfersPage() {
         onClose={() => { if (!createMutation.isPending) setComposerOpen(false); }}
         onSubmit={(input: CreatePieceTransferInput) => createMutation.mutate(input)}
       />
+      </Suspense>}
     </main>
   );
 }
@@ -791,7 +792,7 @@ function MiniStat({ icon, value, title, active = false, onClick }: {
   icon: ReactNode; value?: number; title: string; active?: boolean; onClick: () => void;
 }) {
   return <button type="button" className={`piece-transfer-mini-stat ${active ? "is-active" : ""}`} onClick={onClick} aria-pressed={active} aria-label={`${title} : ${value ?? "chargement"}. Ouvrir`}>
-    <span className="piece-transfer-stat-icon">{icon}</span><strong>{value === undefined ? "—" : new Intl.NumberFormat("fr-FR").format(value)}</strong><span>{title}</span>
+    <span className="piece-transfer-stat-icon">{icon}</span><strong>{value === undefined ? "—" : numberLabel.format(value)}</strong><span>{title}</span>
   </button>;
 }
 
@@ -975,11 +976,11 @@ function AdminPagination({
   if (pages <= 1) return null;
   return (
     <div className="piece-transfer-pagination-v5">
-      <button type="button" disabled={page <= 1} onClick={() => onPage(page - 1)}>
+      <button type="button" aria-label="Page précédente" disabled={page <= 1} onClick={() => onPage(page - 1)}>
         ‹
       </button>
-      <span>{page}/{pages}</span>
-      <button type="button" disabled={page >= pages} onClick={() => onPage(page + 1)}>
+      <span aria-live="polite">Page {page} sur {pages}</span>
+      <button type="button" aria-label="Page suivante" disabled={page >= pages} onClick={() => onPage(page + 1)}>
         ›
       </button>
     </div>

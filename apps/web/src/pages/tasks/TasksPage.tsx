@@ -1,5 +1,11 @@
+const taskDateFormatter1 = new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit",
+    month: "short",
+  });
 import { useLocation } from "react-router-dom";
 import {
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useMemo,
@@ -53,11 +59,12 @@ import type {
   TaskPriority,
   TaskStatus,
 } from "../../features/tasks/task.types";
-import TaskDetailsDrawer from "./TaskDetailsDrawer";
-import TaskFormModal from "./TaskFormModal";
+const TaskDetailsDrawer = lazy(() => import("./TaskDetailsDrawer"));
+const TaskFormModal = lazy(() => import("./TaskFormModal"));
 import "./tasks-page.css";
 import "./task-experience.css";
 import "./task-kpi.css";
+import "./tasks-ui.css";
 
 type DisplayMode = "BOARD" | "LIST";
 type MetricSelection = "total" | "progress" | "alert" | "complete";
@@ -115,10 +122,7 @@ function formatDate(value?: string): string {
     return "Sans échéance";
   }
 
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "short",
-  }).format(new Date(value));
+  return taskDateFormatter1.format(new Date(value));
 }
 
 function getStatusClass(status: TaskStatus): string {
@@ -966,21 +970,12 @@ export default function TasksPage() {
     if (!boardQuery.data?.columns) return undefined;
     const columns = { ...boardQuery.data.columns };
     for (const status of taskStatusOrder) {
-      columns[status] = [...(columns[status] ?? [])].sort((first, second) => {
-        // Une tâche récemment terminée remonte à sa date de fin.
-        // Dans les autres colonnes, priorité à la dernière actualisation.
-        const firstDate = Date.parse(
-          (status === "COMPLETED" ? first.completedAt : undefined)
-            ?? first.updatedAt ?? first.createdAt ?? "",
-        );
-        const secondDate = Date.parse(
-          (status === "COMPLETED" ? second.completedAt : undefined)
-            ?? second.updatedAt ?? second.createdAt ?? "",
-        );
-        const delta = (Number.isFinite(secondDate) ? secondDate : 0)
-          - (Number.isFinite(firstDate) ? firstDate : 0);
-        return delta || second.id.localeCompare(first.id);
-      });
+      columns[status] = (columns[status] ?? []).map(task => {
+        const parsed = Date.parse((status === "COMPLETED" ? task.completedAt : undefined)
+          ?? task.updatedAt ?? task.createdAt ?? "");
+        return { task, time: Number.isFinite(parsed) ? parsed : 0 };
+      }).sort((first, second) => second.time - first.time
+        || second.task.id.localeCompare(first.task.id)).map(entry => entry.task);
     }
     return columns;
   }, [boardQuery.data?.columns]);
@@ -1011,7 +1006,7 @@ export default function TasksPage() {
       : 0;
 
   return (
-    <section className="tasks-page">
+    <section className="tasks-page tasks-page-harmonized">
       <p className="task-ux-feedback" role="status" aria-live="polite">{isPreparingEdit ? "Chargement de la dernière version de la tâche…" : saveMessage}</p>
       {editError && <p className="task-ux-error" role="alert">{editError}</p>}
       <div className="task-view-status" role="status" aria-live="polite">
@@ -2030,6 +2025,7 @@ export default function TasksPage() {
       )}
 
       {isFormOpen && (editingTask ? canManageTasks : canCreateTasks) && (
+        <Suspense fallback={<div className="task-lazy-state" role="status">Ouverture du formulaire…</div>}>
         <TaskFormModal
           key={`${editingTask?.id ?? "new-task"}-${editingTask?.updatedAt ?? "new"}-${currentAgentDirectionId ?? "no-direction"}-${currentAgentServiceId ?? "no-service"}`}
           task={editingTask}
@@ -2054,10 +2050,12 @@ export default function TasksPage() {
           }}
           onSubmit={handleSubmitTask}
         />
+        </Suspense>
       )}
 
       {selectedTaskId &&
         selectedTaskQuery.data && (
+          <Suspense fallback={<div className="task-lazy-state" role="status">Ouverture du détail…</div>}>
           <TaskDetailsDrawer
             isPreparingEdit={isPreparingEdit}
             editError={editError}
@@ -2113,6 +2111,7 @@ export default function TasksPage() {
               void openEditModal(task);
             }}
           />
+          </Suspense>
         )}
     </section>
   );

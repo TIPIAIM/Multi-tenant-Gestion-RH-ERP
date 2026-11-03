@@ -1,6 +1,9 @@
+import { useRoadmapDialog } from "./use-roadmap-dialog";
+import { useRoadmapConfirm } from "./use-roadmap-confirm";
 import { useLocation } from "react-router-dom";
 import {
   useMemo,
+  useRef,
   useEffect,
   useState,
   type ChangeEvent,
@@ -126,6 +129,9 @@ export default function RoadmapDetailsDrawer({
   onChanged,
   onRoadmapUpdated,
 }: RoadmapDetailsDrawerProps) {
+  const drawerRef = useRef<HTMLElement>(null);
+  useRoadmapDialog(drawerRef, onClose);
+  const { confirm, confirmation } = useRoadmapConfirm();
   const notificationLocation = useLocation();
   useEffect(() => {
     const target = new URLSearchParams(notificationLocation.search).get("item");
@@ -435,7 +441,7 @@ export default function RoadmapDetailsDrawer({
 
   async function deleteCurrentRoadmap(): Promise<void> {
     const confirmed =
-      window.confirm(
+      await confirm(
         `Supprimer définitivement la feuille de route ${roadmap.reference} ? Cette action est irréversible.`,
       );
 
@@ -468,7 +474,10 @@ export default function RoadmapDetailsDrawer({
         onClick={onClose}
       />
 
+      {confirmation}
       <aside
+        ref={drawerRef}
+        tabIndex={-1}
         className="roadmap-details-drawer"
         role="dialog"
         aria-modal="true"

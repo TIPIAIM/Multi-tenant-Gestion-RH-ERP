@@ -46,9 +46,12 @@ export default function TaskNotificationsPanel() {
   const query = useQuery({
     queryKey: [...key, "list", page, onlyUnread],
     queryFn: async () => {
-      const response = await api.get<{ data: NoticePage }>("/tasks/notifications", {
-        params: { page, ...(onlyUnread ? { unread: "1" } : {}) },
-      });
+      const response = await api.get<{ data: NoticePage }>(
+        "/tasks/notifications",
+        {
+          params: { page, ...(onlyUnread ? { unread: "1" } : {}) },
+        },
+      );
       return response.data.data;
     },
     enabled: Boolean(user),
@@ -62,8 +65,11 @@ export default function TaskNotificationsPanel() {
       if (notice) {
         await api.patch(`/tasks/notifications/${notice.id}/read`);
       } else {
-        if (!query.data) throw new Error("La liste des notifications est indisponible.");
-        await api.patch("/tasks/notifications/read-all", { before: query.data.asOf });
+        if (!query.data)
+          throw new Error("La liste des notifications est indisponible.");
+        await api.patch("/tasks/notifications/read-all", {
+          before: query.data.asOf,
+        });
       }
     },
     onSuccess: async (_, notice) => {
@@ -84,50 +90,109 @@ export default function TaskNotificationsPanel() {
   return (
     <section className="task-notices" aria-label="Notifications de tâches">
       <div className="task-notices-heading">
-        <button type="button" aria-expanded={expanded} aria-controls={panelId}
-          onClick={() => setExpanded(value => !value)}>
+        <button
+          type="button"
+          aria-expanded={expanded}
+          aria-controls={panelId}
+          onClick={() => setExpanded((value) => !value)}
+        >
           <Bell size={18} aria-hidden="true" />
           <span>Notifications</span>
           {(query.data?.unreadCount ?? 0) > 0 && (
-            <span className="task-notices-count">{query.data!.unreadCount > 99 ? "99+" : query.data!.unreadCount}</span>
+            <span className="task-notices-count">
+              {query.data!.unreadCount > 99 ? "99+" : query.data!.unreadCount}
+            </span>
           )}
-          {expanded ? <ChevronUp size={16} aria-hidden="true" /> : <ChevronDown size={16} aria-hidden="true" />}
+          {expanded ? (
+            <ChevronUp size={16} aria-hidden="true" />
+          ) : (
+            <ChevronDown size={16} aria-hidden="true" />
+          )}
         </button>
         {expanded && (
-          <button type="button" disabled={read.isPending || !query.data?.unreadCount}
-            onClick={() => read.mutate(null)}>
-            <CheckCheck size={18} aria-hidden="true" />Tout marquer comme lu
+          <button
+            type="button"
+            disabled={read.isPending || !query.data?.unreadCount}
+            onClick={() => read.mutate(null)}
+          >
+            <CheckCheck size={18} aria-hidden="true" />
+            Tout marquer comme lu
           </button>
         )}
       </div>
       <div id={panelId} hidden={!expanded}>
         <label className="task-notices-filter">
-          <input type="checkbox" checked={onlyUnread} onChange={event => {
-            setOnlyUnread(event.target.checked); setPage(1);
-          }} />Uniquement les non lues
+          <input
+            type="checkbox"
+            checked={onlyUnread}
+            onChange={(event) => {
+              setOnlyUnread(event.target.checked);
+              setPage(1);
+            }}
+          />
+          Uniquement les non lues
         </label>
         {query.isPending && <p role="status">Chargement des notifications…</p>}
-        {query.isError && <div role="alert"><p>{getApiErrorMessage(query.error)}</p>
-          <button type="button" onClick={() => void query.refetch()}>Réessayer</button></div>}
+        {query.isError && (
+          <div role="alert">
+            <p>{getApiErrorMessage(query.error)}</p>
+            <button type="button" onClick={() => void query.refetch()}>
+              Réessayer
+            </button>
+          </div>
+        )}
         {read.isError && <p role="alert">{getApiErrorMessage(read.error)}</p>}
-        {query.data && !query.isError && <>
-          {query.data.items.length === 0 && <p>Aucune notification{onlyUnread ? " non lue" : ""}.</p>}
-          <ul>
-            {query.data.items.map(notice => <li key={notice.id}>
-              <button type="button" className={notice.readAt ? "" : "is-unread"}
-                disabled={read.isPending} onClick={() => read.mutate(notice)}>
-                <strong>{notice.kind === "COMPLETED" ? "Tâche terminée" : "Nouvelle attribution"} · {notice.title}</strong>
-                <span>{notice.message}</span>
-                <time dateTime={notice.createdAt}>{new Date(notice.createdAt).toLocaleString("fr-FR")}</time>
-              </button>
-            </li>)}
-          </ul>
-          {totalPages > 1 && <nav aria-label="Pages des notifications">
-            <button type="button" disabled={page <= 1 || read.isPending} onClick={() => setPage(value => value - 1)}>Précédent</button>
-            <span>Page {page} sur {totalPages}</span>
-            <button type="button" disabled={page >= totalPages || read.isPending} onClick={() => setPage(value => value + 1)}>Suivant</button>
-          </nav>}
-        </>}
+        {query.data && !query.isError && (
+          <>
+            {query.data.items.length === 0 && (
+              <p>Aucune notification{onlyUnread ? " non lue" : ""}.</p>
+            )}
+            <ul>
+              {query.data.items.map((notice) => (
+                <li key={notice.id}>
+                  <button
+                    type="button"
+                    className={notice.readAt ? "" : "is-unread"}
+                    disabled={read.isPending}
+                    onClick={() => read.mutate(notice)}
+                  >
+                    <strong>
+                      {notice.kind === "COMPLETED"
+                        ? "Tâche terminée"
+                        : "Nouvelle attribution"}{" "}
+                      · {notice.title}
+                    </strong>
+                    <span>{notice.message}</span>
+                    <time dateTime={notice.createdAt}>
+                      {new Date(notice.createdAt).toLocaleString("fr-FR")}
+                    </time>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {totalPages > 1 && (
+              <nav aria-label="Pages des notifications">
+                <button
+                  type="button"
+                  disabled={page <= 1 || read.isPending}
+                  onClick={() => setPage((value) => value - 1)}
+                >
+                  Précédent
+                </button>
+                <span>
+                  Page {page} sur {totalPages}
+                </span>
+                <button
+                  type="button"
+                  disabled={page >= totalPages || read.isPending}
+                  onClick={() => setPage((value) => value + 1)}
+                >
+                  Suivant
+                </button>
+              </nav>
+            )}
+          </>
+        )}
       </div>
     </section>
   );

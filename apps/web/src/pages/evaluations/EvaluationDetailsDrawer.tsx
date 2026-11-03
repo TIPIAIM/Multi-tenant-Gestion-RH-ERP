@@ -1,3 +1,9 @@
+const evaluationDateFormatter = new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 import { useMemo, useState } from "react";
 import {
   Award,
@@ -146,12 +152,7 @@ function formatDayCount(value?: number | null): string {
 
 function formatDate(value?: string): string {
   if (!value) return "—";
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  }).format(new Date(value));
+  return evaluationDateFormatter.format(new Date(value));
 }
 
 function safeNumber(value: unknown, fallback = 0): number {

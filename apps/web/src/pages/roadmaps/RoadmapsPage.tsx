@@ -1,6 +1,8 @@
 import { useLocation } from "react-router-dom";
 import { api } from "../../lib/api";
 import {
+  lazy,
+  Suspense,
   useEffect,
   useRef, useState,
   type ChangeEvent,
@@ -55,8 +57,8 @@ import {
   roadmapStatusLabels,
   statusClass,
 } from "../../features/roadmaps/roadmap.utils";
-import RoadmapDetailsDrawer from "./RoadmapDetailsDrawer";
-import RoadmapEditorModal from "./RoadmapEditorModal";
+const RoadmapDetailsDrawer = lazy(() => import("./RoadmapDetailsDrawer"));
+const RoadmapEditorModal = lazy(() => import("./RoadmapEditorModal"));
 import "./roadmaps-page.css";
 import "./roadmaps-ui.css";
 
@@ -808,6 +810,7 @@ export default function RoadmapsPage() {
       </section>
 
       {isEditorOpen && (
+        <Suspense fallback={<p className="roadmap-lazy-status" role="status">Ouverture de l’éditeur…</p>}>
         <RoadmapEditorModal
           roadmap={editingRoadmap}
           isSubmitting={
@@ -817,11 +820,13 @@ export default function RoadmapsPage() {
           }
           errorMessage={formError}
           onClose={() => {
+            if (createMutation.isPending || updateMutation.isPending || submitMutation.isPending) return;
             setIsEditorOpen(false);
             setEditingRoadmap(null);
           }}
           onSave={saveRoadmap}
         />
+        </Suspense>
       )}
 
       {linkedRoadmapQuery.isFetching && !selectedRoadmap && (
@@ -835,6 +840,7 @@ export default function RoadmapsPage() {
         </div>
       )}
       {selectedRoadmap && (
+        <Suspense fallback={<p className="roadmap-lazy-status" role="status">Ouverture du détail…</p>}>
         <RoadmapDetailsDrawer
           roadmap={selectedRoadmap}
           role={role}
@@ -847,6 +853,7 @@ export default function RoadmapsPage() {
           onChanged={refresh}
           onRoadmapUpdated={setSelectedRoadmap}
         />
+        </Suspense>
       )}
     </section>
   );

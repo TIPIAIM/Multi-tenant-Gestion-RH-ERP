@@ -1,5 +1,4 @@
-import AttendanceDeleteDialog from "./AttendanceDeleteDialog";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   CalendarClock,
@@ -42,12 +41,14 @@ import {
   getAttendanceStatusClass,
   getCurrentMonthRange,
 } from "../../features/attendance/attendance.utils";
-import AttendanceCorrectionModal from "./AttendanceCorrectionModal";
-import AttendanceHistoryDrawer from "./AttendanceHistoryDrawer";
-import AttendanceManualModal from "./AttendanceManualModal";
+const AttendanceCorrectionModal = lazy(() => import("./AttendanceCorrectionModal"));
+const AttendanceHistoryDrawer = lazy(() => import("./AttendanceHistoryDrawer"));
+const AttendanceManualModal = lazy(() => import("./AttendanceManualModal"));
 import AttendanceTodayCard from "./AttendanceTodayCard";
 import "./attendance-page.css";
 import "./attendance-ui.css";
+
+const AttendanceDeleteDialog = lazy(() => import("./AttendanceDeleteDialog"));
 
 type AttendanceFilters = {
   dateFrom: string;
@@ -109,16 +110,6 @@ export default function AttendancePage() {
   const canCorrectAttendance = currentRole === "TENANT_ADMIN";
   const canDeleteAttendance = currentRole === "TENANT_ADMIN";
 
-  useEffect(() => {
-    setPage(1);
-  }, [
-    filters.dateFrom,
-    filters.dateTo,
-    filters.status,
-    filters.directionId,
-    filters.serviceId,
-    filters.agentId,
-  ]);
 
   const organizationQuery = useQuery({
     queryKey: ["organization-tree"],
@@ -273,6 +264,7 @@ export default function AttendancePage() {
     : null;
 
   function updateFilter(key: keyof AttendanceFilters, value: string): void {
+    setPage(1);
     setFilters((currentValue) => ({
       ...currentValue,
       [key]: value,
@@ -293,6 +285,7 @@ export default function AttendancePage() {
   }
 
   function resetFilters(): void {
+    setPage(1);
     const monthRange = getCurrentMonthRange();
 
     setFilters({
@@ -314,6 +307,7 @@ export default function AttendancePage() {
   }
 
   function applyStatusFilter(status: "" | AttendanceStatus): void {
+    setPage(1);
     setFilters((currentValue) => ({
       ...currentValue,
       status,
@@ -774,6 +768,7 @@ export default function AttendancePage() {
         )}
       </section>
 
+      <Suspense fallback={<p role="status">Chargement…</p>}>
       {attendanceToDelete && (
         <AttendanceDeleteDialog
           attendance={attendanceToDelete}
@@ -836,6 +831,7 @@ export default function AttendancePage() {
           }}
         />
       )}
+      </Suspense>
     </section>
   );
 }
