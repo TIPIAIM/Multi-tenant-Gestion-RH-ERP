@@ -1,0 +1,71 @@
+/* Les valeurs publiées sont injectées par TenantSettingsProvider.
+   La preview du brouillon est volontairement isolée dans son conteneur. */
+@media screen {
+  :root { color-scheme: var(--tenant-color-scheme,light); background: var(--tenant-page-bg,#f5f7fa); color: var(--tenant-text,#172f3b); }
+  :root :is(body,#root,.dashboard-app,.dashboard-main,.dashboard-content) { background-color: var(--tenant-page-bg,#f5f7fa); color: var(--tenant-text,#172f3b); }
+  :root .dashboard-sidebar { background: var(--tenant-sidebar-bg,#0b2536); color: var(--tenant-sidebar-text,#d7e3e8); }
+  :root .dashboard-sidebar :is(.dashboard-nav-link,.dashboard-nav-disabled,.dashboard-brand-copy span,.dashboard-brand-copy strong,.dashboard-nav-group-title,.dashboard-sidebar-user-copy strong,.dashboard-sidebar-user-copy span,.dashboard-security-status,.dashboard-tenant-badge) { color: var(--tenant-sidebar-text,#d7e3e8); }
+  :root .dashboard-nav-link.is-active { background: var(--tenant-sidebar-active,#046242); color: var(--tenant-on-sidebar-active,#fff); }
+  :root .dashboard-topbar { background: var(--tenant-topbar-bg,#fff); color: var(--tenant-topbar-text,#0b2536); border-color: var(--tenant-border,#dce5e9); }
+  :root .dashboard-topbar :is(.dashboard-page-heading h1,.dashboard-page-heading p,.dashboard-profile-button,.dashboard-profile-copy small,.dashboard-profile-copy strong) { color: var(--tenant-topbar-text,#0b2536); }
+  :root .dashboard-tenant-logo { width: 100%; height: 100%; max-height: 44px; object-fit: contain; }
+  :root :is(.dashboard-profile-menu,.dashboard-profile-menu button,.dashboard-profile-menu-info) { background: var(--tenant-surface,#fff); color: var(--tenant-text,#172f3b); border-color: var(--tenant-border,#dce5e9); }
+  :root :is(.dashboard-profile-menu-info span,.dashboard-content small) { color: var(--tenant-muted,#526774); }
+  :root .dashboard-content :is(h1,h2,h3,h4,h5,strong,dt,dd) { color: var(--tenant-text,#172f3b); }
+  :root .dashboard-content :is(.agents-filter-panel,.agents-list-panel,.attendance-filters-panel,.attendance-list-panel,.dashboard-panel,.evaluations-filter-panel,.evaluations-list-panel,.leave-panel,.organization-panel,.organization-tree-panel,.reports-filter-panel,.reports-list-panel,.roadmap-filters-panel,.roadmap-list-panel,.settings-preview-panel,.settings-editor-shell,.settings-sidebar,.settings-overview-card,.tasks-filter-panel,.tasks-list-panel,.users-filters-panel,.users-table-card,.agent-row,.task-kanban-card,.tasks-kanban-column,.task-list-row,.roadmap-card) { background: var(--tenant-surface,#fff); color: var(--tenant-text,#172f3b); border-color: var(--tenant-border,#dce5e9); }
+  :root :is(.home-dashboard-hero,.agents-hero,.organization-hero,.tasks-hero,.attendance-hero,.leaves-hero,.roadmaps-hero,.evaluations-hero,.reports-hero,.users-hero,.settings-hero) { background: var(--tenant-surface,#fff); color: var(--tenant-text,#172f3b); border: 1px solid var(--tenant-border,#dce5e9); }
+  :root :is(.home-dashboard-hero,.agents-hero,.organization-hero,.tasks-hero,.attendance-hero,.leaves-hero,.roadmaps-hero,.evaluations-hero,.reports-hero,.users-hero,.settings-hero) :is(h1,h2,p,.settings-hero-description) { color: var(--tenant-text,#172f3b); }
+  :root :is(.home-dashboard-hero,.agents-hero,.organization-hero,.tasks-hero,.attendance-hero,.leaves-hero,.roadmaps-hero,.evaluations-hero,.reports-hero,.users-hero,.settings-hero) :is(h1 span,h2 span) { color: var(--tenant-link,#046242); }
+  :root :is(.dashboard-content,[role=dialog]) :is(input:not([type=color]):not([type=range]):not([type=checkbox]):not([type=radio]),select,textarea) { background: var(--tenant-surface,#fff); color: var(--tenant-text,#172f3b); border-color: var(--tenant-border,#dce5e9); }
+  :root :is(.dashboard-content,[role=dialog]) :is(input,textarea)::placeholder { color: var(--tenant-muted,#526774); opacity: 1; }
+  :root .dashboard-content :is(th,td) { background-color: var(--tenant-surface,#fff); color: var(--tenant-text,#172f3b); border-color: var(--tenant-border,#dce5e9); }
+  :root :is(.agent-modal,.agent-details-drawer,.attendance-modal,.attendance-drawer,.leave-modal,.leave-drawer,.roadmap-modal,.roadmap-details-drawer,.task-modal,.task-drawer,.users-modal,.users-drawer,.organization-modal,.evaluation-modal,.evaluation-drawer,.report-modal,.report-drawer,.settings-publish-modal,.settings-history-drawer,.settings-restore-modal,.piece-transfer-composer,.communication-forward-panel) { background: var(--tenant-surface,#fff); color: var(--tenant-text,#172f3b); }
+  :root :is(.agent-primary-button,.agents-primary-button,.attendance-primary-button,.leave-primary-button,.roadmap-primary-button,.roadmaps-primary-button,.task-primary-button,.tasks-primary-button,.evaluation-primary-button,.report-primary-button,.settings-primary-button,.piece-transfer-primary-button) { background: var(--tenant-primary,#046242); border-color: var(--tenant-primary,#046242); color: var(--tenant-on-primary,#fff); }
+  :root :is(.agent-cancel-button,.agents-secondary-button,.attendance-secondary-button,.leave-secondary-action,.roadmap-secondary-action,.roadmaps-secondary-button,.task-cancel-button,.tasks-secondary-button,.evaluation-secondary-button,.report-secondary-button,.settings-secondary-button,.settings-cancel-button) { background: var(--tenant-surface,#fff); color: var(--tenant-text,#172f3b); border-color: var(--tenant-border,#dce5e9); }
+  :root .dashboard-content :is(.settings-field,.branding-color-field) > span { color: var(--tenant-text,#172f3b); }
+  :root .settings-sidebar nav button { color: var(--tenant-text,#172f3b); }
+  :root .settings-sidebar nav button.is-active { background: var(--tenant-primary,#046242); color: var(--tenant-on-primary,#fff); }
+  :root .settings-sidebar nav button.is-active :is(strong,small,svg) { color: inherit; }
+  :root :is(.dashboard-metrics-grid,.agents-metrics-grid,.organization-metrics-grid,.tasks-metrics-grid,.attendance-stats-grid,.leave-kpis,.roadmap-stats-grid,.evaluations-metrics-grid,.reports-metrics-grid,.users-stats-grid) > * { background: var(--tenant-surface,#fff); border-color: var(--tenant-border,#dce5e9); }
+  :root :is(.piece-transfer-conversations-pane,.piece-transfer-conversation-item,.piece-transfer-chat-panel,.piece-transfer-appbar,.piece-transfer-chat-header) { background: var(--tenant-surface,#fff); color: var(--tenant-text,#172f3b); }
+  :root .piece-transfer-chat-messages { background: var(--tenant-page-bg,#f5f7fa); }
+  :root .piece-transfer-bubble.is-theirs { background: var(--tenant-surface,#fff); color: var(--tenant-text,#172f3b); }
+  :root .piece-transfer-bubble.is-mine { background: var(--tenant-primary,#046242); color: var(--tenant-on-primary,#fff); }
+  :root .piece-transfer-bubble.is-mine :is(p,strong,span,time,button) { color: inherit; }
+  :root .settings-save-bar { background: var(--tenant-surface,#fff); color: var(--tenant-text,#172f3b); border-color: var(--tenant-border,#dce5e9); }
+  :root .settings-workspace { grid-template-columns: minmax(0,1fr); }
+  :root .settings-workspace > * { min-width: 0; }
+  :root .settings-workspace > .settings-preview-panel { display: none; }
+  :root .settings-sidebar nav { display: flex; flex-wrap: wrap; gap: 6px; }
+  :root .settings-sidebar nav button { flex: 1 1 160px; }
+  :root .settings-preview-brand { background: var(--tenant-primary,#046242); color: var(--tenant-on-primary,#fff); }
+}
+@media screen and (min-width: 1100px) {
+  :root .settings-workspace { grid-template-columns: 240px minmax(0,1fr); align-items: start; }
+  :root .settings-sidebar nav { display: grid; }
+  :root .settings-sidebar { position: sticky; top: 88px; }
+}
+@media screen {
+  :root .auth-tenant-logo { max-width: 180px; max-height: 80px; object-fit: contain; margin-bottom: 20px; }
+  :root .auth-brand-panel { background: linear-gradient(135deg,var(--tenant-primary,#046242),var(--tenant-secondary,#0b2536)); }
+  :root .auth-form-panel { background: var(--tenant-surface,#fff); color: var(--tenant-text,#172f3b); }
+  :root .auth-page :is(input,.input-wrapper) { background: var(--tenant-surface,#fff); color: var(--tenant-text,#172f3b); border-color: var(--tenant-border,#dce5e9); }
+  :root .branding-advanced summary { min-height: 44px; color: var(--tenant-text,#172f3b); font-size: .8125rem; cursor: pointer; }
+}
+@media screen {
+  :root .auth-brand-panel { background: var(--tenant-sidebar-bg,#0b2536); color: var(--tenant-sidebar-text,#d7e3e8); }
+  :root .auth-brand-panel :is(h1,h1 span,p) { color: var(--tenant-sidebar-text,#d7e3e8); }
+  :root .dashboard-logo-wrap:has(img) { background: transparent; }
+}
+@media screen {
+  :root .settings-ring::before { background: var(--tenant-surface,#fff); }
+  :root .settings-overview-card :is(span,p) { color: var(--tenant-muted,#526774); }
+  :root .settings-overview-card > div { min-width: 0; }
+}
+@media screen and (max-width: 480px) {
+  :root .settings-overview-grid { grid-template-columns: 1fr; }
+  :root .settings-overview-card { min-height: 96px; padding: 14px; }
+}
+
+
+

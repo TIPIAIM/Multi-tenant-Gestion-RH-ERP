@@ -1,0 +1,49 @@
+/* Le message et ses réactions restent associés, même lorsque le fil défile. */
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .communication-message-unit {
+  display: flex; flex-direction: column; align-items: stretch;
+  align-self: flex-start; min-width: 0; width: fit-content; max-width: min(82%, 660px);
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .communication-message-unit.is-mine { align-self: flex-end; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .communication-message-unit > .piece-transfer-bubble { max-width: 100%; width: 100%; box-sizing: border-box; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .communication-message-unit > .communication-reactions {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 3px;
+  margin: 3px 0 0; padding: 0; background: transparent; border: 0; box-shadow: none;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .communication-message-unit.is-mine > .communication-reactions { justify-content: flex-end; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .communication-message-unit .communication-reaction-picker {
+  display: flex; flex-wrap: wrap; justify-content: inherit; gap: 3px;
+  flex: 0 1 100%; min-width: 0; padding: 2px 0; margin: 0;
+  background: transparent; border: 0; box-shadow: none;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .communication-message-unit .communication-reactions button {
+  display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+  min-width: 32px; min-height: 32px; padding: 3px 6px;
+  border: 0; border-radius: 7px; background: transparent; box-shadow: none;
+  outline: none; color: #1765c1; cursor: pointer;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .communication-message-unit .communication-reactions button:hover { background: transparent; box-shadow: inset 0 -1px #1765c1; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .communication-message-unit .communication-reactions button[aria-pressed="true"] { background: transparent; box-shadow: inset 0 -2px #1765c1; outline: none; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .communication-message-unit .communication-reactions button:focus-visible { outline: 2px solid #1765c1; outline-offset: 2px; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .communication-message-unit .communication-reactions button:disabled { cursor: not-allowed; opacity: .55; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .communication-message-unit .communication-reactions button span { color: #1765c1; font-size: .6875rem; }
+@media (max-width: 760px) {
+  :root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .communication-message-unit { max-width: 94%; }
+}
+@media (pointer: coarse) {
+  :root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .communication-message-unit .communication-reactions button { min-width: 44px; min-height: 44px; }
+}
+
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .communication-message-unit > .communication-reactions:empty { display: none; margin: 0; }
+
+/* Annule la couleur précédemment appliquée aux messages reçus. */
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble.is-theirs {
+  background: #ffffff;
+  background-image: none;
+  color: #222936;
+}
+/* Messages envoyés par le compte connecté, y compris le message initial. */
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble.is-mine {
+  background: #D7E3E8;
+  background-image: none;
+  color: #222936;
+}

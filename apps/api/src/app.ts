@@ -29,7 +29,7 @@ import { pieceTransferRouter } from "./modules/piece-transfers/piece-transfer.ro
 import { backupRouter } from "./modules/backups/backup.routes.js";
 
 import { filesRouter } from "./modules/files/files.routes.js";
-
+import { serveFrontend } from "./core/serve-frontend.js";
 export const app = express();
 
 app.disable("x-powered-by");
@@ -92,5 +92,6 @@ app.use("/api/v1/backups", backupRouter);
 
 app.use("/api/v1/files", filesRouter);
 
+app.use("/api/v1/", serveFrontend) 
 app.use(notFoundMiddleware);
 app.use(errorMiddleware);

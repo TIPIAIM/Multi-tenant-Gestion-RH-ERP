@@ -1,0 +1,14 @@
+:root .communication-person-avatar { display: inline-grid; place-items: center; width: 100%; height: 100%; border-radius: inherit; overflow: hidden; line-height: 1; vertical-align: middle; }
+:root .communication-person-avatar img { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: inherit; }
+:root .piece-transfer-bubble .communication-message-author { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
+:root .piece-transfer-bubble .communication-message-author .piece-transfer-bubble-author { margin: 0; }
+:root .piece-transfer-bubble .communication-message-author-avatar { display: inline-flex; flex: 0 0 26px; width: 26px; height: 26px; border-radius: 50%; background: #e8edf5; color: #526078; font-size: .625rem; }
+
+/* Les cadres ont une taille explicite : une photo ne doit pas être réduite à zéro. */
+:root .piece-transfer-conversation-avatar { width: 44px; height: 44px; flex-shrink: 0; overflow: hidden; }
+:root .piece-transfer-chat-avatar { width: 40px; height: 40px; flex-shrink: 0; overflow: hidden; }
+:root .piece-transfer-admin-message-avatar { width: 36px; height: 36px; flex-shrink: 0; overflow: hidden; }
+/* Préserve le contraste des actions malgré l’héritage de couleur de l’entreprise. */
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .piece-transfer-bubble-meta button { color: #244b91; opacity: 1; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .piece-transfer-bubble-meta button svg { color: inherit; stroke: currentColor; width: 16px; height: 16px; }
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble .piece-transfer-bubble-meta button.is-delete { color: #b42339; }

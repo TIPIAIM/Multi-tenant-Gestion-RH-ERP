@@ -1,4 +1,4 @@
-import mongoose,{type Model} from "mongoose";
+import mongoose,{type Model,type SchemaType} from "mongoose";
 import {createHash} from "node:crypto";
 import {eligibleModel,groups,expandGroups,type BackupGroup} from "./backup.rules.js";
 export function modelsFor(selected:string[]):Array<{group:BackupGroup;model:Model<any>}>{
@@ -11,7 +11,7 @@ export function modelsFor(selected:string[]):Array<{group:BackupGroup;model:Mode
  return result.sort((a,b)=>a.model.modelName.localeCompare(b.model.modelName));
 }
 export function schemaFingerprint(model:Model<any>):string{
- const fields=Object.entries(model.schema.paths).map(([name,path])=>[name,path.instance,String(path.options.ref??""),Boolean(path.options.required)]).sort((a,b)=>String(a[0]).localeCompare(String(b[0])));
+ const fields=Object.entries(model.schema.paths as Record<string,SchemaType>).map(([name,path])=>[name,path.instance,String(path.options.ref??""),Boolean(path.options.required)]).sort((a,b)=>String(a[0]).localeCompare(String(b[0])));
  return createHash("sha256").update(JSON.stringify([model.modelName,model.collection.collectionName,fields])).digest("hex");
 }
 export function catalog(){const all=modelsFor(groups.map(g=>g.key));return groups.map(g=>({key:g.key,label:g.label,available:all.some(m=>m.group===g.key),dependencies:g.dependencies}));}

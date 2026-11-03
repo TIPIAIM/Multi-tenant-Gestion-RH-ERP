@@ -1,0 +1,10 @@
+/* Même bleu que les doubles coches de lecture. La suppression conserve son rouge. */
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble
+  .piece-transfer-bubble-meta button:not(.is-delete):not(.is-danger):not(:disabled) {
+  color: #1765c1;
+}
+:root :is(.piece-transfers-page, .piece-transfer-drawer-layer) .piece-transfer-bubble
+  .piece-transfer-bubble-meta button:not(.is-delete):not(.is-danger):not(:disabled) svg {
+  color: #1765c1;
+  stroke: currentColor;
+}

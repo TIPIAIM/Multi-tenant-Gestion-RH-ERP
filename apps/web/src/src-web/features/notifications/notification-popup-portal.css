@@ -1,0 +1,6 @@
+#fades-notification-popup-root { position: fixed; z-index: 10000; top: max(16px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right)); width: min(350px, calc(100vw - 24px)); max-height: calc(100dvh - 32px); box-sizing: border-box; display: flex; flex-direction: column; gap: 8px; padding: 4px; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; pointer-events: none; }
+#fades-notification-popup-root > .task-popup-stack { display: contents; position: static; width: auto; max-height: none; overflow: visible; padding: 0; }
+#fades-notification-popup-root .task-popup { flex-shrink: 0; }
+@media screen { .roadmap-item-card[id^="roadmap-objective-"]:focus { outline: 2px solid var(--tenant-primary, #046242); outline-offset: 3px; scroll-margin-block: 24px; } }
+@media (max-width: 480px) { #fades-notification-popup-root { top: max(10px, env(safe-area-inset-top)); right: 8px; width: min(350px, calc(100vw - 16px)); max-height: calc(100dvh - 20px); } }
+@media print { #fades-notification-popup-root { display: none !important; } }

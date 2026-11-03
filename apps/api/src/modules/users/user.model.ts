@@ -1,4 +1,4 @@
-import mongoose, { Schema, model } from "mongoose";
+import mongoose, { Schema, model, type Model } from "mongoose";
 import { userRoles, type User } from "./user.types.js";
 
 const userSchema = new Schema<User>(
@@ -92,4 +92,4 @@ userSchema.index({ tenantId: 1, agentId: 1 });
 userSchema.index({ tenantId: 1, createdAt: -1 });
 
 export const UserModel =
-  mongoose.models.User || model<User>("User", userSchema);
+  (mongoose.models.User as Model<User> | undefined) || model<User>("User", userSchema);

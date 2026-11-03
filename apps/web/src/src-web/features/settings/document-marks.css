@@ -1,0 +1,174 @@
+.document-marks-panel {
+  margin-top: 24px;
+  padding: 24px;
+  background: #fff;
+  border-top: 1px solid #dce5e9;
+  color: #172f3b;
+  border-radius: 0 0 12px 12px;
+}
+.document-marks-panel h3 {
+  font-size: 16px;
+  margin: 0 0 8px;
+}
+.document-marks-panel > p {
+  font-size: 13px;
+  line-height: 1.6;
+  max-width: 760px;
+}
+.document-marks-help {
+  color: #526774;
+}
+.document-marks-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  margin-top: 18px;
+}
+.document-mark-field h4 {
+  font-size: 14px;
+  margin: 0 0 10px;
+}
+.document-mark-preview {
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  background: #f7f9fa;
+  margin-bottom: 12px;
+  padding: 12px;
+}
+.document-mark-preview img {
+  max-width: 100%;
+  max-height: 96px;
+  object-fit: contain;
+}
+.document-mark-placeholder {
+  font-size: 12px;
+  color: #526774;
+}
+.document-mark-upload {
+  display: inline-flex;
+  position: relative;
+  align-items: center;
+  background: #172f3b;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  margin-right: 10px;
+}
+.document-mark-upload:focus-within {
+  outline: 2px solid #1765c1;
+  outline-offset: 3px;
+}
+.document-mark-upload input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  width: 100%;
+}
+.document-mark-field button {
+  background: transparent;
+  color: #a32131;
+  border: 0;
+  padding: 8px;
+  cursor: pointer;
+}
+.document-marks-panel .document-marks-error {
+  color: #a32131;
+}
+.payroll-mark-options {
+  padding: 14px 20px;
+  background: #f7f9fa;
+  color: #172f3b;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  font-size: 13px;
+}
+.payroll-mark-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.payroll-mark-options p {
+  width: 100%;
+  margin: 0;
+  font-size: 12px;
+}
+.payroll-mark-options button {
+  padding: 7px 12px;
+  border: 0;
+  border-radius: 6px;
+  background: #172f3b;
+  color: white;
+  cursor: pointer;
+}
+.payroll-mark-options button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+.payslip-validation {
+  margin-top: 24px;
+  padding-top: 12px;
+  break-inside: avoid;
+}
+.payslip-validation > strong {
+  font-size: 12px;
+}
+.payslip-validation-images {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  margin-top: 12px;
+}
+.payslip-validation figure {
+  margin: 0;
+  width: 155px;
+}
+.payslip-validation img {
+  width: 145px;
+  height: 65px;
+  object-fit: contain;
+  object-position: left center;
+}
+.payslip-validation figcaption {
+  font-size: 10px;
+  color: #526774;
+  margin-top: 4px;
+}
+@media (max-width: 600px) {
+  .document-marks-grid {
+    grid-template-columns: 1fr;
+  }
+  .document-marks-panel {
+    padding: 16px;
+  }
+  .payslip-validation-images {
+    gap: 10px;
+  }
+  .payslip-validation figure {
+    width: 130px;
+  }
+  .payslip-validation img {
+    width: 125px;
+  }
+}
+@media print {
+  .document-marks-panel,
+  .payroll-mark-options {
+    display: none !important;
+  }
+}
+
+.payroll-mark-options input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  accent-color: #1765c1;
+}
+
+.document-marks-panel .document-marks-error{color:var(--tenant-text,#0b2536);background:rgba(233,181,33,.1);border-color:rgba(233,181,33,.4)}

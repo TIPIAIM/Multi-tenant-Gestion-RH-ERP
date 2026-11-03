@@ -333,9 +333,9 @@ async function resolveNotificationScope(
     ...getTaskScopeFilter(actor),
   }).exec();
 
-  const filter = {
+  const filter: QueryFilter<TaskNotice> = {
     tenantId: request.tenant._id,
-    ...(visibleTaskIds ? { taskId: { $in: visibleTaskIds } } : {}),
+    ...(visibleTaskIds ? { taskId: { $in: visibleTaskIds as Types.ObjectId[] } } : {}),
     $or: [
       { recipientUserId: user._id },
       ...(agent

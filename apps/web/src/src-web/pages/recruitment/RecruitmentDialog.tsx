@@ -1,0 +1,7 @@
+import {useEffect,useId,useRef,type ReactNode} from "react";
+import {Check,LoaderCircle,X} from "lucide-react";
+export function Dialog({title,busy,error,onClose,children,wide=false}:{title:string;busy:boolean;error?:string;onClose:()=>void;children:ReactNode;wide?:boolean}){
+ const ref=useRef<HTMLDialogElement>(null),id=useId();useEffect(()=>{const d=ref.current,previous=document.activeElement as HTMLElement|null;d?.showModal();d?.querySelector<HTMLElement>("input,select,textarea")?.focus();return()=>{d?.close();previous?.focus();};},[]);
+ return <dialog ref={ref} className={`recruitment-dialog ${wide?"recruitment-dialog-wide":""}`} aria-labelledby={id} onCancel={e=>{e.preventDefault();if(!busy)onClose();}}><header><div><p>RECRUTEMENT</p><h3 id={id}>{title}</h3></div><button type="button" className="rc-icon" aria-label="Fermer" title="Fermer" disabled={busy} onClick={onClose}><X size={16}/></button></header>{error&&<p className="rc-alert" role="alert">{error}</p>}{children}</dialog>;
+}
+export function Buttons({busy,onClose,label="Enregistrer"}:{busy:boolean;onClose:()=>void;label?:string}){return <footer className="rc-form-actions"><button className="rc-button" type="button" disabled={busy} onClick={onClose}>Annuler</button><button className="rc-button rc-primary" type="submit" disabled={busy} aria-busy={busy}>{busy?<LoaderCircle size={16} className="rc-spin"/>:<Check size={16}/>} {label}</button></footer>;}

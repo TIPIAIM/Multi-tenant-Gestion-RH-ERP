@@ -1,0 +1,265 @@
+@media screen {
+  :is(.fl-page, .fl-dialog) {
+    --fl-text: #0b2536;
+    --fl-border: rgba(11, 37, 54, 0.14);
+    --fl-muted: rgba(11, 37, 54, 0.73);
+    --fl-surface: #fff;
+  }
+  .fl-page {
+    width: 100%;
+    min-width: 0;
+    gap: 18px;
+  }
+  .fl-page .fl-hero {
+    padding: 24px;
+    background: #fff;
+    box-shadow: none;
+    border-radius: 14px;
+  }
+  .fl-page .fl-hero p {
+    font-size: 0.6875rem;
+  }
+  .fl-page .fl-hero h2 {
+    font-size: clamp(1.4rem, 3vw, 1.9rem);
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    color: #0b2536;
+    margin: 8px 0 0;
+  }
+  .fl-page .fl-hero > div:first-child > span {
+    display: block;
+    margin-top: 8px;
+    font-size: 0.8125rem;
+  }
+  :is(.fl-page, .fl-dialog) :is(.fl-button, .fl-icon) {
+    min-height: 44px;
+    border-radius: 10px;
+    font-size: 0.8125rem;
+    font-weight: 700;
+    gap: 8px;
+    touch-action: manipulation;
+  }
+  :is(.fl-page, .fl-dialog) .fl-icon {
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
+  }
+  :is(.fl-page, .fl-dialog) :is(.fl-button, .fl-icon) svg {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    display: block;
+  }
+  .fl-page .fl-hero-actions {
+    gap: 8px;
+    align-items: center;
+    justify-content: flex-end;
+  }
+  .fl-page .fl-hero-actions :is(.fl-icon, .fl-button) {
+    width: auto;
+    flex: 0 1 auto;
+    height: 44px;
+    padding: 0 14px;
+    border: 0;
+    background: #fff;
+    color: var(--fl-green);
+    box-shadow: none;
+    align-items: center;
+  }
+  .fl-page .fl-hero-actions span {
+    display: block;
+    color: inherit;
+    font-size: 0.8125rem;
+    line-height: 18px;
+    margin: 0;
+    padding: 0;
+  }
+  .fl-page .fl-stats {
+    gap: 12px;
+  }
+  .fl-page .fl-stats button {
+    min-height: 116px;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: none;
+    border-color: var(--fl-border);
+  }
+  .fl-page .fl-stats button > svg {
+    width: 36px;
+    height: 36px;
+    padding: 9px;
+    background: rgba(4, 98, 66, 0.08);
+    border-radius: 10px;
+    flex: 0 0 36px;
+    color: var(--fl-green);
+  }
+  .fl-page .fl-stats strong {
+    font-size: 1.45rem;
+    line-height: 1.2;
+    color: #0b2536;
+  }
+  .fl-page .fl-stats span {
+    font-size: 0.75rem;
+    line-height: 1.5;
+  }
+  .fl-page .fl-stats button[aria-pressed="true"] {
+    border-color: var(--fl-green);
+    background: #fff;
+    box-shadow: inset 0 0 0 1px var(--fl-green);
+  }
+  .fl-page .fl-panel {
+    padding: 20px;
+    border-radius: 14px;
+    min-width: 0;
+  }
+  .fl-page .fl-panel h3 {
+    font-size: 1.05rem;
+    color: #0b2536;
+  }
+  :is(.fl-page, .fl-dialog) :is(input:not([type="checkbox"]), select) {
+    min-height: 44px;
+    border-radius: 10px;
+    border-color: var(--fl-border);
+    font: inherit;
+    font-size: 0.8125rem;
+    min-width: 0;
+    max-width: 100%;
+  }
+  .fl-page .fl-toolbar {
+    gap: 12px;
+  }
+  .fl-page .fl-table-wrap {
+    min-width: 0;
+    max-width: 100%;
+    border-radius: 12px;
+  }
+  .fl-page .fl-file-icon {
+    border-radius: 10px;
+  }
+  .fl-page .fl-badge {
+    border-radius: 6px;
+  }
+  .fl-page .fl-job {
+    border-radius: 12px;
+    border: 1px solid var(--fl-border);
+    padding: 16px;
+    min-width: 0;
+  }
+  .fl-page .fl-job > div {
+    min-width: 0;
+  }
+  .fl-page .fl-job p {
+    overflow-wrap: anywhere;
+    line-height: 1.6;
+  }
+  .fl-page .fl-job .fl-button {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    max-width: 100%;
+  }
+  .fl-dialog {
+    max-height: calc(100dvh - 40px);
+    border: 1px solid var(--fl-border);
+    border-radius: 14px;
+    padding: 24px;
+  }
+  .fl-dialog header h3 {
+    font-size: 1.05rem;
+    color: #0b2536;
+    line-height: 1.4;
+  }
+  .fl-dialog::backdrop {
+    background: rgba(11, 37, 54, 0.45);
+    backdrop-filter: none;
+  }
+  .fl-dialog footer {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .fl-dialog .fl-primary {
+    background: var(--tenant-accent, #e9b521);
+    border-color: var(--tenant-accent, #e9b521);
+    color: #0b2536;
+  }
+  :is(.fl-page, .fl-dialog) .fl-large-help {
+    padding: 16px;
+    border: 1px solid var(--fl-border);
+    border-left: 4px solid var(--tenant-accent, #e9b521);
+    border-radius: 12px;
+    background: #fff;
+    font-size: 0.8125rem;
+    line-height: 1.65;
+    color: var(--fl-muted);
+    margin: 0;
+  }
+  .fl-large-help strong {
+    color: #0b2536;
+  }
+  .fl-large-help p {
+    margin: 6px 0 0;
+  }
+  :is(.fl-page, .fl-dialog) .fl-danger {
+    color: #b33428;
+  }
+  :is(.fl-page, .fl-dialog) .fl-delete {
+    color: #fff;
+    background: #b33428;
+    border-color: #b33428;
+  }
+  :is(.fl-page, .fl-dialog) :is(.fl-notice, .fl-alert, .fl-empty) {
+    border-radius: 10px;
+  }
+  :is(.fl-page, .fl-dialog)
+    :is(button, a, input, select, summary):focus-visible {
+    outline: 3px solid var(--fl-green);
+    outline-offset: 3px;
+  }
+}
+@media screen and (max-width: 649px) {
+  .fl-page .fl-hero,
+  .fl-page .fl-panel {
+    padding: 16px;
+  }
+  .fl-page .fl-hero-actions {
+    width: 100%;
+  }
+  .fl-page .fl-hero-actions :is(.fl-icon, .fl-button) {
+    flex: 1 1 auto;
+  }
+  .fl-page .fl-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .fl-page .fl-stats button {
+    padding: 14px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .fl-dialog {
+    padding: 18px;
+    max-height: calc(100dvh - 20px);
+    max-width: calc(100vw - 20px);
+  }
+  .fl-dialog footer .fl-button {
+    flex: 1 1 100%;
+  }
+  .fl-page .fl-job {
+    padding: 12px;
+  }
+}
+@media screen and (hover: hover) {
+  .fl-page .fl-hero-actions :is(.fl-icon, .fl-button):not(:disabled):hover {
+    background: var(--fl-green);
+    color: #fff;
+    box-shadow: none;
+  }
+  :is(.fl-page, .fl-dialog) :is(.fl-button, .fl-icon):not(:disabled):hover {
+    filter: brightness(0.98);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.fl-page, .fl-dialog) * {
+    animation: none !important;
+    transition: none !important;
+  }
+}

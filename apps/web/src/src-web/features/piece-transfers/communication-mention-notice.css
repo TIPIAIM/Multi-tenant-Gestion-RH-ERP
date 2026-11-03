@@ -1,0 +1,16 @@
+.communication-mention-notice { margin-bottom: 12px; padding: 12px 14px; border: 1px solid #b9dcc7; border-radius: 12px; background: #edf8f0; color: #0b2536; }
+.communication-mention-notice-main { display: flex; align-items: center; gap: 10px; }
+.communication-mention-notice-main > div { flex: 1; min-width: 0; }
+.communication-mention-notice strong { font-size: .85rem; line-height: 1.4; }
+.communication-mention-notice p { margin: 4px 0 0; font-size: .78rem; line-height: 1.4; overflow-wrap: anywhere; color: #4f6e60; }
+.communication-mention-notice-icon { display: grid; place-items: center; flex: 0 0 36px; height: 36px; border-radius: 50%; color: #046242; background: #d8efdf; }
+.communication-mention-open { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 40px; padding: 8px 12px; border-radius: 9px; background: #046242; color: #fff; text-decoration: none; font-size: .8rem; }
+.communication-mention-notice details { margin-top: 9px; padding-left: 46px; }
+.communication-mention-notice summary { cursor: pointer; font-size: .78rem; color: #046242; }
+.communication-mention-notice summary svg { vertical-align: middle; }
+.communication-mention-notice ul { list-style: none; margin: 8px 0 0; padding: 0; max-height: 200px; overflow-y: auto; }
+.communication-mention-notice li a { display: flex; gap: 10px; justify-content: space-between; padding: 9px; text-decoration: none; color: #0b2536; border-bottom: 1px solid #cde3d5; font-size: .8rem; }
+.communication-mention-notice li span { min-width: 0; overflow-wrap: anywhere; }
+.communication-mention-notice li b { color: #046242; }
+.communication-mention-notice a:focus-visible, .communication-mention-notice summary:focus-visible { outline: 2px solid #046242; outline-offset: 3px; }
+@media (max-width: 480px) { .communication-mention-notice { padding: 10px; } .communication-mention-notice-main { flex-wrap: wrap; } .communication-mention-open { margin-left: 46px; } .communication-mention-notice details { padding-left: 0; } }

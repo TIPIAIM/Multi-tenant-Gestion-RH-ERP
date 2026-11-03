@@ -1,0 +1,16 @@
+export type TrainingFormat="IN_PERSON"|"REMOTE"|"HYBRID";
+export type SessionStatus="DRAFT"|"OPEN"|"IN_PROGRESS"|"COMPLETED"|"CANCELLED";
+export type EnrollmentStatus="REQUESTED"|"APPROVED"|"CONFIRMED"|"REJECTED"|"CANCELLED"|"COMPLETED";
+export type CourseInput={code:string;title:string;category:string;objectives:string;provider:string;format:TrainingFormat;durationHours:number;active:boolean};
+export type Course=CourseInput&{id:string;createdAt:string};
+export type SessionInput={courseId:string;startsAt:string;endsAt:string;durationHours:number;capacity:number;location:string;trainer:string;totalCost:number;currency:"GNF"|"EUR"|"USD"};
+export type OfferInput=Omit<SessionInput,"courseId">&{title:string;provider:string;category:string;objectives:string;format:TrainingFormat};
+export type TrainingSession=Omit<SessionInput,"totalCost"|"currency">&{id:string;title:string;provider:string;format:TrainingFormat;status:SessionStatus;totalCost?:number;currency?:string;createdAt:string;myEnrollmentStatus?:EnrollmentStatus;approvedCount?:number;pendingCount?:number;remainingSeats?:number;objectives?:string;category?:string};
+export type Enrollment={id:string;needId:string;sessionId:string;agentId:string;agentName:string;matricule:string;status:EnrollmentStatus;reviewComment:string;bookingReference?:string;externalOutcome?:"ATTENDED"|"PARTIAL"|"NOT_ATTENDED";externalResultNotes?:string;externalCertificateUrl?:string;externalCertificateReference?:string;satisfaction?:number;feedback?:string;session?:{title:string;startsAt:string;endsAt:string;status:SessionStatus}};
+export type NeedInput={agentId?:string;competency:string;justification:string;priority:"NORMAL"|"HIGH"|"URGENT";sourceKind:"EVALUATION"|"REPORT"|"MANAGER_OBSERVATION"|"AGENT_REQUEST";sourceReference:string;evaluationId?:string;targetDate:string};
+export type TrainingNeed=NeedInput&{id:string;agentName:string;matricule:string;status:"IDENTIFIED"|"APPROVED"|"PLANNED"|"COMPLETED"|"CANCELLED";reviewComment?:string;impactDueDate?:string;impact?:string;impactComment?:string;impactReviewedBy?:string};
+export type EvaluationOption={id:string;year:number;score:number;trainingNeeds:string};
+export type Page<T>={items:T[];pagination:{page:number;limit:number;total:number;totalPages:number}};
+export type TrainingDashboard={ownAgentId:string|null;catalogue:number;openSessions:number;approved:number;completed:number;requested:number;spending:{_id:string;total:number}[]};
+export type AgentOption={id:string;fullName:string;matricule:string};
+export type TrainingAudit={_id:string;action:string;actorName:string;createdAt:string;details:Record<string,unknown>};

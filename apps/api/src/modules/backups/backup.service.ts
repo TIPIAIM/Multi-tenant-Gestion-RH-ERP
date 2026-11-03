@@ -9,7 +9,7 @@ export type BackupActor={tenantId:Types.ObjectId;userId:Types.ObjectId;fullName:
 type Snapshot={format:1;tenantId:string;createdAt:string;modules:string[];collections:Array<{model:string;schema:string;documents:Record<string,any>[]}>};
 const running=new Set<Promise<unknown>>();
 const committing=new Set<string>();
-const fail=(message:string,status=400,code="BACKUP_INVALID"):never=>{throw new AppError(message,status,code);};
+function fail(message:string,status=400,code="BACKUP_INVALID"):never {throw new AppError(message,status,code);}
 function guard(a:BackupActor){if(a.role!=="TENANT_ADMIN")fail("Les sauvegardes sont réservées à l’administrateur.",403);}
 function bucket(){if(!mongoose.connection.db)fail("La base de données n’est pas disponible.",503);return new mongoose.mongo.GridFSBucket(mongoose.connection.db!,{bucketName:"rhBackupFiles"});}
 const json=(v:unknown)=>mongoose.mongo.BSON.EJSON.stringify(v,{relaxed:false});

@@ -1,0 +1,56 @@
+/* Shared visual charter. Overrides are scoped to communications. */
+.piece-transfers-page.piece-transfers-page-v5 {
+  --pt-green: var(--tenant-primary, #046242); --pt-green-soft: #eaf5ef;
+  --pt-navy: #0b2536; --pt-gold: #e9b521; --pt-muted: #52676e;
+  background: #f5f7f9; color: var(--pt-navy); padding: 24px; min-width: 0;
+}
+.piece-transfers-page-v5 .piece-transfer-appbar { border: 0; border-radius: 14px; padding: 18px 20px; gap: 16px; margin-bottom: 18px; box-shadow: 0 2px 12px #0b253606; }
+.piece-transfers-page-v5 .piece-transfer-appbar h1 { color: var(--pt-navy); font-size: 1.5rem; letter-spacing: -.025em; margin: 0; }
+.piece-transfers-page-v5 .piece-transfer-appbar-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.piece-transfers-page-v5 .piece-transfer-appbar-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; height: auto; width: auto; padding: 0 14px; background: #fff; color: var(--pt-green); border: 0; border-radius: 10px; box-shadow: none; font: inherit; font-size: .875rem; font-weight: 600; }
+.piece-transfers-page-v5 .piece-transfer-appbar-actions button span { display: block; margin: 0; padding: 0; line-height: 18px; font: inherit; letter-spacing: normal; color: inherit; }
+.piece-transfers-page-v5 .piece-transfer-appbar-actions button svg { display: block; flex: 0 0 18px; width: 18px; height: 18px; margin: 0; }
+.piece-transfers-page-v5 .piece-transfer-appbar-actions button:hover:not(:disabled), .piece-transfers-page-v5 .piece-transfer-appbar-actions button.is-active { background: var(--pt-green); color: white; }
+.piece-transfers-page-v5 button:disabled { cursor: not-allowed; opacity: .55; }
+.piece-transfers-page-v5 :is(button,a,input,textarea,select):focus-visible, .communication-confirm button:focus-visible { outline: 3px solid #e9b521; outline-offset: 3px; }
+.piece-transfers-page-v5 :is(.piece-transfer-chat-shell,.piece-transfer-admin-workspace-v5,.piece-transfer-composer,.communication-forward-panel) { border-radius: 14px; border-color: #e2e8ec; box-shadow: 0 3px 16px #0b253606; overflow: hidden; }
+.piece-transfers-page-v5 .piece-transfer-chat-panel { background: #f7f9fa; min-width: 0; }
+.piece-transfers-page-v5 .piece-transfer-chat-messages { background: #f7f9fa; }
+.piece-transfers-page-v5 .piece-transfer-chat-header { background: white; border-bottom: 1px solid #e2e8ec; }
+.piece-transfers-page-v5 .piece-transfer-mini-stat { background: #fff; border: 1px solid #e2e8ec; border-radius: 12px; box-shadow: none; min-height: 88px; }
+.piece-transfers-page-v5 .piece-transfer-mini-stat:hover { background: #eaf5ef; border-color: #b7d7c6; }
+.piece-transfers-page-v5 .piece-transfer-conversation-item { border-radius: 10px; margin: 3px 6px; width: calc(100% - 12px); }
+.piece-transfers-page-v5 .piece-transfer-conversation-item.is-active { background: #eaf5ef; box-shadow: inset 3px 0 var(--pt-green); }
+.piece-transfers-page-v5 .piece-transfer-conversation-item.is-unread strong { color: #046242; }
+.piece-transfers-page-v5 .piece-transfer-bubble { border-radius: 14px; box-shadow: 0 1px 3px #0b253608; }
+.piece-transfers-page-v5 .piece-transfer-bubble.is-theirs { background: white; color: #173841; border: 1px solid #e2e8ec; }
+.piece-transfers-page-v5 .piece-transfer-bubble.is-mine { background: #eaf5ef; color: #173841; }
+.piece-transfers-page-v5 .piece-transfer-bubble :is(p,.communication-message-body) { line-height: 1.6; overflow-wrap: anywhere; }
+.piece-transfers-page-v5 :is(.piece-transfer-composer,.communication-forward-panel) { background: white; }
+.piece-transfers-page-v5 :is(.piece-transfer-field input,.piece-transfer-field textarea,.piece-transfer-conversation-search) { border-radius: 10px; border-color: #dce5e9; }
+.piece-transfers-page-v5 .piece-transfer-admin-files-v5 article { border-radius: 12px; background: #fff; border-color: #e2e8ec; }
+.piece-transfers-page-v5 .piece-transfer-admin-files-v5 strong { overflow-wrap: anywhere; }
+.piece-transfers-page-v5 .piece-transfer-pagination-v5 button { min-width: 44px; min-height: 44px; }
+.communication-confirm { box-sizing: border-box; width: min(460px,calc(100vw - 32px)); padding: 24px; border: 0; border-radius: 14px; color: #0b2536; background: white; box-shadow: 0 20px 70px #0b25362e; font: inherit; }
+.communication-confirm::backdrop { background: #0b253680; }
+.communication-confirm header,.communication-confirm header span,.communication-confirm footer { display: flex; align-items: center; gap: 10px; }
+.communication-confirm header { justify-content: space-between; font-weight: 700; }
+.communication-confirm p { line-height: 1.6; overflow-wrap: anywhere; margin: 20px 0; }
+.communication-confirm footer { justify-content: flex-end; }
+.communication-confirm button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 16px; border: 0; border-radius: 10px; background: #f1f5f4; color: #046242; font: inherit; cursor: pointer; }
+.communication-confirm button.is-danger { background: #b7332c; color: white; }
+@media(max-width: 760px) {
+ .piece-transfers-page.piece-transfers-page-v5 { padding: 12px; }
+ .piece-transfers-page-v5 .piece-transfer-appbar { align-items: flex-start; flex-direction: column; padding: 16px; }
+ .piece-transfers-page-v5 .piece-transfer-appbar-actions { width: 100%; gap: 4px; }
+ .piece-transfers-page-v5 .piece-transfer-appbar-actions button { padding: 0 10px; }
+ .piece-transfers-page-v5 .piece-transfer-chat-shell { min-width: 0; }
+}
+@media(prefers-reduced-motion: reduce) { .piece-transfers-page-v5 *, .communication-confirm * { animation: none!important; transition: none!important; scroll-behavior: auto!important; } }
+
+.piece-transfers-page-v5 { font-family: inherit; }
+.piece-transfers-page-v5 :is(button,input,textarea,select) { font-family: inherit; }
+.piece-transfers-page-v5 :is(.piece-transfer-appbar h1,.piece-transfer-chat-title strong,.piece-transfer-conversation-line strong) { font-family: inherit; }
+.piece-transfers-page-v5 .piece-transfer-conversation-filters button.is-active { background: #eaf5ef; color: #046242; }
+.piece-transfers-page-v5 :is(.communication-message-actions button,.communication-reaction-add) { color: #046242; background: #eef7f1; }
+.piece-transfers-page-v5 .piece-transfer-admin-summary-v5 button { border-radius: 12px; }
